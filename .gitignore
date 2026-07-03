@@ -1,1 +1,32 @@
+﻿# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Env
+.env
+.env.*
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Sensitive or accidental local files
 %SystemDrive%/
+ProgramData/
+SogouInput/
