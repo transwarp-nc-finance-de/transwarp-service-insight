@@ -41,3 +41,11 @@
 (8) 重写 `README.md` 和 `docs/` 下核心文档，将旧的泛化 RAG、AIOps 和智能复盘方案收敛为第一阶段 Demo 范围，并把真实知识库检索、RAG 与大模型总结、AIOps 辅助分析、SLA 表单智能补全和智能复盘报告生成移入后续演进方向。
 
 (9) 完善 `.gitignore`，补充 OS、IDE、日志、依赖、构建产物、环境变量、临时文件和误包含本地目录规则，用于避免本地缓存、敏感配置和构建产物进入仓库。
+
+(10) 新增 `docs/prd-sla-precheck-assistant.md`，形成一期 `SLA 预诊助手` PRD 主文档，用于评审提交前预诊、受控知识源、大模型辅助建议、人工审核和指标设计。
+
+(11) 新增 `docs/prd-sla-precheck-assistant.html`，作为一期 PRD 静态 HTML 评审展示页，便于会议投屏和浏览；该页面不接接口、不加载外部资源，不代表真实系统接入。
+
+(12) 更新 `docs/progress.md` 和 `docs/roadmap.md`，补充一期 PRD 评审进展、AIOps 历史 SLA 查询与 SLA 提交能力的产品预留要求，并明确不写具体 API 协议、接口地址或后端实现。
+
+(13) 新增 `prompts/2026-07-03-02-sla-precheck-prd.md`，归档本次 PRD 生成提示词摘要，用于满足重要 AI Agent 提示词可追溯要求。

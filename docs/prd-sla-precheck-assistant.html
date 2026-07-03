@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLA 预诊助手一期 PRD 评审页</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #647083;
+      --line: #d9e0ea;
+      --primary: #1557b0;
+      --primary-soft: #e8f1ff;
+      --accent: #177a61;
+      --warn-soft: #fff5dd;
+      --danger: #9d2f2f;
+      --danger-soft: #fff0f0;
+      --shadow: 0 10px 30px rgba(26, 38, 62, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      padding: 28px 22px;
+      border-right: 1px solid var(--line);
+      background: #ffffff;
+      overflow: auto;
+    }
+
+    aside h1 {
+      margin: 0 0 8px;
+      font-size: 21px;
+      line-height: 1.3;
+    }
+
+    aside p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    nav a {
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: #27344a;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    main {
+      padding: 34px;
+    }
+
+    .hero {
+      margin: 0 auto 22px;
+      max-width: 1180px;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .hero .summary {
+      max-width: 900px;
+      margin: 18px 0 0;
+      color: #38465a;
+      font-size: 17px;
+    }
+
+    .notice {
+      margin-top: 22px;
+      padding: 14px 16px;
+      border: 1px solid #f0d28f;
+      border-radius: 6px;
+      background: var(--warn-soft);
+      color: #59400d;
+    }
+
+    .content {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    section {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    section h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+    }
+
+    section h3 {
+      margin: 22px 0 10px;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul, ol {
+      margin: 0 0 12px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #1d2b42;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 8px 8px 0;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .tag.green {
+      background: #e6f5ef;
+      color: var(--accent);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      counter-reset: step;
+    }
+
+    .flow div {
+      min-height: 112px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+
+    .flow div::before {
+      counter-increment: step;
+      content: counter(step);
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 6px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f4fa;
+      color: #26354b;
+    }
+
+    .boundary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .boundary .no {
+      border-color: #f0c4c4;
+      background: var(--danger-soft);
+    }
+
+    .boundary .yes {
+      border-color: #bfe3d7;
+      background: #edf9f5;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 18px 0 30px;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      main {
+        padding: 18px;
+      }
+
+      .grid, .flow, .boundary {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 24px;
+      }
+
+      .hero h2 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>SLA 预诊助手 PRD</h1>
+      <p>一期评审展示页。静态 HTML，不接入真实接口，不加载外部资源。</p>
+      <nav>
+        <a href="#overview">重点摘要</a>
+        <a href="#problem">问题定义</a>
+        <a href="#goals">产品目标</a>
+        <a href="#roles">用户角色</a>
+        <a href="#scope">一期范围</a>
+        <a href="#output">预诊输出</a>
+        <a href="#aiops">AIOps 预留</a>
+        <a href="#flow">业务流程</a>
+        <a href="#metrics">指标设计</a>
+        <a href="#boundary">边界风险</a>
+        <a href="#acceptance">验收与待确认</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero" id="overview">
+        <p class="eyebrow">Transwarp Service Insight / 一期产品需求</p>
+        <h2>SLA 预诊助手</h2>
+        <p class="summary">面向内部员工提交 SLA 前的智能预诊能力，通过受控知识源、大模型辅助建议，并预留与既有 AIOps 的历史 SLA 查询和 SLA 提交对接要求，在提交源头提升 SLA 信息质量和处理效率。</p>
+        <div class="notice">边界声明：本文为一期 PRD 评审页，不代表已完成真实 AIOps、真实 RAG、真实大模型、真实 Wiki、真实历史 SLA 或生产系统接入。所有 AI 输出均需人工审核。</div>
+      </header>
+
+      <div class="content">
+        <section>
+          <h2>重点摘要</h2>
+          <div class="grid">
+            <div class="card"><strong>产品定位</strong>内部员工提交 SLA 前的智能预诊助手，输出建议但不阻断提交。</div>
+            <div class="card"><strong>一期形态</strong>可试点系统需求定义，聚焦受控知识源、AI 辅助建议和人工确认流程。</div>
+            <div class="card"><strong>核心指标</strong>优先衡量提交质量提升，SLA 数量下降仅作为间接收益。</div>
+          </div>
+          <p>
+            <span class="tag">依据来源</span>
+            <span class="tag">置信度</span>
+            <span class="tag">人工介入建议</span>
+            <span class="tag">待补充信息</span>
+            <span class="tag green">建议但不阻断</span>
+          </p>
+        </section>
+
+        <section id="problem">
+          <h2>问题定义</h2>
+          <p>当前 SLA 提交前存在信息不完整、基础类问题重复提交、历史经验未复用、开源社区类问题缺少资料参考、分类判断困难等问题。这些问题会拉长首次理解、首次分派和首次响应耗时。</p>
+          <div class="grid">
+            <div class="card"><strong>信息不完整类</strong>缺少组件、版本、影响范围、日志、截图、复现条件。</div>
+            <div class="card"><strong>基础类和重复类</strong>已有 Wiki、手册或历史摘要可参考，但提交前难以快速命中。</div>
+            <div class="card"><strong>分类不清类</strong>提交人难以判断是否继续提交 SLA，以及应先补充哪些信息。</div>
+          </div>
+        </section>
+
+        <section id="goals">
+          <h2>产品目标</h2>
+          <ul>
+            <li>提升 SLA 字段完整度、问题上下文、影响范围和附件信息质量。</li>
+            <li>降低基础类、重复类和资料可自助解决问题的低价值提交。</li>
+            <li>提高有效 SLA 处理效率，减少首次理解、首次分派和首次响应阶段的低效沟通。</li>
+            <li>建立可追溯的 AI 辅助输出格式，确保所有建议可解释、可确认、可审计。</li>
+            <li>为既有 AIOps 的历史 SLA 查询和 SLA 提交能力预留产品接口要求。</li>
+          </ul>
+        </section>
+
+        <section id="roles">
+          <h2>用户角色</h2>
+          <table>
+            <thead>
+              <tr><th>角色</th><th>主要诉求</th><th>一期价值</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>内部交付、售后、服务员工</td><td>提交前快速获得参考资料和补充建议。</td><td>提升提交质量，降低检索成本。</td></tr>
+              <tr><td>SLA 处理人</td><td>收到更完整的问题上下文。</td><td>减少追问，提高分派和响应效率。</td></tr>
+              <tr><td>知识库维护人员</td><td>识别高频问题和资料缺口。</td><td>优化知识库覆盖和质量。</td></tr>
+              <tr><td>管理和运营人员</td><td>观察提交质量和效率改进趋势。</td><td>形成服务效率改进指标。</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="scope">
+          <h2>一期功能范围</h2>
+          <div class="grid">
+            <div class="card"><strong>SLA 提交前预诊入口</strong>在员工填写标题、描述、组件、版本和影响范围后触发。</div>
+            <div class="card"><strong>检索意图生成</strong>基于标题、描述、组件、版本、问题类型、错误摘要生成检索意图。</div>
+            <div class="card"><strong>受控知识源检索</strong>优先面向售后知识库、Wiki、培训素材、使用手册和处理手册。</div>
+            <div class="card"><strong>AIOps 历史 SLA 查询预留</strong>按关键词、组件、版本、类型、时间范围和状态查询脱敏摘要。</div>
+            <div class="card"><strong>AIOps SLA 提交预留</strong>员工人工确认后提交标题、描述、附件和预诊摘要。</div>
+            <div class="card"><strong>大模型辅助建议</strong>生成摘要、可能原因方向、补充信息和是否继续提交建议。</div>
+          </div>
+        </section>
+
+        <section id="output">
+          <h2>预诊输出</h2>
+          <table>
+            <thead>
+              <tr><th>输出项</th><th>要求</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>预诊摘要</td><td>概括当前问题和已识别上下文。</td></tr>
+              <tr><td>相似资料</td><td>展示知识库、Wiki、培训素材、手册或脱敏历史 SLA 摘要。</td></tr>
+              <tr><td>可能原因方向</td><td>只能表达为待核验方向，不得表达为最终根因。</td></tr>
+              <tr><td>建议补充信息</td><td>列出字段、日志、截图、时间窗口、影响范围或复现步骤。</td></tr>
+              <tr><td>是否建议继续提交 SLA</td><td>给出建议但不阻断，员工仍可人工确认后继续提交。</td></tr>
+              <tr><td>依据来源</td><td>列出命中的资料来源、历史摘要或输入字段依据。</td></tr>
+              <tr><td>置信度</td><td>使用高、中、低表达，并说明影响原因。</td></tr>
+              <tr><td>人工介入建议</td><td>明确提交人、处理人或知识库维护人员需要确认的事项。</td></tr>
+              <tr><td>待补充信息</td><td>列出进入正式 SLA 前仍缺失的信息。</td></tr>
+            </tbody>
+          </table>
+          <div class="notice">模拟数据示例：Foundation 审计日志归档功能不可用。依据来源为模拟 Wiki、模拟处理手册和模拟脱敏历史 SLA 摘要；置信度为中；仍需人工补充操作用户、后台日志、归档路径、存储空间和近期变更记录。</div>
+        </section>
+
+        <section id="aiops">
+          <h2>AIOps 对接产品接口要求</h2>
+          <p>公司已有 AIOps 系统支持历史 SLA 查询和 SLA 提交。本文只定义后续对接的产品接口要求，不写具体 API 协议、接口地址、鉴权实现或后端代码。</p>
+          <table>
+            <thead>
+              <tr><th>能力</th><th>产品要求</th><th>失败处理</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>历史 SLA 查询</td><td>按关键词、组件、版本、问题类型、时间范围、处理状态查询授权范围内的脱敏摘要。</td><td>查询失败不阻断人工提交，提示稍后重试或继续提交。</td></tr>
+              <tr><td>SLA 提交</td><td>员工人工确认后提交标题、描述、组件、版本、级别、影响范围、附件信息和预诊摘要。</td><td>提交失败保留草稿，提示重试或人工处理。</td></tr>
+              <tr><td>权限与审计</td><td>按员工身份、角色和可访问范围控制，并记录查询条件、命中来源、预诊结果、提交人和提交动作。</td><td>审计记录用于追溯和评估，不用于自动判责。</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="flow">
+          <h2>业务流程</h2>
+          <div class="flow">
+            <div>员工填写 SLA 标题、描述、组件、版本、级别和影响范围。</div>
+            <div>员工点击 `SLA 预诊`，系统生成检索意图。</div>
+            <div>系统检索受控知识源，并预留脱敏历史 SLA 查询。</div>
+            <div>系统生成预诊建议，展示依据来源、置信度和待补充信息。</div>
+            <div>员工补充信息、自助处理或人工确认后继续提交 SLA。</div>
+          </div>
+        </section>
+
+        <section id="metrics">
+          <h2>指标设计</h2>
+          <table>
+            <thead>
+              <tr><th>指标</th><th>定义</th><th>价值</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>SLA 字段完整度提升</td><td>提交时标题、描述、组件、版本、影响范围、附件等字段完整度变化。</td><td>衡量提交质量改善。</td></tr>
+              <tr><td>预诊后补充信息比例</td><td>员工在预诊后补充字段、日志、截图或影响范围的比例。</td><td>衡量建议是否推动信息完善。</td></tr>
+              <tr><td>命中资料占比</td><td>预诊命中知识资料或脱敏历史 SLA 摘要的占比。</td><td>衡量知识覆盖和检索效果。</td></tr>
+              <tr><td>有效 SLA 占比提升</td><td>提交后无需大量追问、可进入处理流程的 SLA 占比变化。</td><td>衡量整体提交质量。</td></tr>
+              <tr><td>首次分派、首次响应、问题理解耗时下降</td><td>提交到分派、响应和理解问题的平均耗时变化。</td><td>衡量处理效率提升。</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="boundary">
+          <h2>边界风险</h2>
+          <div class="boundary">
+            <div class="card yes">
+              <strong>一期允许定义</strong>
+              <ul>
+                <li>提交前预诊入口。</li>
+                <li>受控知识源检索能力要求。</li>
+                <li>大模型辅助建议输出格式。</li>
+                <li>AIOps 历史查询和 SLA 提交的产品预留要求。</li>
+                <li>权限、脱敏、审计和失败处理要求。</li>
+              </ul>
+            </div>
+            <div class="card no">
+              <strong>一期明确不做</strong>
+              <ul>
+                <li>不自动阻断、自动提交或自动闭单。</li>
+                <li>不输出最终根因或最终处理结论。</li>
+                <li>不自动判责或修改生产配置。</li>
+                <li>不开放给客户或合作伙伴。</li>
+                <li>不编写真实接口、后端代码或数据库设计。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="acceptance">
+          <h2>验收与待确认</h2>
+          <h3>验收标准</h3>
+          <ul>
+            <li>PRD 明确一期背景、目标、角色、范围、非目标、指标和风险边界。</li>
+            <li>预诊输出包含依据来源、置信度、人工介入建议和待补充信息。</li>
+            <li>AIOps 仅定义产品接口要求，不出现真实接口地址、协议细节或后端实现。</li>
+            <li>提交流程坚持建议但不阻断，员工可人工确认后继续提交 SLA。</li>
+          </ul>
+          <h3>待确认事项</h3>
+          <ul>
+            <li>一期试点覆盖团队、组件和问题类型。</li>
+            <li>知识源准入标准和脱敏审计要求。</li>
+            <li>AIOps 对接排期是否进入一期试点范围。</li>
+            <li>字段完整度、首次分派、首次响应和有效 SLA 占比的当前基线。</li>
+            <li>提交人、处理人、知识库维护人员和运营人员的人工审核边界。</li>
+          </ul>
+        </section>
+
+        <p class="footer">静态评审展示页。所有示例均按模拟数据边界理解；最终结论、SLA 提交、复盘确认和知识库沉淀必须由人工完成。</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
