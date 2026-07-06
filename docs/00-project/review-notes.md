@@ -25,7 +25,7 @@
 - `docs/task-breakdown.md`
 - `docs/templates.md`
 
-删除原因是这些文档包含较多后续阶段能力描述，例如真实 RAG、AIOps 摘要、多 Agent、SLA 草稿生成和智能复盘，容易被误读为当前 MVP 功能。其仍有价值的边界信息已合并到 `README.md`、`AGENTS.md`、`docs/mvp-scope.md`、`docs/roadmap.md` 和本文档中。
+删除原因是这些文档包含较多后续阶段能力描述，例如真实 RAG、AIOps 摘要、多 Agent、SLA 草稿生成和智能复盘，容易被误读为当前 MVP 功能。其仍有价值的边界信息已合并到 `README.md`、`AGENTS.md`、`docs/00-project/mvp-scope.md`、`docs/00-project/roadmap.md` 和本文档中。
 
 ### HTML 原型迁移原因
 
@@ -61,3 +61,4 @@ prototypes/sla-precheck-demo.html
 - 推荐参考资料类型是否覆盖评审方关注的资料来源。
 - 后续是否需要增加更多模拟场景，但不改变当前主 Demo。
 - 如后续接入真实数据，应先确认脱敏、授权、权限和审计机制。
+

@@ -2,94 +2,49 @@
 
 ## 目的
 
-本文档说明 `Transwarp Service Insight` 当前阶段的项目定位、Demo 范围、交互流程、目录结构和后续演进方向，确保项目聚焦 `SLA 智能预诊助手` 的第一阶段交付边界。
+本文档说明 `Transwarp Service Insight` 当前项目定位、阶段边界、目录结构、文档导航和 Demo 查看方式。
 
 ## 适用范围
 
-适用于项目介绍、Demo 查看、方案评审、AI Agent 协作和后续任务拆解。当前阶段仅包含项目文档、纯前端静态 HTML Demo、mock 数据和演示说明，不包含后端代码、真实接口接入、真实 RAG、大模型、AIOps、Wiki 或 SLA 系统接入。
+适用于项目介绍、Demo 查看、方案评审、AI Agent 协作和后续任务拆解。当前仓库仅包含文档、纯前端静态 Demo、mock 数据、PRD 和架构设计草案，不包含后端代码、真实接口接入、真实 RAG、真实大模型、真实 AIOps、真实 Wiki、真实历史 SLA 或数据库接入。
 
 ## 项目简介
 
-`Transwarp Service Insight` 是一个面向 SLA 报备流程的智能预诊助手项目。
+`Transwarp Service Insight` 是面向交付与服务流程的 AI 服务洞察与效率提升项目。当前对外能力名称为 `SLA 智能预诊助手`。
 
-当前第一阶段聚焦纯前端 Demo：在 SLA 提交前，用户可以点击 `智能预诊` 按钮，系统基于当前表单信息，模拟检索 Wiki、历史问题、历史 SLA、操作手册和产品文档，返回若干参考资料、前置诊断结论和建议补充信息。
+当前阶段统一定义为：`第一阶段：纯前端 SLA 智能预诊 Demo`。本阶段验证在 SLA 提交前通过模拟检索资料、生成辅助建议和提示补充信息来改善提交质量。所有输出均需人工审核，不代表最终根因、最终处理方案或正式复盘结论。
 
-当前阶段不接入真实后端、真实 RAG、真实大模型、真实 AIOps 或真实 SLA 系统。智能预诊结果仅作为辅助参考，不代表最终根因或最终处理结论，SLA 是否提交、内容是否准确、处理建议是否适用于当前环境均需人工审核。
+## 当前边界
 
-## 当前阶段目标
+- 当前已完成：纯前端 Demo、mock 数据说明、PRD、架构设计基线、实施计划、任务拆分和各专题设计草案。
+- 当前未完成：真实 ITSM、AIOps、RAG、LLM、Wiki、历史 SLA、数据库、后端服务和生产部署。
+- 当前禁止：自动提交 SLA、自动闭单、自动判责、自动变更生产配置、使用未脱敏真实客户数据。
+- 所有 Demo 数据和示例均必须标注为 `模拟数据`。
 
-当前阶段统一定义为：`第一阶段：纯前端 SLA 智能预诊 Demo`。
+## 文档导航
 
-阶段目标是在模拟 AIOps SLA 报备页面中新增 `智能预诊` 入口，验证提交前辅助检索和信息补全提示的交互闭环。Demo 用于评审交互、文案、边界提示和演示流程，不验证真实知识库检索效果，也不验证真实大模型诊断能力。
+- 项目范围与路线：`docs/00-project/`
+- 产品需求：`docs/01-requirements/`
+- 系统架构：`docs/02-architecture/`
+- API 草案：`docs/03-api/`
+- RAG 设计：`docs/04-rag/`
+- LLM 生成设计：`docs/05-llm/`
+- 知识库设计：`docs/06-knowledge/`
+- 系统集成：`docs/07-integration/`
+- 安全与幻觉防护：`docs/08-security/`
+- 观测与指标：`docs/09-observability/`
+- 测试验收：`docs/10-testing/`
+- 提示词归档：`prompts/`
+- 纯前端 Demo：`prototypes/sla-precheck-demo.html`
 
-## 当前阶段范围
+## 关键文档
 
-- 纯前端静态 HTML Demo。
-- SLA 表单页面新增 `智能预诊` 按钮。
-- 点击后展示 loading 效果，并使用本地 `setTimeout` 模拟 1.5 到 3 秒耗时。
-- 使用前端 mock 数据模拟 Wiki、历史问题、历史 SLA、操作手册和产品文档。
-- 展示 `智能预诊结果`、检索关键词、检索范围、前置诊断结论、建议补充信息、推荐参考资料和操作提示。
-- 所有 Demo 数据均标注为 `模拟数据`。
-- 保留原有 `确定` 提交入口的模拟交互，不阻塞用户继续提交 SLA。
-
-## 非目标范围
-
-- 不生成后端代码、伪代码或接口实现。
-- 不调用真实接口。
-- 不接入真实 RAG、真实大模型、真实 AIOps、真实 Wiki、真实历史 SLA 或真实工单系统。
-- 不使用真实客户、真实 SLA 编号、真实历史问题、真实日志或真实内部链接。
-- 不自动提交 SLA、不自动闭单、不自动判责、不自动变更生产配置。
-- 不将智能预诊结果描述为最终根因、最终处理方案或正式复盘结论。
-- 不把后续的智能复盘、真实 RAG、多 Agent 协作描述为当前 MVP 功能。
-
-## Demo 主场景
-
-模拟数据：
-
-- 产品组件：Foundation。
-- 产品版本：TDS-4.0.1。
-- 问题级别：Sev3。
-- 服务类型：现场问题解决。
-- 问题概述：Foundation 审计日志归档功能不可用。
-- 问题描述：用户在 Foundation 页面执行审计日志归档时，归档功能不可用或按钮置灰，无法完成归档操作。
-
-该场景仅用于演示页面交互和 mock 数据展示，不代表真实客户现场、真实故障记录或真实 SLA。
-
-## 页面交互流程
-
-1. 用户查看模拟 AIOps SLA 报备页面。
-2. 页面展示 Foundation 审计日志归档功能不可用的模拟表单字段。
-3. 用户点击底部 `智能预诊`。
-4. 按钮文案变为 `预诊中...`，并禁用重复点击。
-5. 页面展示 loading 文案：`正在检索 Wiki、历史问题、历史 SLA、操作手册和产品文档，请稍候...`。
-6. 1.5 到 3 秒后展示 `智能预诊结果`。
-7. 用户查看模拟参考资料、建议补充信息和人工审核提示。
-8. 用户可点击 `继续提交 SLA` 关闭结果面板并提示人工确认；该动作不会自动提交。
-9. 用户仍可点击原页面 `确定` 进行模拟提交，实际 SLA 提交必须由人工确认。
-
-## 项目目录结构
-
-```text
-transwarp-service-insight/
-├── README.md
-├── AGENTS.md
-├── CHANGELOG.md
-├── .gitignore
-├── docs/
-│   ├── mvp-scope.md
-│   ├── frontend-demo.md
-│   ├── mock-knowledge.md
-│   ├── demo-plan.md
-│   ├── demo-script.md
-│   ├── progress.md
-│   ├── roadmap.md
-│   └── review-notes.md
-├── prompts/
-│   ├── README.md
-│   └── prompts2026-07-03-01-sla-precheck-demo-restructure.md
-└── prototypes/
-    └── sla-precheck-demo.html
-```
+- `docs/00-project/mvp-scope.md`：第一阶段 MVP 范围。
+- `docs/00-project/implementation-plan.md`：从 Demo 到可试点系统设计的实施计划。
+- `docs/00-project/task-breakdown.md`：后续任务拆分。
+- `docs/01-requirements/prd-sla-precheck-assistant.md`：一期 PRD。
+- `docs/02-architecture/architecture-design-v1.0.md`：由架构设计 docx 整合形成的 Markdown 架构基线。
+- `docs/03-api/api-contract-draft.md`：后续接口草案，不代表真实接口。
 
 ## 如何查看 Demo
 
@@ -99,18 +54,8 @@ transwarp-service-insight/
 prototypes/sla-precheck-demo.html
 ```
 
-该文件是纯前端静态页面，不需要启动后端服务，不需要安装依赖，也不会访问真实接口。
+该文件是纯前端静态页面，不需要启动后端服务，不安装依赖，也不会访问真实接口。
 
 ## 后续演进方向
 
-- 真实知识库检索：在完成权限、脱敏和审计设计后，接入受控知识来源。
-- RAG 与大模型总结：在可追溯引用和人工审核机制下生成摘要。
-- AIOps 辅助分析：基于授权指标提供异常线索，不输出最终根因。
-- SLA 表单智能补全：基于人工确认的信息辅助补全字段。
-- 智能复盘报告生成：在处理完成且人工确认后生成复盘草稿。
-
-以上均为后续演进方向，不属于当前第一阶段 MVP 功能。
-
-## 变更记录说明
-
-重要项目变更统一记录在根目录 `CHANGELOG.md`。日期格式使用 `YYYY/MM/DD`，同一天变更合并到同一个日期标题下，并使用 `(1)`、`(2)`、`(3)` 编号。
+后续可在授权、脱敏、权限和审计评审通过后，逐步评估真实知识库检索、RAG 与大模型总结、AIOps 辅助分析、SLA 表单智能补全、人工确认后的 ITSM / AIOps 对接和复盘草稿生成。这些均为后续目标，不属于当前第一阶段已实现能力。
