@@ -1,18 +1,13 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SLA 智能预诊助手 Demo</title>
+  <link rel="icon" href="data:,">
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: #243044;
-      background: #f4f7fb;
-      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-      font-size: 14px;
-    }
+    body { margin: 0; color: #243044; background: #f4f7fb; font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; font-size: 14px; }
     a { color: #1769e0; text-decoration: none; }
     a:hover { text-decoration: underline; }
     .app-shell { min-height: 100vh; display: grid; grid-template-columns: 224px minmax(0, 1fr); }
@@ -24,7 +19,7 @@
     .nav-item { height: 42px; padding: 0 24px; display: flex; align-items: center; border-left: 3px solid transparent; }
     .nav-item.active { color: #fff; background: #20365f; border-left-color: #2c7df0; }
     .main { min-width: 0; display: flex; flex-direction: column; }
-    .topbar { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #fff; border-bottom: 1px solid #e4eaf3; }
+    .topbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e4eaf3; }
     .breadcrumb { color: #66758f; font-size: 13px; }
     .top-actions { display: flex; align-items: center; gap: 16px; color: #526176; }
     .page { padding: 22px 28px 86px; }
@@ -50,26 +45,18 @@
     .btn:disabled { cursor: not-allowed; opacity: 0.68; }
     .overlay { position: fixed; inset: 0; z-index: 30; display: none; align-items: stretch; justify-content: flex-end; background: rgba(18, 30, 52, 0.38); }
     .overlay.open { display: flex; }
-    .drawer { width: min(680px, 100vw); height: 100vh; display: flex; flex-direction: column; background: #fff; box-shadow: -10px 0 28px rgba(21, 34, 56, 0.22); animation: slideIn 0.18s ease-out; }
+    .drawer { width: min(760px, 100vw); height: 100vh; display: flex; flex-direction: column; background: #fff; box-shadow: -10px 0 28px rgba(21, 34, 56, 0.22); animation: slideIn 0.18s ease-out; }
     @keyframes slideIn { from { transform: translateX(32px); opacity: 0.8; } to { transform: translateX(0); opacity: 1; } }
     .drawer-header { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f2; }
     .drawer-title { margin: 0; color: #17233d; font-size: 18px; }
     .mock-badge { margin-left: 10px; padding: 3px 8px; border-radius: 999px; color: #8a4b00; background: #fff4da; border: 1px solid #ffd899; font-size: 12px; font-weight: 600; }
     .icon-button { width: 32px; height: 32px; border: 0; border-radius: 4px; cursor: pointer; color: #5c6a80; background: transparent; font-size: 22px; line-height: 1; }
     .icon-button:hover { background: #edf3fb; }
-    .drawer-body { flex: 1; overflow: auto; padding: 20px 22px; }
-    .drawer-footer { padding: 14px 22px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f2; background: #fff; }
+    .drawer-body { flex: 1; overflow: auto; padding: 18px 22px; background: #f7f9fc; }
+    .drawer-footer { padding: 12px 22px 14px; border-top: 1px solid #e2e8f2; background: #fff; }
     .loading-box { min-height: 210px; display: grid; place-items: center; text-align: center; color: #526176; line-height: 1.7; }
     .spinner { width: 38px; height: 38px; margin: 0 auto 16px; border: 4px solid #d7e7ff; border-top-color: #1769e0; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .result-block { margin-bottom: 18px; padding: 14px 16px; border: 1px solid #e1e8f2; border-radius: 6px; background: #fbfdff; }
-    .block-title { margin-bottom: 8px; color: #17233d; font-weight: 700; }
-    .chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip { padding: 4px 9px; border-radius: 999px; color: #1758b8; background: #edf5ff; border: 1px solid #cfe3ff; font-size: 12px; }
-    .diagnosis { margin: 0 0 8px; color: #4a5870; line-height: 1.75; }
-    .supplement-list { margin: 0; padding-left: 20px; color: #4a5870; line-height: 1.8; }
-    .result-list { display: grid; gap: 12px; }
-    .result-item { padding: 14px; border: 1px solid #dfe7f2; border-radius: 6px; background: #fff; }
     .result-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
     .type-tag { flex: 0 0 auto; padding: 3px 7px; border-radius: 4px; color: #fff; background: #1769e0; font-size: 12px; line-height: 1.4; }
     .type-tag.history { background: #6d64d8; }
@@ -77,17 +64,39 @@
     .type-tag.manual { background: #d36a1f; }
     .result-title { margin: 0; color: #1d2c43; font-size: 14px; line-height: 1.5; }
     .result-summary { margin: 0 0 8px; color: #58677c; line-height: 1.65; }
-    .operation-tip { color: #5a4b19; background: #fff9e9; border-color: #f4df9a; }
+    .chat-thread { display: grid; gap: 14px; }
+    .chat-message { display: flex; gap: 10px; align-items: flex-start; }
+    .chat-message.user { justify-content: flex-end; }
+    .avatar { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #1769e0; font-size: 12px; font-weight: 700; }
+    .chat-message.user .avatar { order: 2; background: #526176; }
+    .bubble { max-width: min(620px, calc(100vw - 96px)); padding: 12px 14px; border: 1px solid #e1e8f2; border-radius: 8px; background: #fff; color: #3e4d63; line-height: 1.7; }
+    .chat-message.user .bubble { color: #243044; background: #eaf2ff; border-color: #cfe3ff; }
+    .bubble-title { margin-bottom: 8px; color: #17233d; font-weight: 700; }
+    .bubble p { margin: 0 0 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul { margin: 0; padding-left: 18px; }
+    .bubble li { margin: 2px 0; }
+    .source-grid { display: grid; gap: 10px; margin-top: 10px; }
+    .source-card { padding: 12px; border: 1px solid #dfe7f2; border-radius: 6px; background: #fbfdff; }
+    .source-card a { display: inline-block; margin-top: 6px; }
+    .quick-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .quick-chip { border: 1px solid #cfe3ff; border-radius: 999px; padding: 6px 11px; cursor: pointer; color: #1758b8; background: #edf5ff; font: inherit; }
+    .quick-chip:hover { background: #dfeeff; }
+    .chat-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+    .chat-input-row textarea { min-height: 58px; max-height: 120px; resize: vertical; }
+    .footer-actions { margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; }
     .toast { position: fixed; left: 50%; bottom: 76px; z-index: 50; display: none; min-width: 320px; max-width: min(520px, calc(100vw - 32px)); padding: 12px 16px; color: #173b1f; background: #eaf8ee; border: 1px solid #bfe7c8; border-radius: 6px; box-shadow: 0 8px 24px rgba(22, 40, 64, 0.18); transform: translateX(-50%); text-align: center; line-height: 1.6; }
     .toast.show { display: block; }
     @media (max-width: 900px) {
       .app-shell { grid-template-columns: 1fr; }
       .sidebar { display: none; }
-      .topbar { align-items: flex-start; height: auto; min-height: 58px; padding: 12px 16px; flex-direction: column; gap: 8px; }
+      .topbar { align-items: flex-start; height: auto; padding: 12px 16px; flex-direction: column; }
       .page { padding: 16px 14px 82px; }
       .form-grid { grid-template-columns: 1fr; padding: 16px; }
       .actions { padding: 12px; flex-wrap: wrap; }
       .btn { min-width: 88px; }
+      .chat-input-row { grid-template-columns: 1fr; }
+      .footer-actions { justify-content: stretch; flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -116,7 +125,7 @@
       <section class="page">
         <div class="notice">
           <div class="notice-title">SLA 报备须知</div>
-          <div>本页面为纯前端静态 Demo，页面字段、客户、集群、项目、问题描述、预诊结果与链接均为模拟数据。智能预诊结果仅供参考，不代表最终根因或处理结论；SLA 是否提交、工单内容是否准确、处理建议是否适用于当前环境，均需要人工审核。如果参考资料无法解决当前问题，请继续提交 SLA，由研发或相关责任人进一步处理。</div>
+          <div>本页面为纯前端静态 Demo，页面字段、客户、集群、项目、问题描述、对话式预诊回复与链接均为模拟数据。智能预诊结果仅供参考，不代表最终根因或处理结论；SLA 是否提交、工单内容是否准确、处理建议是否适用于当前环境，均需要人工审核。如果参考资料无法解决当前问题，请继续提交 SLA，由研发或相关责任人进一步处理。</div>
         </div>
 
         <form class="form-card" id="slaForm">
@@ -147,13 +156,25 @@
   <div class="overlay" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
     <section class="drawer">
       <header class="drawer-header">
-        <h2 class="drawer-title" id="drawerTitle">智能预诊结果 <span class="mock-badge">模拟数据</span></h2>
+        <h2 class="drawer-title" id="drawerTitle">对话式智能预诊 <span class="mock-badge">模拟数据</span></h2>
         <button type="button" class="icon-button" id="closeIcon" aria-label="关闭">×</button>
       </header>
       <div class="drawer-body" id="drawerBody"></div>
       <footer class="drawer-footer">
-        <button type="button" class="btn" id="closeBtn">关闭</button>
-        <button type="button" class="btn primary" id="continueBtn">继续提交 SLA</button>
+        <div class="quick-actions" id="quickActions" aria-label="快捷反馈">
+          <button type="button" class="quick-chip" data-feedback="补充日志现象：后台出现归档接口报错，需确认具体日志时间点。">补充日志现象</button>
+          <button type="button" class="quick-chip" data-feedback="补充权限信息：当前操作用户可能缺少审计管理权限。">补充权限信息</button>
+          <button type="button" class="quick-chip" data-feedback="补充影响范围：目前需要确认是全员、单用户还是单集群影响。">补充影响范围</button>
+          <button type="button" class="quick-chip" data-feedback="补充近期变更：近期做过升级或配置调整，需要比对变更记录。">补充近期变更</button>
+        </div>
+        <div class="chat-input-row">
+          <textarea id="chatInput" placeholder="补充日志、权限、影响范围或近期变更等信息（模拟输入）"></textarea>
+          <button type="button" class="btn secondary" id="sendBtn">发送</button>
+        </div>
+        <div class="footer-actions">
+          <button type="button" class="btn" id="closeBtn">关闭</button>
+          <button type="button" class="btn primary" id="continueBtn">继续提交 SLA</button>
+        </div>
       </footer>
     </section>
   </div>
@@ -165,7 +186,7 @@
       { type: "Wiki", title: "Foundation 审计日志归档功能说明", summary: "模拟数据：介绍 Foundation 审计日志归档相关配置、使用限制和常见问题。", url: "https://example.com/wiki/foundation-audit-archive" },
       { type: "历史问题", title: "Foundation 审计日志归档按钮不可用问题处理记录", summary: "模拟数据：历史问题样例显示，该类现象可能与产品版本、权限配置或功能开关有关，不能作为当前问题最终结论。", url: "https://example.com/question/foundation-audit-archive-button" },
       { type: "历史 SLA", title: "TDS-4.0.1 Foundation 组件归档功能异常", summary: "模拟数据：该历史 SLA 样例记录归档功能异常的人工排查路径，实际是否适用需要提交人与处理人确认。", url: "https://example.com/sla/foundation-archive-case" },
-      { type: "操作手册", title: "Foundation 组件常见问题排查手册", summary: "模拟数据：包含 Foundation 组件常见问题、日志路径、权限检查和配置检查方法。", url: "https://example.com/manual/foundation-troubleshooting" }
+      { type: "产品文档", title: "Foundation 审计日志归档与常见问题排查说明", summary: "模拟数据：包含 Foundation 审计日志归档使用限制、日志路径、权限检查和配置检查方法，作为操作手册式参考资料。", url: "https://example.com/docs/foundation-audit-archive-troubleshooting" }
     ];
 
     const precheckBtn = document.getElementById("precheckBtn");
@@ -176,6 +197,9 @@
     const closeBtn = document.getElementById("closeBtn");
     const closeIcon = document.getElementById("closeIcon");
     const continueBtn = document.getElementById("continueBtn");
+    const quickActions = document.getElementById("quickActions");
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
     const toast = document.getElementById("toast");
 
     function openDrawer() { overlay.classList.add("open"); }
@@ -189,8 +213,113 @@
     function getTypeClass(type) {
       if (type === "历史问题") return "history";
       if (type === "历史 SLA") return "sla";
-      if (type === "操作手册") return "manual";
+      if (type === "产品文档") return "manual";
       return "";
+    }
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+    function getFieldValue(id) { return document.getElementById(id).value.trim(); }
+    function getFormSummary() {
+      return [
+        `问题类型：${getFieldValue("issueType")}`,
+        `客户名称：${getFieldValue("customer")}`,
+        `集群名称：${getFieldValue("cluster")}`,
+        `项目名称：${getFieldValue("project")}`,
+        `产品组件：${getFieldValue("component")}`,
+        `产品版本：${getFieldValue("version")}`,
+        `问题级别：${getFieldValue("severity")}`,
+        `服务类型：${getFieldValue("serviceType")}`,
+        `问题概述：${getFieldValue("summary")}`,
+        `问题描述：${getFieldValue("description")}`
+      ].join("\n");
+    }
+    function buildAssistantHtml(title, bodyItems, extraHtml = "") {
+      const bodyHtml = bodyItems.map(item => `<p>${escapeHtml(item)}</p>`).join("");
+      return `<div class="bubble-title">${escapeHtml(title)}</div>${bodyHtml}${extraHtml}`;
+    }
+    function appendMessage(role, html) {
+      const thread = document.getElementById("chatThread");
+      if (!thread) return;
+      const message = document.createElement("div");
+      message.className = `chat-message ${role}`;
+      message.innerHTML = `<div class="avatar">${role === "user" ? "我" : "AI"}</div><div class="bubble">${html}</div>`;
+      thread.appendChild(message);
+      drawerBody.scrollTop = drawerBody.scrollHeight;
+    }
+    function appendUserMessage(text) {
+      appendMessage("user", `<p>${escapeHtml(text).replaceAll("\n", "<br>")}</p>`);
+    }
+    function renderSourceCards() {
+      return `<div class="source-grid">${mockKnowledgeResults.map(item => `
+        <article class="source-card">
+          <div class="result-head"><span class="type-tag ${getTypeClass(item.type)}">${item.type}</span><h3 class="result-title">${item.title}</h3></div>
+          <p class="result-summary">${item.summary}</p>
+          <a href="${item.url}" target="_blank" rel="noopener noreferrer">查看详情（模拟数据，example.com 示例链接）</a>
+        </article>
+      `).join("")}</div>`;
+    }
+    function buildInitialAssistantMessage() {
+      const detailHtml = `
+        <ul>
+          <li>诊断结论：当前仅基于表单字段和前端模拟资料完成初步预诊，暂未形成可直接替代人工判断的处理方案；该建议仅供参考，不代表最终根因或最终处理结论。</li>
+          <li>依据来源：页面表单字段、前端静态 mock 知识数组、4 条 example.com 模拟参考资料。</li>
+          <li>置信度：中。原因是缺少真实环境日志、权限核查、影响范围和近期变更记录。</li>
+          <li>人工介入建议：需提交人确认 SLA 内容是否准确，并由处理人判断资料是否适用于当前环境。</li>
+          <li>待补充信息：日志时间点、组件日志路径、审计管理权限、影响范围、近期升级或配置变更。</li>
+        </ul>
+        <div class="bubble-title" style="margin-top:10px;">推荐参考资料（全部为模拟数据）</div>
+        ${renderSourceCards()}`;
+      return buildAssistantHtml("已基于表单字段和模拟资料完成初步预诊", [
+        "以下内容为第一阶段纯前端 Demo 的模拟数据输出，不接入真实 RAG、大模型、AIOps、Wiki、历史 SLA 或数据库。",
+        "请继续补充日志、权限、影响范围或近期变更信息，我会按前端关键词规则返回下一轮模拟建议。"
+      ], detailHtml);
+    }
+    function buildFollowUpReply(text) {
+      const normalized = text.toLowerCase();
+      if (/日志|报错|error|exception|log/.test(normalized)) {
+        return buildAssistantHtml("日志现象已记录（模拟数据）", [
+          "诊断结论：已将依据更新为表单字段、模拟参考资料和用户补充的日志/报错现象；当前仍仅供参考，不代表最终根因。",
+          "依据来源：页面表单字段、前端静态 mock 资料、用户本轮补充内容。置信度：中。",
+          "人工介入建议：请人工确认报错是否来自对应组件和同一时间窗口，避免误判。",
+          "待补充信息：具体日志时间点、组件日志路径、完整报错上下文和复现步骤。"
+        ]);
+      }
+      if (/权限|角色|审计管理|授权|permission|role/.test(normalized)) {
+        return buildAssistantHtml("权限信息已记录（模拟数据）", [
+          "诊断结论：该现象可能与审计管理权限、角色配置或功能开关有关；该判断来自关键词分支模拟，仅供参考。",
+          "依据来源：页面表单字段、模拟知识资料、用户补充的权限信息。置信度：中。",
+          "人工介入建议：请由有权限的人员核查当前用户角色、审计管理权限和功能开关配置。",
+          "待补充信息：操作用户角色、权限组、功能开关状态和同角色用户是否可复现。"
+        ]);
+      }
+      if (/影响范围|全员|单用户|集群|范围|severity|sev/.test(normalized)) {
+        return buildAssistantHtml("影响范围已记录（模拟数据）", [
+          "诊断结论：需要先确认影响范围是全员、单用户还是单集群，再由人工判断 SLA 级别是否需要调整。",
+          "依据来源：页面表单字段、模拟知识资料、用户补充的影响范围信息。置信度：中。",
+          "人工介入建议：请提交人和处理人共同确认业务影响、受影响用户数量和是否存在替代操作路径。",
+          "待补充信息：受影响用户数、受影响集群、开始时间、是否存在绕行方案和当前 Sev 判断依据。"
+        ]);
+      }
+      if (/变更|升级|配置|调整|change|upgrade|config/.test(normalized)) {
+        return buildAssistantHtml("近期变更已记录（模拟数据）", [
+          "诊断结论：近期升级或配置变更可能影响归档功能，需要比对变更前后配置差异；该内容仅为模拟预诊建议。",
+          "依据来源：页面表单字段、模拟知识资料、用户补充的变更信息。置信度：中。",
+          "人工介入建议：请人工核查变更记录、版本差异、配置变更审批和回退条件。",
+          "待补充信息：变更时间、变更项、升级版本、配置差异和变更后首次出现问题的时间。"
+        ]);
+      }
+      return buildAssistantHtml("信息仍不足（模拟数据）", [
+        "诊断结论：当前补充内容未命中前端静态关键词分支，无法进一步缩小模拟预诊范围；该回复仅供参考，需人工确认。",
+        "依据来源：页面表单字段、模拟知识资料、用户本轮补充内容。置信度：低。",
+        "人工介入建议：请人工判断是否继续提交 SLA，并由处理人确认是否需要追加排查。",
+        "待补充信息：请按日志、权限、影响范围、近期变更四类继续补充，避免工单信息不足。"
+      ]);
     }
     function renderLoading() {
       drawerBody.innerHTML = `
@@ -200,41 +329,22 @@
             <div>正在检索 Wiki、历史问题、历史 SLA、操作手册和产品文档，请稍候...</div>
             <div class="field-note">本过程使用前端 setTimeout 和模拟数据，不调用真实接口。</div>
           </div>
-        </div>
-      `;
+        </div>`;
     }
-    function renderResults() {
-      const keywordHtml = ["Foundation", "TDS-4.0.1", "审计日志归档", "功能不可用"].map(item => `<span class="chip">${item}</span>`).join("");
-      const scopeHtml = ["Wiki", "历史问题", "历史 SLA", "操作手册", "产品文档"].map(item => `<span class="chip">${item}</span>`).join("");
-      const resultHtml = mockKnowledgeResults.map(item => `
-        <article class="result-item">
-          <div class="result-head"><span class="type-tag ${getTypeClass(item.type)}">${item.type}</span><h3 class="result-title">${item.title}</h3></div>
-          <p class="result-summary">${item.summary}</p>
-          <a href="${item.url}" target="_blank" rel="noopener noreferrer">查看详情（模拟链接）</a>
-        </article>
-      `).join("");
-
-      drawerBody.innerHTML = `
-        <div class="result-block"><div class="block-title">检索关键词</div><div class="chip-list">${keywordHtml}</div></div>
-        <div class="result-block"><div class="block-title">检索范围</div><div class="chip-list">${scopeHtml}</div></div>
-        <div class="result-block">
-          <div class="block-title">前置诊断结论</div>
-          <p class="diagnosis">当前仅基于模拟知识库返回相关资料，暂未发现可以直接解决该问题的明确方案。检索结果仅供参考，不代表最终根因或处理结论。如参考资料无法解决当前问题，请继续提交 SLA，由研发或相关责任人进一步处理。</p>
-          <p class="diagnosis">依据来源：页面表单字段与前端模拟知识库数据。置信度：中。人工介入建议：由提交人确认是否继续提交 SLA，由处理人确认资料是否适用于当前环境。待补充信息：真实环境日志、复现步骤、影响范围、权限与配置核查结果。</p>
-        </div>
-        <div class="result-block">
-          <div class="block-title">建议补充信息</div>
-          <ol class="supplement-list">
-            <li>是否所有用户均无法使用归档功能？</li>
-            <li>当前操作用户是否具备审计管理权限？</li>
-            <li>是否有后台服务报错日志？</li>
-            <li>是否近期升级或变更过配置？</li>
-            <li>是否存在归档路径、存储空间或权限异常？</li>
-          </ol>
-        </div>
-        <div class="result-block"><div class="block-title">推荐参考资料</div><div class="result-list">${resultHtml}</div></div>
-        <div class="result-block operation-tip"><div class="block-title">操作提示</div><p class="diagnosis">如果以上资料不能解决当前问题，请继续提交 SLA。继续提交 SLA 只关闭结果面板并提示人工确认，不会自动提交、自动闭单或自动处理 SLA。</p></div>
-      `;
+    function renderChatResults() {
+      drawerBody.innerHTML = `<div class="chat-thread" id="chatThread"></div>`;
+      appendUserMessage(`请基于当前 SLA 表单做提交前智能预诊（模拟数据）：\n${getFormSummary()}`);
+      appendMessage("assistant", buildInitialAssistantMessage());
+    }
+    function submitChatMessage(text) {
+      const content = text.trim();
+      if (!content) {
+        showToast("请先输入需要补充的信息。");
+        return;
+      }
+      appendUserMessage(content);
+      chatInput.value = "";
+      window.setTimeout(() => appendMessage("assistant", buildFollowUpReply(content)), 300);
     }
 
     precheckBtn.addEventListener("click", () => {
@@ -244,7 +354,7 @@
       openDrawer();
       const delay = 1500 + Math.floor(Math.random() * 1501);
       window.setTimeout(() => {
-        renderResults();
+        renderChatResults();
         precheckBtn.disabled = false;
         precheckBtn.textContent = "智能预诊";
       }, delay);
@@ -253,11 +363,23 @@
     closeIcon.addEventListener("click", closeDrawer);
     continueBtn.addEventListener("click", () => {
       closeDrawer();
-      showToast("请人工确认工单内容后，点击页面原“确定”按钮继续提交 SLA。");
+      showToast("请人工确认工单内容后，再决定是否点击页面原“确定”按钮；本 Demo 不会自动提交 SLA。");
     });
     submitBtn.addEventListener("click", () => showToast("模拟提交 SLA：实际提交、问题分类、处理建议和复盘结论仍需人工审核。"));
     cancelBtn.addEventListener("click", () => showToast("已取消本次模拟操作，表单内容未提交。"));
     overlay.addEventListener("click", event => { if (event.target === overlay) closeDrawer(); });
+    sendBtn.addEventListener("click", () => submitChatMessage(chatInput.value));
+    chatInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        submitChatMessage(chatInput.value);
+      }
+    });
+    quickActions.addEventListener("click", event => {
+      const button = event.target.closest("[data-feedback]");
+      if (!button) return;
+      submitChatMessage(button.dataset.feedback);
+    });
   </script>
 </body>
 </html>

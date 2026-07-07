@@ -1,4 +1,4 @@
-﻿# 变更记录
+# 变更记录
 
 ## 目的
 
@@ -18,6 +18,22 @@
 6. 纯前端 Demo 或 `模拟数据` 变更必须明确边界；未接真实系统、未接真实接口或需人工审核的边界必须保留。
 
 ## 变更记录
+
+### 2026/07/07
+
+(1) 第一阶段 Demo 评审定稿
+摘要：定稿纯前端 `SLA 智能预诊助手` Demo 的演示入口、mock 资料口径、评审文档和验收说明，用于内部评审时保持交互闭环和边界一致。
+- 更新 `prototypes/sla-precheck-demo.html` 和 `docs/06-knowledge/mock-knowledge.md`，将第 4 条模拟参考资料统一为产品文档口径，并继续使用 `example.com` 示例链接；仍为 Demo/模拟数据，不接真实知识库或内部系统。
+- 更新 `docs/00-project/frontend-demo.md`、`docs/00-project/demo-plan.md`、`docs/00-project/demo-script.md` 和 `docs/00-project/progress.md`，明确第一阶段 Demo 定稿完成、验收标准、演示话术、继续提交 SLA 与原 `确定` 按钮均需人工确认且不自动提交。
+- 新增 `prompts/2026-07-07-01-sla-demo-review-finalization.md`，归档本次评审定稿提示词，满足重要 AI Agent 提示词可追溯要求。
+- 本次变更不生成后端代码，不调用真实接口，不接入真实 RAG、大模型、AIOps、Wiki、历史 SLA 或数据库，不输出最终根因或最终处理结论。
+
+(2) 第一阶段 Demo 对话式预诊改造
+摘要：将纯前端 `SLA 智能预诊助手` Demo 的结果抽屉改造成对话式智能预诊体验，用于演示提交前多轮信息补充和低置信度追问能力。
+- 更新 `prototypes/sla-precheck-demo.html`，保留 `智能预诊` 入口，新增自动表单摘要、初步助手回复、4 条模拟资料卡、自由输入、快捷反馈按钮和前端静态关键词分支；仍为 Demo/模拟数据，不接真实接口或真实模型。
+- 更新 `docs/00-project/frontend-demo.md`、`docs/00-project/demo-plan.md`、`docs/00-project/demo-script.md` 和 `docs/06-knowledge/mock-knowledge.md`，将结果面板口径调整为对话式智能预诊，补充多轮反馈、关键词分支、低置信度追问和验收标准。
+- 更新 `docs/00-project/progress.md`，记录第一阶段 Demo 对话式预诊改造完成；新增 `prompts/2026-07-07-02-conversational-precheck-demo.md` 归档本次提示词。
+- 本次变更不生成后端代码，不调用真实接口，不接入真实 RAG、大模型、AIOps、Wiki、历史 SLA 或数据库；所有回复仅供参考，需人工审核，不作为最终根因或最终处理结论。
 
 ### 2026/07/06
 
