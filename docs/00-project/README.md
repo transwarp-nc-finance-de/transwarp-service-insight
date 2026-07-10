@@ -18,6 +18,8 @@
 - `implementation-plan.md`：从文档基线到可试点系统的阶段化实施计划。
 - `task-breakdown.md`：按模块拆分的后续任务、输入、输出、角色和验收标准。
 - `frontend-demo.md`、`demo-plan.md`、`demo-script.md`、`review-notes.md`：第一阶段 Demo 评审与演示材料。
+- `demo-acceptance-review-2026-07-10.md`：第一阶段 Demo 浏览器技术验收、问题清单和有条件通过结论。
+- `next-stage-decision-gate.md`：进入一期可试点系统设计评审前的范围、基线、授权和人工责任门禁。
 
 所有文档均需保留当前边界：当前仓库仅包含文档、纯前端 Demo、mock 数据和架构设计草案；不代表已接入真实 ITSM、AIOps、RAG、LLM、Wiki、历史 SLA、数据库或生产服务。
 
