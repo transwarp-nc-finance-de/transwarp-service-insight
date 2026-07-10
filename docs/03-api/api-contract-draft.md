@@ -48,3 +48,23 @@
 
 这些接口均为后续设计草案，不代表当前 Demo 已经实现。所有提交、采纳、工单创建和知识发布动作必须保留人工确认与审计。
 
+### 知识策略与预诊响应增补草案
+
+管理员策略对象建议包含：
+
+```text
+rag_enabled
+enabled_sources.wiki
+enabled_sources.historical_sla
+enabled_sources.product_manual
+enabled_sources.open_source
+general_knowledge_fallback_enabled
+policy_version
+```
+
+`POST /api/v1/precheck` 的来源范围由服务端策略和用户权限计算，客户端只能缩小查询范围，不能扩大管理员策略。响应建议增加：`answer_mode`、`configured_sources`、`effective_sources`、`matched_sources`、`policy_version` 和 `fallback_reason`。
+
+`configured_sources` 表示管理员已开启来源，`effective_sources` 表示叠加权限、状态和查询过滤后的范围，`matched_sources` 仅表示本次真实命中的来源。附件请求只传经脱敏和授权的附件引用或摘要；审计不得保存未脱敏附件正文。
+
+以上仅为后续 API 设计草案，当前纯前端 Demo 未实现或调用任何接口。
+

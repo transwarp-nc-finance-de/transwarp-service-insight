@@ -14,7 +14,7 @@
 
 Mock 数据用于模拟 `智能预诊` 点击后的对话式参考资料展示效果，帮助评审者理解 SLA 提交前如何展示资料来源、辅助结论、置信度、人工介入建议和待补充信息。
 
-Mock 数据不用于证明真实知识库质量，不代表真实 Wiki、真实 SLA、真实历史问题、真实客户现场或真实大模型输出。
+Mock 数据不用于证明真实知识库质量，不代表真实 Wiki、真实历史 SLA、真实客户现场或真实大模型输出。
 
 ### Mock 数据来源说明
 
@@ -30,17 +30,28 @@ const mockKnowledgeResults = [
     type: "Wiki",
     title: "Foundation 审计日志归档功能说明",
     summary: "模拟数据：介绍 Foundation 审计日志归档相关配置、使用限制和常见问题。",
-    url: "https://example.com/wiki/foundation-audit-archive"
+    url: "https://example.com/wiki/foundation-audit-archive",
+    keywords: ["审计日志", "归档功能", "归档"]
   }
 ]
 ```
 
 ### Mock 数据字段说明
 
-- `type`：资料类型，例如 Wiki、历史问题、历史 SLA、产品文档。
+- `type`：资料类型，仅使用 Wiki、历史 SLA、产品手册三类候选来源。
 - `title`：资料标题，必须为模拟标题，不得使用真实内部标题。
 - `summary`：资料摘要，必须以 `模拟数据` 标注。
 - `url`：示例链接，必须使用 `example.com` 示例域，不得使用真实内部链接。
+- `keywords`：前端本地确定性过滤关键词，仅用于 Demo，不代表真实相关性分数或真实检索命中。
+
+### 资料命中规则
+
+- 检索文本只拼接产品组件、产品版本、问题概述和问题描述四个页面字段。
+- 每个候选资料只要命中自身任一关键词即展示；每类当前最多一条，合计展示 0–3 条。
+- 默认 Foundation/TDS-4.0.1/审计日志归档不可用场景命中三类资料。
+- 部分命中时只展示实际命中的 1–2 条资料，不展示无关资料。
+- 无命中时不渲染推荐资料标题、卡片容器或占位卡片，只显示“暂未检索到相关模拟资料，可补充信息或继续提交 SLA”，并将置信度标记为低。
+- 没有相关模拟资料不等于问题没有解决方案，也不阻止人工继续提交 SLA。
 
 ### 对话回复规则
 
@@ -69,25 +80,22 @@ const mockKnowledgeResults = [
     type: "Wiki",
     title: "Foundation 审计日志归档功能说明",
     summary: "模拟数据：介绍 Foundation 审计日志归档相关配置、使用限制和常见问题。",
-    url: "https://example.com/wiki/foundation-audit-archive"
-  },
-  {
-    type: "历史问题",
-    title: "Foundation 审计日志归档按钮不可用问题处理记录",
-    summary: "模拟数据：历史问题样例显示，该类现象可能与版本、权限配置或功能开关有关，不能作为当前问题最终结论。",
-    url: "https://example.com/question/foundation-audit-archive-button"
+    url: "https://example.com/wiki/foundation-audit-archive",
+    keywords: ["审计日志", "归档功能", "归档"]
   },
   {
     type: "历史 SLA",
     title: "TDS-4.0.1 Foundation 组件归档功能异常",
     summary: "模拟数据：该历史 SLA 样例记录归档功能异常的人工排查路径，实际是否适用需要处理人确认。",
-    url: "https://example.com/sla/foundation-archive-case"
+    url: "https://example.com/sla/foundation-archive-case",
+    keywords: ["tds-4.0.1", "4.0.1", "功能不可用", "按钮置灰"]
   },
   {
-    type: "产品文档",
+    type: "产品手册",
     title: "Foundation 审计日志归档与常见问题排查说明",
     summary: "模拟数据：包含 Foundation 审计日志归档使用限制、日志路径、权限检查和配置检查方法，作为操作手册式参考资料。",
-    url: "https://example.com/docs/foundation-audit-archive-troubleshooting"
+    url: "https://example.com/manual/foundation-audit-archive-troubleshooting",
+    keywords: ["foundation", "权限配置", "日志路径", "配置检查"]
   }
 ]
 ```
@@ -115,3 +123,15 @@ const mockKnowledgeResults = [
 - 置信度：中或低。
 - 是否需要人工介入：需要。
 - 待补充信息：真实环境日志、复现步骤、影响范围、权限与配置核查结果、近期变更记录。
+
+### 四类来源与附件模拟增补
+
+Demo 的候选来源扩展为 `Wiki`、`历史 SLA`、`产品手册`、`开源资料`。其中 RAG 仅代表检索增强能力，不属于知识来源；模型通用知识属于独立降级策略，也不得伪装成资料引用。
+
+- 内部资料：Wiki、历史 SLA、产品手册。每条均为人工构造的模拟数据。
+- 开源资料：仅模拟官方文档、发布说明、安全公告和上游 Issue/PR，链接必须位于 `example.com`。
+- 附件：内置一份模拟截图和一份模拟日志，只保存前端内存中的名称与模拟预览；不打开文件选择器，不读取真实文件。
+- 来源隔离：关闭某来源后，该来源不得出现在候选集、排序、资料卡、命中数、回答依据和生成上下文。
+- 路由顺序：内部资料命中优先；内部资料无命中后才使用已开启的开源资料；全部无命中时按通用知识降级策略处理。
+
+模拟开源样例为“KRaft 元数据仲裁超时排查”，仅用于演示上游资料路由，不能证明真实问题与上游 Issue 相同。所有回答仍需给出置信度、人工介入建议和待补充信息，并声明不是最终根因。

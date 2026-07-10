@@ -21,7 +21,11 @@
     .main { min-width: 0; display: flex; flex-direction: column; }
     .topbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e4eaf3; }
     .breadcrumb { color: #66758f; font-size: 13px; }
-    .top-actions { display: flex; align-items: center; gap: 16px; color: #526176; }
+    .top-actions { display: flex; align-items: center; gap: 10px; color: #526176; flex-wrap: wrap; justify-content: flex-end; }
+    .scope-bar { max-width: 1120px; margin: 0 auto 16px; padding: 11px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid #e2e8f2; border-radius: 6px; }
+    .scope-label { color: #526176; font-weight: 600; }
+    .scope-tag { padding: 3px 8px; border-radius: 999px; color: #1758b8; background: #edf5ff; border: 1px solid #cfe3ff; font-size: 12px; }
+    .scope-empty { color: #a13d35; background: #fff0ee; border-color: #ffd0cb; }
     .page { padding: 22px 28px 86px; }
     .notice { max-width: 1120px; margin: 0 auto 16px; padding: 16px 18px; background: #eef6ff; border: 1px solid #cfe3ff; border-radius: 6px; line-height: 1.7; }
     .notice-title { margin-bottom: 6px; color: #1758b8; font-weight: 700; }
@@ -59,9 +63,9 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .result-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
     .type-tag { flex: 0 0 auto; padding: 3px 7px; border-radius: 4px; color: #fff; background: #1769e0; font-size: 12px; line-height: 1.4; }
-    .type-tag.history { background: #6d64d8; }
     .type-tag.sla { background: #0f8b7c; }
     .type-tag.manual { background: #d36a1f; }
+    .type-tag.open { background: #7556b9; }
     .result-title { margin: 0; color: #1d2c43; font-size: 14px; line-height: 1.5; }
     .result-summary { margin: 0 0 8px; color: #58677c; line-height: 1.65; }
     .chat-thread { display: grid; gap: 14px; }
@@ -76,7 +80,13 @@
     .bubble p:last-child { margin-bottom: 0; }
     .bubble ul { margin: 0; padding-left: 18px; }
     .bubble li { margin: 2px 0; }
+    .metadata-row { margin: 8px 0 2px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .meta-pill { padding: 3px 7px; border-radius: 4px; color: #46566d; background: #f0f3f8; border: 1px solid #dfe6ef; font-size: 12px; }
+    .command-box { margin: 10px 0; padding: 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; border-radius: 5px; background: #17233d; color: #eaf0fa; }
+    .command-box code { overflow-wrap: anywhere; font-family: Consolas, monospace; }
+    .copy-btn { min-width: 52px; height: 28px; padding: 0 8px; border: 1px solid #7890b5; border-radius: 4px; color: #fff; background: #294160; cursor: pointer; }
     .source-grid { display: grid; gap: 10px; margin-top: 10px; }
+    .no-results { margin-top: 10px; padding: 10px 12px; color: #6f4d16; background: #fff8e8; border: 1px solid #f0d9a2; border-radius: 5px; }
     .source-card { padding: 12px; border: 1px solid #dfe7f2; border-radius: 6px; background: #fbfdff; }
     .source-card a { display: inline-block; margin-top: 6px; }
     .quick-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -84,6 +94,22 @@
     .quick-chip:hover { background: #dfeeff; }
     .chat-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
     .chat-input-row textarea { min-height: 58px; max-height: 120px; resize: vertical; }
+    .attachment-tools { margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .tool-btn { border: 1px dashed #9cb7dc; border-radius: 5px; padding: 6px 10px; color: #1758b8; background: #f6faff; cursor: pointer; font: inherit; }
+    .attachment-list { margin-bottom: 10px; display: grid; gap: 6px; }
+    .attachment-item { padding: 7px 9px; display: flex; justify-content: space-between; gap: 10px; align-items: center; border: 1px solid #dfe7f2; border-radius: 5px; background: #f8fbff; }
+    .attachment-remove { border: 0; color: #a13d35; background: transparent; cursor: pointer; }
+    .attachment-preview { margin-top: 8px; padding: 9px; border-radius: 5px; color: #526176; background: #f4f7fb; border: 1px solid #e0e7f0; font-size: 12px; white-space: pre-wrap; }
+    .settings-overlay { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; padding: 16px; background: rgba(18, 30, 52, 0.45); }
+    .settings-overlay.open { display: grid; }
+    .settings-dialog { width: min(620px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 8px; box-shadow: 0 12px 36px rgba(21,34,56,.24); }
+    .settings-body { padding: 18px 22px; }
+    .settings-note { padding: 10px 12px; color: #6f4d16; background: #fff8e8; border: 1px solid #f0d9a2; border-radius: 5px; line-height: 1.6; }
+    .switch-row { padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid #edf1f6; }
+    .switch-row label { margin: 0; }
+    .switch-row small { display: block; margin-top: 3px; color: #7a8799; font-weight: 400; }
+    .switch-row input { width: 18px; height: 18px; flex: 0 0 auto; }
+    .settings-footer { padding: 14px 22px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f2; }
     .footer-actions { margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; }
     .toast { position: fixed; left: 50%; bottom: 76px; z-index: 50; display: none; min-width: 320px; max-width: min(520px, calc(100vw - 32px)); padding: 12px 16px; color: #173b1f; background: #eaf8ee; border: 1px solid #bfe7c8; border-radius: 6px; box-shadow: 0 8px 24px rgba(22, 40, 64, 0.18); transform: translateX(-50%); text-align: center; line-height: 1.6; }
     .toast.show { display: block; }
@@ -119,7 +145,7 @@
     <main class="main">
       <header class="topbar">
         <div><strong>SLA 报备</strong><span class="breadcrumb"> / 提交问题 / SLA 智能预诊助手 Demo</span></div>
-        <div class="top-actions"><span>演示环境</span><span>当前用户：模拟数据</span></div>
+        <div class="top-actions"><span>演示环境</span><span>当前用户：模拟数据</span><button type="button" class="btn" id="settingsBtn">知识来源配置（模拟）</button></div>
       </header>
 
       <section class="page">
@@ -127,6 +153,8 @@
           <div class="notice-title">SLA 报备须知</div>
           <div>本页面为纯前端静态 Demo，页面字段、客户、集群、项目、问题描述、对话式预诊回复与链接均为模拟数据。智能预诊结果仅供参考，不代表最终根因或处理结论；SLA 是否提交、工单内容是否准确、处理建议是否适用于当前环境，均需要人工审核。如果参考资料无法解决当前问题，请继续提交 SLA，由研发或相关责任人进一步处理。</div>
         </div>
+
+        <div class="scope-bar"><span class="scope-label">当前可回答范围：</span><span id="scopeTags"></span><span class="field-note">配置变更从下一次预诊开始生效。</span></div>
 
         <form class="form-card" id="slaForm">
           <div class="section-title">SLA 基本信息</div>
@@ -157,7 +185,7 @@
     <section class="drawer">
       <header class="drawer-header">
         <h2 class="drawer-title" id="drawerTitle">对话式智能预诊 <span class="mock-badge">模拟数据</span></h2>
-        <button type="button" class="icon-button" id="closeIcon" aria-label="关闭">×</button>
+        <div><button type="button" class="btn" id="settingsInDrawerBtn">来源配置</button><button type="button" class="icon-button" id="closeIcon" aria-label="关闭">×</button></div>
       </header>
       <div class="drawer-body" id="drawerBody"></div>
       <footer class="drawer-footer">
@@ -167,6 +195,12 @@
           <button type="button" class="quick-chip" data-feedback="补充影响范围：目前需要确认是全员、单用户还是单集群影响。">补充影响范围</button>
           <button type="button" class="quick-chip" data-feedback="补充近期变更：近期做过升级或配置调整，需要比对变更记录。">补充近期变更</button>
         </div>
+        <div class="attachment-tools">
+          <span class="field-note">内置附件（不读取真实文件）：</span>
+          <button type="button" class="tool-btn" data-attachment="screenshot">＋ 模拟截图</button>
+          <button type="button" class="tool-btn" data-attachment="log">＋ 模拟日志</button>
+        </div>
+        <div class="attachment-list" id="attachmentList"></div>
         <div class="chat-input-row">
           <textarea id="chatInput" placeholder="补充日志、权限、影响范围或近期变更等信息（模拟输入）"></textarea>
           <button type="button" class="btn secondary" id="sendBtn">发送</button>
@@ -179,207 +213,202 @@
     </section>
   </div>
 
+  <div class="settings-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <section class="settings-dialog">
+      <header class="drawer-header"><h2 class="drawer-title" id="settingsTitle">知识来源配置 <span class="mock-badge">管理员全局配置模拟</span></h2><button type="button" class="icon-button" id="settingsCloseIcon" aria-label="关闭">×</button></header>
+      <div class="settings-body">
+        <div class="settings-note">仅使用浏览器 localStorage 模拟持久化，不代表已接入真实账户、权限或配置中心。已有对话保留预诊开始时的策略快照。</div>
+        <div class="switch-row"><label for="cfgRag">知识增强回答（RAG）<small>关闭后忽略下方四类检索来源。</small></label><input type="checkbox" id="cfgRag"></div>
+        <div class="switch-row"><label for="cfgWiki">Wiki<small>模拟内部知识资料。</small></label><input type="checkbox" id="cfgWiki"></div>
+        <div class="switch-row"><label for="cfgSla">历史 SLA<small>模拟已脱敏且经审核的历史样例。</small></label><input type="checkbox" id="cfgSla"></div>
+        <div class="switch-row"><label for="cfgManual">产品手册<small>模拟产品使用与排查资料。</small></label><input type="checkbox" id="cfgManual"></div>
+        <div class="switch-row"><label for="cfgOpen">开源资料<small>仅模拟官方资料和上游 Issue/PR。</small></label><input type="checkbox" id="cfgOpen"></div>
+        <div class="switch-row"><label for="cfgFallback">模型通用知识降级<small>无资料命中时仅提供低置信度一般建议。</small></label><input type="checkbox" id="cfgFallback"></div>
+      </div>
+      <footer class="settings-footer"><button type="button" class="btn" id="settingsCancel">取消</button><button type="button" class="btn primary" id="settingsSave">保存配置</button></footer>
+    </section>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
-    const mockKnowledgeResults = [
-      { type: "Wiki", title: "Foundation 审计日志归档功能说明", summary: "模拟数据：介绍 Foundation 审计日志归档相关配置、使用限制和常见问题。", url: "https://example.com/wiki/foundation-audit-archive" },
-      { type: "历史问题", title: "Foundation 审计日志归档按钮不可用问题处理记录", summary: "模拟数据：历史问题样例显示，该类现象可能与产品版本、权限配置或功能开关有关，不能作为当前问题最终结论。", url: "https://example.com/question/foundation-audit-archive-button" },
-      { type: "历史 SLA", title: "TDS-4.0.1 Foundation 组件归档功能异常", summary: "模拟数据：该历史 SLA 样例记录归档功能异常的人工排查路径，实际是否适用需要提交人与处理人确认。", url: "https://example.com/sla/foundation-archive-case" },
-      { type: "产品文档", title: "Foundation 审计日志归档与常见问题排查说明", summary: "模拟数据：包含 Foundation 审计日志归档使用限制、日志路径、权限检查和配置检查方法，作为操作手册式参考资料。", url: "https://example.com/docs/foundation-audit-archive-troubleshooting" }
-    ];
+    (() => {
+      const STORAGE_KEY = "tsi-demo-knowledge-policy-v1";
+      const DEFAULT_POLICY = { rag_enabled: true, wiki: true, historical_sla: true, product_manual: true, open_source: true, general_knowledge_fallback_enabled: true, policy_version: 1 };
+      const SOURCE_LABELS = { wiki: "Wiki", historical_sla: "历史 SLA", product_manual: "产品手册", open_source: "开源资料" };
+      const SOURCE_ORDER = ["wiki", "historical_sla", "product_manual", "open_source"];
+      const INTERNAL_SOURCES = ["wiki", "historical_sla", "product_manual"];
+      const knowledge = [
+        { source: "wiki", title: "Foundation 审计日志归档功能说明", summary: "模拟数据：介绍审计日志归档的配置条件、权限边界和常见现象。", url: "https://example.com/wiki/foundation-audit-archive", keywords: ["审计日志", "归档功能", "归档"] },
+        { source: "historical_sla", title: "TDS-4.0.1 Foundation 归档功能异常样例", summary: "模拟数据：记录人工核验权限、日志和变更差异的排查路径，是否适用须由处理人确认。", url: "https://example.com/sla/foundation-archive-case", keywords: ["tds-4.0.1", "4.0.1", "功能不可用", "按钮置灰"] },
+        { source: "product_manual", title: "Foundation 审计日志归档排查说明", summary: "模拟数据：包含使用限制、日志位置、权限检查和配置检查的手册式说明。", url: "https://example.com/manual/foundation-audit-archive-troubleshooting", keywords: ["foundation", "权限配置", "日志路径", "配置检查"] },
+        { source: "open_source", title: "上游项目：KRaft 元数据仲裁超时排查", summary: "模拟数据：模拟官方文档与上游 Issue 中关于 metadata quorum 超时、节点连通性和版本兼容性的只读排查说明。", url: "https://example.com/upstream/issues/kraft-metadata-quorum-timeout", keywords: ["kraft", "metadata quorum", "仲裁超时", "controller timeout"] }
+      ];
 
-    const precheckBtn = document.getElementById("precheckBtn");
-    const submitBtn = document.getElementById("submitBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const overlay = document.getElementById("resultOverlay");
-    const drawerBody = document.getElementById("drawerBody");
-    const closeBtn = document.getElementById("closeBtn");
-    const closeIcon = document.getElementById("closeIcon");
-    const continueBtn = document.getElementById("continueBtn");
-    const quickActions = document.getElementById("quickActions");
-    const chatInput = document.getElementById("chatInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const toast = document.getElementById("toast");
+      const el = id => document.getElementById(id);
+      const overlay = el("resultOverlay");
+      const drawerBody = el("drawerBody");
+      const chatInput = el("chatInput");
+      const settingsOverlay = el("settingsOverlay");
+      let savedPolicy = loadPolicy();
+      let activePolicy = null;
+      let pendingAttachments = [];
 
-    function openDrawer() { overlay.classList.add("open"); }
-    function closeDrawer() { overlay.classList.remove("open"); }
-    function showToast(message) {
-      toast.textContent = message;
-      toast.classList.add("show");
-      window.clearTimeout(showToast.timer);
-      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 3000);
-    }
-    function getTypeClass(type) {
-      if (type === "历史问题") return "history";
-      if (type === "历史 SLA") return "sla";
-      if (type === "产品文档") return "manual";
-      return "";
-    }
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-    function getFieldValue(id) { return document.getElementById(id).value.trim(); }
-    function getFormSummary() {
-      return [
-        `问题类型：${getFieldValue("issueType")}`,
-        `客户名称：${getFieldValue("customer")}`,
-        `集群名称：${getFieldValue("cluster")}`,
-        `项目名称：${getFieldValue("project")}`,
-        `产品组件：${getFieldValue("component")}`,
-        `产品版本：${getFieldValue("version")}`,
-        `问题级别：${getFieldValue("severity")}`,
-        `服务类型：${getFieldValue("serviceType")}`,
-        `问题概述：${getFieldValue("summary")}`,
-        `问题描述：${getFieldValue("description")}`
-      ].join("\n");
-    }
-    function buildAssistantHtml(title, bodyItems, extraHtml = "") {
-      const bodyHtml = bodyItems.map(item => `<p>${escapeHtml(item)}</p>`).join("");
-      return `<div class="bubble-title">${escapeHtml(title)}</div>${bodyHtml}${extraHtml}`;
-    }
-    function appendMessage(role, html) {
-      const thread = document.getElementById("chatThread");
-      if (!thread) return;
-      const message = document.createElement("div");
-      message.className = `chat-message ${role}`;
-      message.innerHTML = `<div class="avatar">${role === "user" ? "我" : "AI"}</div><div class="bubble">${html}</div>`;
-      thread.appendChild(message);
-      drawerBody.scrollTop = drawerBody.scrollHeight;
-    }
-    function appendUserMessage(text) {
-      appendMessage("user", `<p>${escapeHtml(text).replaceAll("\n", "<br>")}</p>`);
-    }
-    function renderSourceCards() {
-      return `<div class="source-grid">${mockKnowledgeResults.map(item => `
-        <article class="source-card">
-          <div class="result-head"><span class="type-tag ${getTypeClass(item.type)}">${item.type}</span><h3 class="result-title">${item.title}</h3></div>
-          <p class="result-summary">${item.summary}</p>
-          <a href="${item.url}" target="_blank" rel="noopener noreferrer">查看详情（模拟数据，example.com 示例链接）</a>
-        </article>
-      `).join("")}</div>`;
-    }
-    function buildInitialAssistantMessage() {
-      const detailHtml = `
-        <ul>
-          <li>诊断结论：当前仅基于表单字段和前端模拟资料完成初步预诊，暂未形成可直接替代人工判断的处理方案；该建议仅供参考，不代表最终根因或最终处理结论。</li>
-          <li>依据来源：页面表单字段、前端静态 mock 知识数组、4 条 example.com 模拟参考资料。</li>
-          <li>置信度：中。原因是缺少真实环境日志、权限核查、影响范围和近期变更记录。</li>
-          <li>人工介入建议：需提交人确认 SLA 内容是否准确，并由处理人判断资料是否适用于当前环境。</li>
-          <li>待补充信息：日志时间点、组件日志路径、审计管理权限、影响范围、近期升级或配置变更。</li>
-        </ul>
-        <div class="bubble-title" style="margin-top:10px;">推荐参考资料（全部为模拟数据）</div>
-        ${renderSourceCards()}`;
-      return buildAssistantHtml("已基于表单字段和模拟资料完成初步预诊", [
-        "以下内容为第一阶段纯前端 Demo 的模拟数据输出，不接入真实 RAG、大模型、AIOps、Wiki、历史 SLA 或数据库。",
-        "请继续补充日志、权限、影响范围或近期变更信息，我会按前端关键词规则返回下一轮模拟建议。"
-      ], detailHtml);
-    }
-    function buildFollowUpReply(text) {
-      const normalized = text.toLowerCase();
-      if (/日志|报错|error|exception|log/.test(normalized)) {
-        return buildAssistantHtml("日志现象已记录（模拟数据）", [
-          "诊断结论：已将依据更新为表单字段、模拟参考资料和用户补充的日志/报错现象；当前仍仅供参考，不代表最终根因。",
-          "依据来源：页面表单字段、前端静态 mock 资料、用户本轮补充内容。置信度：中。",
-          "人工介入建议：请人工确认报错是否来自对应组件和同一时间窗口，避免误判。",
-          "待补充信息：具体日志时间点、组件日志路径、完整报错上下文和复现步骤。"
-        ]);
+      function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;"); }
+      function loadPolicy() {
+        try { return { ...DEFAULT_POLICY, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; }
+        catch (_) { return { ...DEFAULT_POLICY }; }
       }
-      if (/权限|角色|审计管理|授权|permission|role/.test(normalized)) {
-        return buildAssistantHtml("权限信息已记录（模拟数据）", [
-          "诊断结论：该现象可能与审计管理权限、角色配置或功能开关有关；该判断来自关键词分支模拟，仅供参考。",
-          "依据来源：页面表单字段、模拟知识资料、用户补充的权限信息。置信度：中。",
-          "人工介入建议：请由有权限的人员核查当前用户角色、审计管理权限和功能开关配置。",
-          "待补充信息：操作用户角色、权限组、功能开关状态和同角色用户是否可复现。"
-        ]);
+      function persistPolicy(policy) { localStorage.setItem(STORAGE_KEY, JSON.stringify(policy)); }
+      function enabledSourceKeys(policy) { return policy.rag_enabled ? SOURCE_ORDER.filter(key => policy[key]) : []; }
+      function scopeLabels(policy) {
+        const labels = enabledSourceKeys(policy).map(key => SOURCE_LABELS[key]);
+        if (policy.general_knowledge_fallback_enabled) labels.push("通用知识降级");
+        return labels;
       }
-      if (/影响范围|全员|单用户|集群|范围|severity|sev/.test(normalized)) {
-        return buildAssistantHtml("影响范围已记录（模拟数据）", [
-          "诊断结论：需要先确认影响范围是全员、单用户还是单集群，再由人工判断 SLA 级别是否需要调整。",
-          "依据来源：页面表单字段、模拟知识资料、用户补充的影响范围信息。置信度：中。",
-          "人工介入建议：请提交人和处理人共同确认业务影响、受影响用户数量和是否存在替代操作路径。",
-          "待补充信息：受影响用户数、受影响集群、开始时间、是否存在绕行方案和当前 Sev 判断依据。"
-        ]);
+      function renderScope() {
+        const labels = scopeLabels(savedPolicy);
+        el("scopeTags").innerHTML = labels.length
+          ? labels.map(label => `<span class="scope-tag">${escapeHtml(label)}</span>`).join(" ")
+          : '<span class="scope-tag scope-empty">仅提示信息不足</span>';
       }
-      if (/变更|升级|配置|调整|change|upgrade|config/.test(normalized)) {
-        return buildAssistantHtml("近期变更已记录（模拟数据）", [
-          "诊断结论：近期升级或配置变更可能影响归档功能，需要比对变更前后配置差异；该内容仅为模拟预诊建议。",
-          "依据来源：页面表单字段、模拟知识资料、用户补充的变更信息。置信度：中。",
-          "人工介入建议：请人工核查变更记录、版本差异、配置变更审批和回退条件。",
-          "待补充信息：变更时间、变更项、升级版本、配置差异和变更后首次出现问题的时间。"
-        ]);
+      function fillSettings() {
+        el("cfgRag").checked = savedPolicy.rag_enabled;
+        el("cfgWiki").checked = savedPolicy.wiki;
+        el("cfgSla").checked = savedPolicy.historical_sla;
+        el("cfgManual").checked = savedPolicy.product_manual;
+        el("cfgOpen").checked = savedPolicy.open_source;
+        el("cfgFallback").checked = savedPolicy.general_knowledge_fallback_enabled;
       }
-      return buildAssistantHtml("信息仍不足（模拟数据）", [
-        "诊断结论：当前补充内容未命中前端静态关键词分支，无法进一步缩小模拟预诊范围；该回复仅供参考，需人工确认。",
-        "依据来源：页面表单字段、模拟知识资料、用户本轮补充内容。置信度：低。",
-        "人工介入建议：请人工判断是否继续提交 SLA，并由处理人确认是否需要追加排查。",
-        "待补充信息：请按日志、权限、影响范围、近期变更四类继续补充，避免工单信息不足。"
-      ]);
-    }
-    function renderLoading() {
-      drawerBody.innerHTML = `
-        <div class="loading-box">
-          <div>
-            <div class="spinner" aria-hidden="true"></div>
-            <div>正在检索 Wiki、历史问题、历史 SLA、操作手册和产品文档，请稍候...</div>
-            <div class="field-note">本过程使用前端 setTimeout 和模拟数据，不调用真实接口。</div>
-          </div>
-        </div>`;
-    }
-    function renderChatResults() {
-      drawerBody.innerHTML = `<div class="chat-thread" id="chatThread"></div>`;
-      appendUserMessage(`请基于当前 SLA 表单做提交前智能预诊（模拟数据）：\n${getFormSummary()}`);
-      appendMessage("assistant", buildInitialAssistantMessage());
-    }
-    function submitChatMessage(text) {
-      const content = text.trim();
-      if (!content) {
-        showToast("请先输入需要补充的信息。");
-        return;
+      function openSettings() { fillSettings(); settingsOverlay.classList.add("open"); }
+      function closeSettings() { settingsOverlay.classList.remove("open"); }
+      function saveSettings() {
+        savedPolicy = {
+          rag_enabled: el("cfgRag").checked,
+          wiki: el("cfgWiki").checked,
+          historical_sla: el("cfgSla").checked,
+          product_manual: el("cfgManual").checked,
+          open_source: el("cfgOpen").checked,
+          general_knowledge_fallback_enabled: el("cfgFallback").checked,
+          policy_version: Number(savedPolicy.policy_version || 0) + 1
+        };
+        persistPolicy(savedPolicy); renderScope(); closeSettings(); showToast("模拟管理员配置已保存，将从下一次预诊开始生效。");
       }
-      appendUserMessage(content);
-      chatInput.value = "";
-      window.setTimeout(() => appendMessage("assistant", buildFollowUpReply(content)), 300);
-    }
+      function showToast(message) {
+        const toast = el("toast"); toast.textContent = message; toast.classList.add("show");
+        clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove("show"), 3000);
+      }
+      function field(id) { return el(id).value.trim(); }
+      function retrievalText() { return ["component", "version", "summary", "description"].map(field).join(" ").toLowerCase(); }
+      function formSummary() {
+        return [["问题类型","issueType"],["客户名称","customer"],["集群名称","cluster"],["项目名称","project"],["产品组件","component"],["产品版本","version"],["问题级别","severity"],["服务类型","serviceType"],["问题概述","summary"],["问题描述","description"]].map(([name,id]) => `${name}：${field(id)}`).join("\n");
+      }
+      function retrieve(policy) {
+        const enabled = enabledSourceKeys(policy);
+        const text = retrievalText();
+        const candidates = knowledge.filter(item => enabled.includes(item.source) && item.keywords.some(keyword => text.includes(keyword.toLowerCase())));
+        const internal = candidates.filter(item => INTERNAL_SOURCES.includes(item.source));
+        return internal.length ? internal : candidates.filter(item => item.source === "open_source");
+      }
+      function typeClass(source) { return source === "historical_sla" ? "sla" : source === "product_manual" ? "manual" : source === "open_source" ? "open" : ""; }
+      function renderSources(results) {
+        if (!results.length) return "";
+        return `<div class="bubble-title" style="margin-top:10px;">参考资料（实际命中 ${results.length} 条，均为模拟数据）</div><div class="source-grid">${results.map(item => `<article class="source-card"><div class="result-head"><span class="type-tag ${typeClass(item.source)}">${SOURCE_LABELS[item.source]}</span><h3 class="result-title">${escapeHtml(item.title)}</h3></div><p class="result-summary">${escapeHtml(item.summary)}</p><a href="${item.url}" target="_blank" rel="noopener noreferrer">查看详情（example.com 模拟链接）</a></article>`).join("")}</div>`;
+      }
+      function policyMetadata(policy, matched) {
+        const enabled = enabledSourceKeys(policy).map(key => SOURCE_LABELS[key]);
+        const actual = [...new Set(matched.map(item => SOURCE_LABELS[item.source]))];
+        return `<div class="metadata-row"><span class="meta-pill">策略版本：v${policy.policy_version}</span><span class="meta-pill">已启用来源：${enabled.length ? enabled.join(" / ") : "无"}</span><span class="meta-pill">实际命中来源：${actual.length ? actual.join(" / ") : "无"}</span></div>`;
+      }
+      function commandHtml(command) { return `<div class="bubble-title">只读诊断命令</div><div class="command-box"><code>${escapeHtml(command)}</code><button type="button" class="copy-btn" data-copy="${escapeHtml(command)}">复制</button></div>`; }
+      function attachmentsHtml(items) {
+        if (!items.length) return "";
+        return `<div class="attachment-preview">随消息发送的内置附件（模拟数据）：\n${items.map(item => `• ${item.name}：${item.preview}`).join("\n")}</div>`;
+      }
+      function assistantAnswer(policy, attachments = []) {
+        const matched = retrieve(policy);
+        const internalHit = matched.some(item => INTERNAL_SOURCES.includes(item.source));
+        const openHit = matched.some(item => item.source === "open_source");
+        let mode, title, judgement, confidence, missing, command = "";
+        if (internalHit) {
+          mode = "内部资料"; title = "已形成初步辅助判断（模拟数据）";
+          judgement = "表单现象与模拟内部资料存在关键词关联，可优先人工核验操作权限、功能开关、组件日志和近期变更；这不是最终根因或最终处理结论。";
+          confidence = "中：仅由前端静态规则命中，尚未核验真实环境。"; missing = "日志时间点、完整报错上下文、用户角色、影响范围和近期变更记录。";
+          command = "Get-Content <组件日志路径> -Tail 200";
+        } else if (openHit) {
+          mode = "开源资料"; title = "内部资料未命中，已参考开源资料（模拟数据）";
+          judgement = "可参考模拟官方资料或上游 Issue，人工核对元数据仲裁状态、节点连通性与版本兼容性；不得直接将上游案例认定为当前环境根因。";
+          confidence = "中低：开源案例可能与当前版本和部署方式不同。"; missing = "组件版本、完整错误文本、节点角色、问题开始时间和可复现步骤。";
+          command = "Get-Content <组件日志路径> -Tail 200";
+        } else if (policy.general_knowledge_fallback_enabled) {
+          mode = "通用知识"; title = enabledSourceKeys(policy).length ? "未命中已启用资料，返回一般排查方向（模拟数据）" : "当前未启用检索来源，返回一般排查方向（模拟数据）";
+          judgement = "建议先人工确认复现步骤、时间窗口、影响范围和近期变更，再收集对应组件日志；通用建议不引用任何资料，也不能作为最终结论。";
+          confidence = "低：未获得任何资料命中，仅为模型通用知识降级的前端模拟。"; missing = "完整报错、版本、日志、影响范围、权限与变更记录。";
+          command = "Get-Content <组件日志路径> -Tail 200";
+        } else {
+          mode = "信息不足"; title = "未检索到可用依据（模拟数据）";
+          judgement = "当前策略范围内没有命中资料，且未启用通用知识降级。请补充信息或由人工继续提交 SLA，不生成无依据的排查结论。";
+          confidence = "低：无可用资料依据。"; missing = "完整报错、版本、日志、影响范围、权限与变更记录。";
+        }
+        const sourceText = matched.length ? matched.map(item => `${SOURCE_LABELS[item.source]}：${item.title}`).join("；") : "本次无资料命中";
+        return `<div class="bubble-title">${title}</div>${policyMetadata(policy, matched)}<ul><li><strong>回答模式：</strong>${mode}</li><li><strong>辅助判断：</strong>${judgement}</li><li><strong>依据来源：</strong>${escapeHtml(sourceText)}</li><li><strong>置信度：</strong>${confidence}</li><li><strong>人工介入建议：</strong>需要。提交人须确认工单内容，处理人须判断建议是否适用于当前环境及是否继续提交。</li><li><strong>待补充信息：</strong>${missing}</li><li><strong>边界声明：</strong>以上仅为纯前端模拟建议，不是最终根因、最终处理方案或正式复盘结论。</li></ul>${command ? commandHtml(command) : ""}${attachmentsHtml(attachments)}${renderSources(matched)}`;
+      }
+      function appendMessage(role, html) {
+        const thread = el("chatThread"); if (!thread) return;
+        const node = document.createElement("div"); node.className = `chat-message ${role}`; node.innerHTML = `<div class="avatar">${role === "user" ? "我" : "AI"}</div><div class="bubble">${html}</div>`; thread.appendChild(node); drawerBody.scrollTop = drawerBody.scrollHeight;
+      }
+      function appendUser(text, attachments = []) { appendMessage("user", `<p>${escapeHtml(text).replaceAll("\n", "<br>")}</p>${attachmentsHtml(attachments)}`); }
+      function renderLoading(policy) {
+        const enabled = enabledSourceKeys(policy).map(key => SOURCE_LABELS[key]);
+        const wording = enabled.length ? `正在检索已启用的模拟来源：${enabled.join("、")}` : policy.general_knowledge_fallback_enabled ? "当前未启用检索来源，正在准备低置信度通用建议" : "当前无可用检索来源，正在生成信息不足提示";
+        drawerBody.innerHTML = `<div class="loading-box"><div><div class="spinner" aria-hidden="true"></div><div>${escapeHtml(wording)}，请稍候...</div><div class="field-note">使用前端 setTimeout 和静态数组，不调用真实接口、模型或互联网。</div></div></div>`;
+      }
+      function renderChat() {
+        drawerBody.innerHTML = '<div class="chat-thread" id="chatThread"></div>';
+        appendUser(`请基于当前 SLA 表单做提交前智能预诊（模拟数据）：\n${formSummary()}`);
+        appendMessage("assistant", assistantAnswer(activePolicy));
+      }
+      function addAttachment(kind) {
+        if (pendingAttachments.some(item => item.kind === kind)) { showToast("该模拟附件已添加。"); return; }
+        pendingAttachments.push(kind === "screenshot" ? { kind, name: "foundation-page-error.png", preview: "页面归档按钮置灰，右上角出现操作不可用提示（内置模拟截图）" } : { kind, name: "foundation-component.log", preview: "10:20:31 WARN archive request rejected: permission check failed（内置模拟日志）" });
+        renderAttachments();
+      }
+      function renderAttachments() {
+        el("attachmentList").innerHTML = pendingAttachments.map((item,index) => `<div class="attachment-item"><span><strong>${escapeHtml(item.name)}</strong> · ${escapeHtml(item.preview)}</span><button type="button" class="attachment-remove" data-remove="${index}">删除</button></div>`).join("");
+      }
+      function sendMessage(text) {
+        const content = text.trim();
+        if (!content && !pendingAttachments.length) { showToast("请输入补充信息或添加内置模拟附件。"); return; }
+        const sent = pendingAttachments.map(item => ({ ...item })); pendingAttachments = []; renderAttachments(); chatInput.value = "";
+        appendUser(content || "补充模拟附件", sent);
+        setTimeout(() => appendMessage("assistant", assistantAnswer(activePolicy, sent)), 300);
+      }
+      function copyCommand(command, button) {
+        const done = () => { button.textContent = "已复制"; showToast("只读诊断命令已复制，请由人工确认路径和适用环境。"); };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(command).then(done).catch(() => showToast("浏览器未允许复制，请手工选择命令。"));
+        else { const area = document.createElement("textarea"); area.value = command; document.body.appendChild(area); area.select(); try { document.execCommand("copy"); done(); } catch (_) { showToast("浏览器未允许复制，请手工选择命令。"); } area.remove(); }
+      }
 
-    precheckBtn.addEventListener("click", () => {
-      precheckBtn.disabled = true;
-      precheckBtn.textContent = "预诊中...";
-      renderLoading();
-      openDrawer();
-      const delay = 1500 + Math.floor(Math.random() * 1501);
-      window.setTimeout(() => {
-        renderChatResults();
-        precheckBtn.disabled = false;
-        precheckBtn.textContent = "智能预诊";
-      }, delay);
-    });
-    closeBtn.addEventListener("click", closeDrawer);
-    closeIcon.addEventListener("click", closeDrawer);
-    continueBtn.addEventListener("click", () => {
-      closeDrawer();
-      showToast("请人工确认工单内容后，再决定是否点击页面原“确定”按钮；本 Demo 不会自动提交 SLA。");
-    });
-    submitBtn.addEventListener("click", () => showToast("模拟提交 SLA：实际提交、问题分类、处理建议和复盘结论仍需人工审核。"));
-    cancelBtn.addEventListener("click", () => showToast("已取消本次模拟操作，表单内容未提交。"));
-    overlay.addEventListener("click", event => { if (event.target === overlay) closeDrawer(); });
-    sendBtn.addEventListener("click", () => submitChatMessage(chatInput.value));
-    chatInput.addEventListener("keydown", event => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        submitChatMessage(chatInput.value);
-      }
-    });
-    quickActions.addEventListener("click", event => {
-      const button = event.target.closest("[data-feedback]");
-      if (!button) return;
-      submitChatMessage(button.dataset.feedback);
-    });
+      el("precheckBtn").addEventListener("click", () => {
+        activePolicy = JSON.parse(JSON.stringify(savedPolicy));
+        el("precheckBtn").disabled = true; el("precheckBtn").textContent = "预诊中..."; renderLoading(activePolicy); overlay.classList.add("open");
+        setTimeout(() => { renderChat(); el("precheckBtn").disabled = false; el("precheckBtn").textContent = "智能预诊"; }, 1500);
+      });
+      el("settingsBtn").addEventListener("click", openSettings); el("settingsInDrawerBtn").addEventListener("click", openSettings); el("settingsCloseIcon").addEventListener("click", closeSettings); el("settingsCancel").addEventListener("click", closeSettings); el("settingsSave").addEventListener("click", saveSettings);
+      settingsOverlay.addEventListener("click", event => { if (event.target === settingsOverlay) closeSettings(); });
+      el("closeBtn").addEventListener("click", () => overlay.classList.remove("open")); el("closeIcon").addEventListener("click", () => overlay.classList.remove("open"));
+      overlay.addEventListener("click", event => { if (event.target === overlay) overlay.classList.remove("open"); });
+      el("continueBtn").addEventListener("click", () => { overlay.classList.remove("open"); showToast("请人工确认工单内容后再决定是否提交；本 Demo 不会自动提交 SLA。"); });
+      el("submitBtn").addEventListener("click", () => showToast("模拟提交提示：实际提交、分类、建议适用性和复盘结论均需人工审核。"));
+      el("cancelBtn").addEventListener("click", () => showToast("已取消本次模拟操作，未提交任何数据。"));
+      el("sendBtn").addEventListener("click", () => sendMessage(chatInput.value));
+      chatInput.addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(chatInput.value); } });
+      el("quickActions").addEventListener("click", event => { const button = event.target.closest("[data-feedback]"); if (button) sendMessage(button.dataset.feedback); });
+      document.querySelector(".attachment-tools").addEventListener("click", event => { const button = event.target.closest("[data-attachment]"); if (button) addAttachment(button.dataset.attachment); });
+      el("attachmentList").addEventListener("click", event => { const button = event.target.closest("[data-remove]"); if (!button) return; pendingAttachments.splice(Number(button.dataset.remove), 1); renderAttachments(); });
+      drawerBody.addEventListener("click", event => { const button = event.target.closest("[data-copy]"); if (button) copyCommand(button.dataset.copy, button); });
+      renderScope();
+    })();
   </script>
 </body>
 </html>

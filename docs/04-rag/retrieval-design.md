@@ -18,3 +18,13 @@
 
 所有结果必须显示依据来源，不得编造内部链接或真实历史 SLA。
 
+### 来源策略与严格隔离增补
+
+RAG 是检索能力，不是知识来源。目标设计中的管理员策略字段为 `rag_enabled`、`enabled_sources.wiki`、`enabled_sources.historical_sla`、`enabled_sources.product_manual`、`enabled_sources.open_source`、`general_knowledge_fallback_enabled` 和 `policy_version`。
+
+有效检索范围必须按以下交集计算：管理员已启用来源 ∩ 用户有权来源 ∩ `APPROVED` 知识 ∩ 查询过滤条件。来源映射到 `doc_type/source_type` 后进入关键词、向量召回和重排；例如关闭 Wiki 时，召回、重排和生成上下文均不得包含 `wiki` 类型。
+
+排序分层为：先在有效内部来源（Wiki、历史 SLA、产品手册）检索；内部有命中则不混入开放来源；内部无命中时再检索已启用的官方开源资料和上游 Issue/PR。全部无命中时不伪造引用，由生成层按通用知识降级开关返回低置信度建议或信息不足提示。
+
+当前 Demo 仅用本地关键词数组模拟上述路由，不接向量库、真实资料或网络。
+
