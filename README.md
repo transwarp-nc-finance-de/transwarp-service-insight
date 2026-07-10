@@ -12,7 +12,7 @@
 
 `Transwarp Service Insight` 是面向交付与服务流程的 AI 服务洞察与效率提升项目。当前对外能力名称为 `SLA 智能预诊助手`。
 
-当前阶段统一定义为：`第一阶段：纯前端 SLA 智能预诊 Demo`。本阶段验证在 SLA 提交前通过模拟检索资料、生成辅助建议和提示补充信息来改善提交质量。2026/07/10 技术验收为“有条件通过”，待 Edge 人工冒烟、业务口径确认和项目负责人签字后关闭第一阶段；当前尚未进入真实系统开发或试点实施。所有输出均需人工审核，不代表最终根因、最终处理方案或正式复盘结论。
+`第一阶段：纯前端 SLA 智能预诊 Demo` 已于 2026/07/10 完成人工授权确认并关闭。本阶段验证了在 SLA 提交前通过模拟检索资料、生成辅助建议和提示补充信息来改善提交质量；当前仅准备下一阶段决策材料，尚未进入一期可试点系统设计评审、真实系统开发或试点实施。所有输出均需人工审核，不代表最终根因、最终处理方案或正式复盘结论。
 
 ## 当前边界
 
@@ -41,7 +41,7 @@
 
 - `docs/00-project/mvp-scope.md`：第一阶段 MVP 范围。
 - `docs/00-project/implementation-plan.md`：从 Demo 到可试点系统设计的实施计划。
-- `docs/00-project/demo-acceptance-review-2026-07-10.md`：Demo 浏览器技术验收与有条件通过结论。
+- `docs/00-project/demo-acceptance-review-2026-07-10.md`：Demo 浏览器技术验收、人工确认与第一阶段关闭结论。
 - `docs/00-project/next-stage-decision-gate.md`：下一阶段范围、指标、授权与人工责任门禁。
 - `docs/00-project/task-breakdown.md`：后续任务拆分。
 - `docs/01-requirements/prd-sla-precheck-assistant.md`：一期 PRD。
