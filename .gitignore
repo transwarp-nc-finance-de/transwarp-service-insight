@@ -25,6 +25,7 @@ coverage/
 # Env
 .env
 .env.*
+!.env.example
 
 # Temp
 tmp/

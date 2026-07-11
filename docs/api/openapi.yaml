@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: Transwarp Service Insight Precheck API
+  version: 1.0.0
+  description: 当前技术 MVP 的唯一已实现接口契约；所有示例均为模拟数据。
+paths:
+  /api/v1/precheck:
+    post:
+      summary: 生成 SLA 辅助预诊（模拟数据）
+      operationId: createPrecheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrecheckRequest'
+      responses:
+        '200':
+          description: 预诊成功，结果仍需人工审核
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrecheckResponse'
+              example:
+                precheckId: 123e4567-e89b-12d3-a456-426614174000
+                summary: 模拟预诊：这是辅助方向，不是最终根因或处理结论。
+                recommendations: [请人工核对发生时间和影响范围。]
+                references:
+                  - sourceType: PRODUCT_MANUAL
+                    title: 产品手册排查章节（模拟数据）
+                    excerpt: 建议核对版本和模块状态。
+                    url: https://example.com/mock/product-manual
+                    mockData: true
+                confidence: MEDIUM
+                humanReviewRequired: true
+                missingInformation: [版本]
+                fallbackReason: 未调用真实 RAG、大模型或外部服务。
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    PrecheckRequest:
+      type: object
+      required: [title, description]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, minLength: 1, maxLength: 10000 }
+        product: { type: string, maxLength: 100 }
+        module: { type: string, maxLength: 100 }
+        version: { type: string, maxLength: 100 }
+        severity: { type: string, maxLength: 100 }
+        impactScope: { type: string, maxLength: 2000 }
+        attachmentsSummary: { type: string, maxLength: 5000 }
+    ReferenceItem:
+      type: object
+      required: [sourceType, title, excerpt, url, mockData]
+      properties:
+        sourceType: { type: string, enum: [PRODUCT_MANUAL, HISTORICAL_SLA] }
+        title: { type: string }
+        excerpt: { type: string }
+        url: { type: string, format: uri }
+        mockData: { type: boolean }
+    PrecheckResponse:
+      type: object
+      required: [precheckId, summary, recommendations, references, confidence, humanReviewRequired, missingInformation, fallbackReason]
+      properties:
+        precheckId: { type: string, format: uuid }
+        summary: { type: string }
+        recommendations: { type: array, items: { type: string } }
+        references: { type: array, items: { $ref: '#/components/schemas/ReferenceItem' } }
+        confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        humanReviewRequired: { type: boolean }
+        missingInformation: { type: array, items: { type: string } }
+        fallbackReason: { type: string }
+    ApiError:
+      type: object
+      required: [code, message, fieldErrors, timestamp, traceId]
+      properties:
+        code: { type: string, enum: [VALIDATION_ERROR, INTERNAL_ERROR] }
+        message: { type: string }
+        fieldErrors: { type: object, additionalProperties: { type: string } }
+        timestamp: { type: string, format: date-time }
+        traceId: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: 必填或长度约束校验失败
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    InternalError:
+      description: 未预期错误；响应不包含堆栈或请求正文
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }

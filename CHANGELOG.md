@@ -1,5 +1,12 @@
 # 变更记录
 
+## 2026/07/11：建立技术 MVP 工程治理基线
+
+- 建立 ACTIVE / DRAFT / ARCHIVED 文档体系，归档第一阶段 Demo、旧计划、API 草案和历史提示词。
+- 重构 SLA 预诊前后端结构，明确请求长度约束、唯一 `precheckId`、统一错误 `traceId` 和 OpenAPI 唯一契约。
+- 增加 Spotless、ESLint、Prettier、前后端行为测试、CI 和 Pull Request 模板。
+- 仍仅使用 `模拟数据`，未接入真实数据库、RAG、LLM、ITSM、AIOps 或生产环境。
+
 ## 目的
 
 本文档用于记录 `Transwarp Service Insight` 的重要需求边界、文档规则、目录结构和 Demo 原型变更，便于后续追溯。

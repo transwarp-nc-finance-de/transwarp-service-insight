@@ -10,7 +10,7 @@
 
 ## 正文
 
-第一阶段纯前端 `SLA 智能预诊助手` Demo 已于 2026/07/10 关闭，`prototypes/sla-precheck-demo.html` 继续作为视觉与交互参考。当前为技术 MVP 开发，M1 交付可本地运行的 Vue 前端与 Spring Boot Mock API 闭环。
+第一阶段纯前端 `SLA 智能预诊助手` Demo 已于 2026/07/10 关闭，历史原型归档在 `docs/archive/demo-v1/`。当前为技术 MVP 开发，M1 交付可本地运行的 Vue 前端与 Spring Boot Mock API 闭环。
 
 M1 包含 SLA 表单、`POST /api/v1/precheck`、确定性模拟预诊、结构化错误、结果面板、人工继续提交模拟、前后端测试和启动文档。所有参考资料和结果均为 `模拟数据`；不接数据库、真实 RAG、真实模型、AIOps、ITSM、Wiki、历史 SLA 或生产数据。
 
