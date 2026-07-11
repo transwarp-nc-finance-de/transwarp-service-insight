@@ -16,6 +16,11 @@ node_modules/
 # Build output
 dist/
 build/
+target/
+coverage/
+.vite/
+*.class
+*.tsbuildinfo
 
 # Env
 .env

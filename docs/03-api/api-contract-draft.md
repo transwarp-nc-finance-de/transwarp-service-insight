@@ -14,9 +14,9 @@
 
 用途：提交人工填写的 SLA 草稿字段，返回预诊建议草案。
 
-输入字段建议：`title`、`description`、`product`、`module`、`version`、`severity`、`impact_scope`、`attachments_summary`。
+M1 已实现请求字段：`title`、`description`、`product`、`module`、`version`、`severity`、`impactScope`、`attachmentsSummary`。仅标题和描述必填。
 
-输出字段建议：`precheck_id`、`summary`、`recommendations`、`references`、`confidence`、`human_review_required`、`missing_information`、`fallback_reason`。
+M1 已实现响应字段：`precheckId`、`summary`、`recommendations`、`references`、`confidence`、`humanReviewRequired`、`missingInformation`、`fallbackReason`。接口使用 camelCase；输出为确定性 `模拟数据`，不调用真实检索或模型，`humanReviewRequired` 始终为 `true`。
 
 ### `POST /api/v1/retrieval/search`
 
