@@ -36,10 +36,23 @@ function submitPrecheck() {
       <label>产品<input v-model="form.product" maxlength="100" /></label>
       <label>模块<input v-model="form.module" maxlength="100" /></label>
       <label>版本<input v-model="form.version" maxlength="100" /></label>
-      <label>紧急程度<select v-model="form.severity"><option value="">请选择</option><option>P1</option><option>P2</option><option>P3</option></select></label>
+      <label
+        >紧急程度<select v-model="form.severity">
+          <option value="">请选择</option>
+          <option>P1</option>
+          <option>P2</option>
+          <option>P3</option>
+        </select></label
+      >
     </div>
     <label>影响范围<input v-model="form.impactScope" maxlength="2000" /></label>
-    <label>附件摘要（仅限模拟或脱敏内容）<textarea v-model="form.attachmentsSummary" rows="2" maxlength="5000" /></label>
+    <label
+      >附件摘要（仅限模拟或脱敏内容）<textarea
+        v-model="form.attachmentsSummary"
+        rows="2"
+        maxlength="5000"
+      />
+    </label>
     <p v-if="validationError" class="error">{{ validationError }}</p>
     <div class="actions">
       <button class="primary" :disabled="loading">{{ loading ? '正在预诊…' : '智能预诊' }}</button>

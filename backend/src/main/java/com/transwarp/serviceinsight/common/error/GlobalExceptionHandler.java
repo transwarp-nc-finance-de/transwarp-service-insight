@@ -35,10 +35,6 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(
             new ApiError(
-                "INTERNAL_ERROR",
-                "预诊服务暂时不可用，请稍后重试或继续人工提交",
-                Map.of(),
-                Instant.now(),
-                traceId));
+                "INTERNAL_ERROR", "预诊服务暂时不可用，请稍后重试或继续人工提交", Map.of(), Instant.now(), traceId));
   }
 }

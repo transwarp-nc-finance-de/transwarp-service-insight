@@ -4,6 +4,7 @@ import com.transwarp.serviceinsight.precheck.dto.Confidence;
 import com.transwarp.serviceinsight.precheck.dto.PrecheckRequest;
 import com.transwarp.serviceinsight.precheck.dto.PrecheckResponse;
 import com.transwarp.serviceinsight.precheck.dto.ReferenceItem;
+import com.transwarp.serviceinsight.precheck.dto.ReferenceSourceType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -17,13 +18,13 @@ public class MockPrecheckService {
     var references =
         List.of(
             new ReferenceItem(
-                "PRODUCT_MANUAL",
+                ReferenceSourceType.PRODUCT_MANUAL,
                 "产品手册排查章节（模拟数据）",
                 "建议核对版本、模块状态和近期变更。",
                 "https://example.com/mock/product-manual",
                 true),
             new ReferenceItem(
-                "HISTORICAL_SLA",
+                ReferenceSourceType.HISTORICAL_SLA,
                 "相似历史 SLA 摘要（模拟数据）",
                 "建议先补齐时间范围与影响对象。",
                 "https://example.com/mock/historical-sla",
@@ -31,10 +32,7 @@ public class MockPrecheckService {
     return new PrecheckResponse(
         UUID.randomUUID().toString(),
         "模拟预诊：已整理 " + module + " 的辅助排查方向；这不是最终根因或处理结论。",
-        List.of(
-            "请人工核对发生时间、影响范围和复现步骤。",
-            "确认适用性后再执行只读检查或补充脱敏信息。",
-            "由提交人确认内容后决定是否继续提交 SLA。"),
+        List.of("请人工核对发生时间、影响范围和复现步骤。", "确认适用性后再执行只读检查或补充脱敏信息。", "由提交人确认内容后决定是否继续提交 SLA。"),
         references,
         missing.size() >= 4 ? Confidence.LOW : Confidence.MEDIUM,
         true,

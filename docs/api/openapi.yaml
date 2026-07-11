@@ -50,7 +50,7 @@ components:
         product: { type: string, maxLength: 100 }
         module: { type: string, maxLength: 100 }
         version: { type: string, maxLength: 100 }
-        severity: { type: string, maxLength: 100, enum: [P1, P2, P3] }
+        severity: { type: string, maxLength: 100 }
         impactScope: { type: string, maxLength: 2000 }
         attachmentsSummary: { type: string, maxLength: 5000 }
     ReferenceItem:
