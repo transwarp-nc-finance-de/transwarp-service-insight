@@ -1,0 +1,2 @@
+import type {PrecheckRequest,PrecheckResponse} from '../types/precheck';
+export async function runPrecheck(payload:PrecheckRequest):Promise<PrecheckResponse>{const response=await fetch('/api/v1/precheck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(!response.ok){let message='预诊服务暂时不可用';try{const body=await response.json();message=body.message??message}catch{}throw new Error(message)}return response.json()}
