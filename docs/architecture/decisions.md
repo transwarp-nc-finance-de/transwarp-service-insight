@@ -10,6 +10,13 @@
 
 ## 正文
 
+详细 ADR：
+
+- [ADR-0001：模块化单体优先](decisions/ADR-0001-modular-monolith.md)
+- [ADR-0002：Workflow-first](decisions/ADR-0002-workflow-first.md)
+- [ADR-0003：存储按里程碑演进](decisions/ADR-0003-storage-evolution.md)
+- [ADR-0004：OpenAPI 唯一契约](decisions/ADR-0004-api-contract.md)
+
 | 日期 | 状态 | 背景 | 决定 | 影响 |
 |---|---|---|---|---|
 | 2026/07/11 | 已采纳 | 独立迭代界面与服务 | 前后端分离 | Vite 代理 `/api`，生产部署后续确定 |

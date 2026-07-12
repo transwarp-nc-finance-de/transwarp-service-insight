@@ -6,7 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.transwarp.serviceinsight.precheck.MockPrecheckService;
+import com.transwarp.serviceinsight.precheck.application.ContinuePrecheckUseCase;
+import com.transwarp.serviceinsight.precheck.application.CreatePrecheckUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,11 +18,13 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(PrecheckController.class)
 class PrecheckErrorTest {
   @Autowired private MockMvc mockMvc;
-  @MockitoBean private MockPrecheckService service;
+  @MockitoBean private CreatePrecheckUseCase createPrecheck;
+  @MockitoBean private ContinuePrecheckUseCase continuePrecheck;
 
   @Test
   void hidesUnexpectedFailureDetails() throws Exception {
-    when(service.precheck(any())).thenThrow(new IllegalStateException("sensitive stack detail"));
+    when(createPrecheck.create(any()))
+        .thenThrow(new IllegalStateException("sensitive stack detail"));
     mockMvc
         .perform(
             post("/api/v1/precheck")

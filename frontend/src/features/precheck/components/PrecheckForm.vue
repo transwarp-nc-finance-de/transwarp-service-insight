@@ -3,7 +3,10 @@ import { reactive, ref } from 'vue'
 import type { PrecheckRequest } from '../types'
 
 defineProps<{ loading: boolean }>()
-const emit = defineEmits<{ precheck: [payload: PrecheckRequest] }>()
+const emit = defineEmits<{
+  precheck: [payload: PrecheckRequest]
+  continueSubmission: []
+}>()
 const submitted = ref(false)
 const validationError = ref('')
 const form = reactive<PrecheckRequest>({
@@ -24,6 +27,11 @@ function submitPrecheck() {
     return
   }
   emit('precheck', { ...form })
+}
+
+function continueSubmission() {
+  submitted.value = true
+  emit('continueSubmission')
 }
 </script>
 
@@ -56,7 +64,7 @@ function submitPrecheck() {
     <p v-if="validationError" class="error">{{ validationError }}</p>
     <div class="actions">
       <button class="primary" :disabled="loading">{{ loading ? '正在预诊…' : '智能预诊' }}</button>
-      <button type="button" class="secondary" @click="submitted = true">继续提交 SLA</button>
+      <button type="button" class="secondary" @click="continueSubmission">继续提交 SLA</button>
     </div>
     <p v-if="submitted" class="notice">已进入人工确认步骤（模拟），未调用真实提交接口。</p>
   </form>

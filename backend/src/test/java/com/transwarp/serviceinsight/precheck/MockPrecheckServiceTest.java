@@ -5,11 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.transwarp.serviceinsight.precheck.dto.PrecheckRequest;
 import com.transwarp.serviceinsight.precheck.dto.ReferenceSourceType;
+import com.transwarp.serviceinsight.precheck.infrastructure.mock.MockPrecheckAdapter;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class MockPrecheckServiceTest {
-  private final MockPrecheckService service = new MockPrecheckService();
+  private final MockPrecheckAdapter service = new MockPrecheckAdapter();
 
   @Test
   void returnsPredictableMockContentWithRequiredReviewAndReferences() {

@@ -40,14 +40,33 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker compose build
       - run: docker compose up -d --wait
-      - name: Smoke test frontend, health and precheck
+      - name: Smoke test frontend, health, precheck, follow-up and feedback
         run: |
           curl --fail --retry 5 http://localhost:5173/
           test "$(curl --fail --silent http://localhost:5173/api/v1/health | jq -r .status)" = "UP"
-          curl --fail --silent \
+          precheck="$(curl --fail --silent \
             -H 'Content-Type: application/json' \
             -d '{"title":"模拟数据：Compose 冒烟","description":"模拟数据：验证本地预诊闭环"}' \
-            http://localhost:5173/api/v1/precheck | jq -e '.humanReviewRequired == true and .references[0].mockData == true'
+            http://localhost:5173/api/v1/precheck)"
+          echo "$precheck" | jq -e '
+            .humanReviewRequired == true and
+            .references[0].mockData == true and
+            (.allowedActions | index("CONTINUE_SUBMISSION")) != null and
+            .policyVersion == "mock-policy-v1" and
+            .modelVersion == "not-applicable-deterministic-mock"'
+          precheck_id="$(echo "$precheck" | jq -r .precheckId)"
+          curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d "{\"precheckId\":\"$precheck_id\",\"message\":\"模拟数据：补充脱敏日志\"}" \
+            http://localhost:5173/api/v1/precheck/follow-up | jq -e '
+              .humanReviewRequired == true and
+              .references[0].mockData == true and
+              (.allowedActions | index("CONTINUE_SUBMISSION")) != null'
+          curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d "{\"precheckId\":\"$precheck_id\",\"adoptionStatus\":\"PARTIALLY_ADOPTED\",\"feedbackReason\":\"模拟数据\",\"continuedSubmission\":true}" \
+            http://localhost:5173/api/v1/precheck/feedback | jq -e '
+              .recorded == true and .mockData == true and .continuedSubmission == true'
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend
