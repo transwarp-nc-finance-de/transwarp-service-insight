@@ -4,6 +4,20 @@ info:
   version: 1.0.0
   description: 当前技术 MVP 的唯一已实现接口契约；所有示例均为模拟数据。
 paths:
+  /api/v1/health:
+    get:
+      summary: 查询进程健康状态
+      description: 仅表示当前进程可服务，不代表数据库、RAG、模型或外部系统可用。
+      operationId: getHealth
+      responses:
+        '200':
+          description: 进程可服务
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: UP
   /api/v1/precheck:
     post:
       summary: 生成 SLA 辅助预诊（模拟数据）
@@ -41,6 +55,14 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [UP]
     PrecheckRequest:
       type: object
       required: [title, description]

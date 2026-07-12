@@ -2,12 +2,14 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
+首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
+
 ## ACTIVE
 
 - 项目：[范围](project/scope.md)、[Backlog](project/backlog.md)、[路线图](project/roadmap.md)、[待确认问题](project/open-questions.md)
 - 产品：[PRD](product/prd.md)、[用户流程](product/user-flow.md)、[验收标准](product/acceptance-criteria.md)
 - 架构：[当前概览](architecture/overview.md)、[决策记录](architecture/decisions.md)
-- 开发：[本地开发](development/local-development.md)、[测试策略](development/test-strategy.md)
+- 开发：[M2 安装部署](../README.md)、[本地开发](development/local-development.md)、[测试策略](development/test-strategy.md)
 - 接口：[OpenAPI](api/openapi.yaml)
 
 ## DRAFT / ARCHIVED

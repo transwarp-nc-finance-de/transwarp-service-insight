@@ -2,7 +2,7 @@
 
 ## 目的
 
-说明 M1 的安装、启动、测试、构建和本地联调方式。
+说明 M2 的容器化交付以及保留的非容器开发方式。
 
 ## 适用范围
 
@@ -10,7 +10,23 @@
 
 ## 正文
 
-依赖 JDK 21（设置 `JAVA_HOME`）、Node.js 24 LTS 和 npm。Maven 无需全局安装，M1 不使用容器。
+完整的首次安装、版本检查、日常运维、故障排查、升级与回滚步骤以根目录 [README](../../README.md) 为准。本文只保留源码开发时的补充说明，避免与安装手册形成两套口径。
+
+### 一键容器化启动
+
+依赖已启动的 Docker Desktop。根目录执行：
+
+```powershell
+docker compose up -d --build --wait
+Invoke-RestMethod http://localhost:5173/api/v1/health
+docker compose down --remove-orphans
+```
+
+浏览器访问 `http://127.0.0.1:5173`。仅前端入口绑定宿主机 `127.0.0.1:5173`，后端只在 Compose 网络内提供 8080；`GET /api/v1/health` 的 `UP` 仅表示进程可服务，不代表数据库、RAG、模型或外部系统可用。
+
+### 非容器开发
+
+依赖 JDK 21（设置 `JAVA_HOME`）、Node.js 24 LTS 和 npm。Maven 无需全局安装。
 
 后端：
 
@@ -32,12 +48,13 @@ npm ci
 npm run dev
 npm run lint
 npm run format:check
+npm run openapi:check
 npm test
 npm run build
 ```
 
 访问 `http://localhost:5173`，Vite 将 `/api` 代理到后端。正常预诊、缺少可选信息、关闭后端三种情况下，“继续提交 SLA”都应可点击；该操作仅显示人工确认提示，不调用提交接口。
 
-常见问题：`java` 未找到时安装 JDK 21 并重开终端；Wrapper 下载失败时检查网络；前端 502 时确认后端 8080 已启动。不要提交个人代理或凭据。
+容器模式下关闭后端后，前端页面仍可访问，预诊会以网关错误安全失败且“继续提交 SLA”仍可人工操作（仅模拟，不调用提交接口）。常见故障及安全清理方式统一见根目录 README。不要提交个人代理、凭据或包含真实客户信息的日志。
 
 所有输出均为 `模拟数据`，未接真实 RAG、模型、AIOps、知识库、ITSM 或生产数据。
