@@ -1,8 +1,10 @@
 package com.transwarp.serviceinsight.precheck.api;
 
 import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,9 +26,16 @@ class PrecheckControllerTest {
         .perform(
             post("/api/v1/precheck").contentType(MediaType.APPLICATION_JSON).content(validBody()))
         .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.precheckId", not(blankOrNullString())))
+        .andExpect(jsonPath("$.summary", not(blankOrNullString())))
+        .andExpect(jsonPath("$.recommendations").isArray())
+        .andExpect(jsonPath("$.references").isArray())
+        .andExpect(jsonPath("$.confidence", matchesPattern("HIGH|MEDIUM|LOW")))
         .andExpect(jsonPath("$.humanReviewRequired").value(true))
-        .andExpect(jsonPath("$.references[0].mockData").value(true));
+        .andExpect(jsonPath("$.references[0].mockData").value(true))
+        .andExpect(jsonPath("$.missingInformation").isArray())
+        .andExpect(jsonPath("$.fallbackReason", not(blankOrNullString())));
   }
 
   @Test
@@ -37,7 +46,10 @@ class PrecheckControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"description\":\"模拟描述\"}"))
         .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.message").value("请求参数校验失败"))
         .andExpect(jsonPath("$.fieldErrors.title").exists())
+        .andExpect(jsonPath("$.timestamp", not(blankOrNullString())))
         .andExpect(jsonPath("$.traceId", not(blankOrNullString())));
   }
 

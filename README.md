@@ -11,7 +11,13 @@
 - API 契约：[docs/api/openapi.yaml](docs/api/openapi.yaml)
 - 本地开发：[docs/development/local-development.md](docs/development/local-development.md)
 
-后端要求 Java 21，前端要求 Node.js 24 LTS。分别在 `backend/` 和 `frontend/` 目录启动，详见本地开发文档。
+M2 提供一键本地交付模式（需 Docker Desktop）：
+
+```powershell
+docker compose up -d --build --wait
+```
+
+访问 `http://localhost:5173`；后端不向宿主机暴露端口。也可继续使用 Java 21 与 Node.js 24 LTS 分别启动前后端，详见本地开发文档。
 
 ## 仓库结构
 

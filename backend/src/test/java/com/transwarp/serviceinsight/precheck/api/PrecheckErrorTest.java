@@ -29,6 +29,8 @@ class PrecheckErrorTest {
                 .content("{\"title\":\"模拟标题\",\"description\":\"模拟描述\"}"))
         .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+        .andExpect(jsonPath("$.fieldErrors").isEmpty())
+        .andExpect(jsonPath("$.timestamp").isNotEmpty())
         .andExpect(jsonPath("$.traceId").isNotEmpty())
         .andExpect(jsonPath("$.message").value("预诊服务暂时不可用，请稍后重试或继续人工提交"));
   }
