@@ -28,14 +28,25 @@ class PrecheckControllerTest {
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.precheckId", not(blankOrNullString())))
+        .andExpect(jsonPath("$.sessionId", not(blankOrNullString())))
         .andExpect(jsonPath("$.summary", not(blankOrNullString())))
         .andExpect(jsonPath("$.recommendations").isArray())
         .andExpect(jsonPath("$.references").isArray())
         .andExpect(jsonPath("$.confidence", matchesPattern("HIGH|MEDIUM|LOW")))
+        .andExpect(jsonPath("$.confidenceReason", not(blankOrNullString())))
         .andExpect(jsonPath("$.humanReviewRequired").value(true))
         .andExpect(jsonPath("$.references[0].mockData").value(true))
         .andExpect(jsonPath("$.missingInformation").isArray())
-        .andExpect(jsonPath("$.fallbackReason", not(blankOrNullString())));
+        .andExpect(jsonPath("$.fallbackReason", not(blankOrNullString())))
+        .andExpect(jsonPath("$.nextAction", not(blankOrNullString())))
+        .andExpect(jsonPath("$.nextActionReason", not(blankOrNullString())))
+        .andExpect(jsonPath("$.allowedActions").isArray())
+        .andExpect(jsonPath("$.allowedActions[1]").value("CONTINUE_SUBMISSION"))
+        .andExpect(jsonPath("$.status", not(blankOrNullString())))
+        .andExpect(jsonPath("$.policyVersion").value("mock-policy-v1"))
+        .andExpect(jsonPath("$.modelVersion").value("not-applicable-deterministic-mock"))
+        .andExpect(jsonPath("$.promptVersion").value("mock-rule-v1"))
+        .andExpect(jsonPath("$.indexVersion").value("not-applicable-no-index"));
   }
 
   @Test

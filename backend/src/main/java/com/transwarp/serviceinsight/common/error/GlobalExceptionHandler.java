@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +27,19 @@ public class GlobalExceptionHandler {
         .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
     return ResponseEntity.badRequest()
         .body(new ApiError("VALIDATION_ERROR", "请求参数校验失败", errors, Instant.now(), traceId));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  ResponseEntity<ApiError> unreadableRequest(HttpMessageNotReadableException exception) {
+    var traceId = UUID.randomUUID().toString();
+    return ResponseEntity.badRequest()
+        .body(
+            new ApiError(
+                "VALIDATION_ERROR",
+                "请求参数校验失败",
+                Map.of("request", "请求格式或字段类型不正确"),
+                Instant.now(),
+                traceId));
   }
 
   @ExceptionHandler(Exception.class)

@@ -53,6 +53,57 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/v1/precheck/follow-up:
+    post:
+      summary: 生成 SLA 预诊追问辅助回复（模拟数据）
+      description: 无状态、无持久化的确定性 Mock；不校验 precheckId 是否对应既有预诊。
+      operationId: createPrecheckFollowUp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FollowUpRequest' }
+      responses:
+        '200':
+          description: 追问成功，回复仍需人工审核
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowUpResponse' }
+              example:
+                followUpId: 223e4567-e89b-12d3-a456-426614174000
+                precheckId: 123e4567-e89b-12d3-a456-426614174000
+                reply: 模拟数据：已记录日志线索，但不能据此确认最终根因。
+                recommendations: [请人工核对错误发生时间和完整错误码。]
+                references:
+                  - { sourceType: PRODUCT_MANUAL, title: 日志排查提示（模拟数据）, excerpt: 由本地关键词规则生成的模拟依据。, url: 'https://example.com/mock/follow-up', mockData: true }
+                confidence: MEDIUM
+                humanReviewRequired: true
+                missingInformation: [完整错误码, 复现步骤]
+                fallbackReason: 模拟数据：未调用真实数据库、RAG、大模型或外部服务。
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/precheck/feedback:
+    post:
+      summary: 记录预诊反馈（模拟内存数据）
+      description: 仅保留在当前后端进程内；重启即清空，不校验 precheckId 是否存在。是否继续提交及提交内容均由人工确认。
+      operationId: recordPrecheckFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FeedbackRequest' }
+      responses:
+        '200':
+          description: 模拟反馈已记录
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FeedbackResponse' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   schemas:
     HealthResponse:
@@ -86,16 +137,86 @@ components:
         mockData: { type: boolean }
     PrecheckResponse:
       type: object
-      required: [precheckId, summary, recommendations, references, confidence, humanReviewRequired, missingInformation, fallbackReason]
+      required: [precheckId, sessionId, summary, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion]
       properties:
         precheckId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
         summary: { type: string }
         recommendations: { type: array, items: { type: string } }
         references: { type: array, items: { $ref: '#/components/schemas/ReferenceItem' } }
         confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        confidenceReason: { type: string }
         humanReviewRequired: { type: boolean }
         missingInformation: { type: array, items: { type: string } }
         fallbackReason: { type: string }
+        nextAction: { $ref: '#/components/schemas/NextAction' }
+        nextActionReason: { type: string }
+        allowedActions: { type: array, items: { $ref: '#/components/schemas/AllowedAction' } }
+        status: { $ref: '#/components/schemas/PrecheckStatus' }
+        policyVersion: { type: string }
+        modelVersion: { type: string, description: 当前确定性 Mock 固定为不适用标识 }
+        promptVersion: { type: string, description: 当前表示 Mock 规则版本，不代表真实 Prompt }
+        indexVersion: { type: string, description: 当前固定为无索引标识 }
+    FollowUpRequest:
+      type: object
+      required: [precheckId, message]
+      additionalProperties: false
+      properties:
+        precheckId: { type: string, format: uuid }
+        message: { type: string, minLength: 1, maxLength: 5000 }
+    FollowUpResponse:
+      type: object
+      required: [followUpId, precheckId, reply, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion]
+      additionalProperties: false
+      properties:
+        followUpId: { type: string, format: uuid }
+        precheckId: { type: string, format: uuid }
+        reply: { type: string }
+        recommendations: { type: array, items: { type: string } }
+        references: { type: array, items: { $ref: '#/components/schemas/ReferenceItem' } }
+        confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        confidenceReason: { type: string }
+        humanReviewRequired: { type: boolean }
+        missingInformation: { type: array, items: { type: string } }
+        fallbackReason: { type: string }
+        nextAction: { $ref: '#/components/schemas/NextAction' }
+        nextActionReason: { type: string }
+        allowedActions: { type: array, items: { $ref: '#/components/schemas/AllowedAction' } }
+        status: { $ref: '#/components/schemas/PrecheckStatus' }
+        policyVersion: { type: string }
+        modelVersion: { type: string }
+        promptVersion: { type: string }
+        indexVersion: { type: string }
+    FeedbackRequest:
+      type: object
+      required: [precheckId, adoptionStatus, continuedSubmission]
+      additionalProperties: false
+      properties:
+        precheckId: { type: string, format: uuid }
+        adoptionStatus: { type: string, enum: [ADOPTED, PARTIALLY_ADOPTED, IGNORED] }
+        feedbackReason: { type: string, maxLength: 2000 }
+        continuedSubmission: { type: boolean }
+    FeedbackResponse:
+      type: object
+      required: [feedbackId, precheckId, adoptionStatus, continuedSubmission, policyVersion, recorded, mockData]
+      additionalProperties: false
+      properties:
+        feedbackId: { type: string, format: uuid }
+        precheckId: { type: string, format: uuid }
+        adoptionStatus: { type: string, enum: [ADOPTED, PARTIALLY_ADOPTED, IGNORED] }
+        continuedSubmission: { type: boolean }
+        policyVersion: { type: string }
+        recorded: { type: boolean }
+        mockData: { type: boolean }
+    NextAction:
+      type: string
+      enum: [SELF_SERVICE_SUGGESTED, NEED_MORE_INFORMATION, SUBMISSION_RECOMMENDED, MANUAL_REVIEW_REQUIRED]
+    AllowedAction:
+      type: string
+      enum: [SUPPLEMENT_INFORMATION, CONTINUE_SUBMISSION]
+    PrecheckStatus:
+      type: string
+      enum: [RECEIVED, VALIDATED, COMPLETED, NEED_MORE_INFORMATION, DEGRADED, FAILED, CANCELLED]
     ApiError:
       type: object
       required: [code, message, fieldErrors, timestamp, traceId]
