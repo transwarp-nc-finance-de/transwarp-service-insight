@@ -62,7 +62,9 @@ public class PrecheckWorkflowService
     var status =
         missing.isEmpty() ? PrecheckStatus.COMPLETED : PrecheckStatus.NEED_MORE_INFORMATION;
     var evidence =
-        verification.verify(knowledge.search(command.title() + " " + command.description()));
+        missing.isEmpty()
+            ? verification.verify(knowledge.search(command.title() + " " + command.description()))
+            : List.<Evidence>of();
     var result =
         new PrecheckResult(
             precheckId,

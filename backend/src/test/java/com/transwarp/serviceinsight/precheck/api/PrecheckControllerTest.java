@@ -84,7 +84,20 @@ class PrecheckControllerTest {
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
   }
 
+  @Test
+  void skipsKnowledgeSearchWhenInformationIsIncomplete() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/precheck")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"模拟标题\",\"description\":\"模拟描述\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("NEED_MORE_INFORMATION"))
+        .andExpect(jsonPath("$.references").isEmpty())
+        .andExpect(jsonPath("$.allowedActions[1]").value("CONTINUE_SUBMISSION"));
+  }
+
   private String validBody() {
-    return "{\"title\":\"模拟标题\",\"description\":\"模拟描述\",\"severity\":\"P2\"}";
+    return "{\"title\":\"模拟标题\",\"description\":\"模拟描述\",\"product\":\"Inceptor\",\"module\":\"SQL\",\"version\":\"1.0\",\"severity\":\"P2\",\"impactScope\":\"单个模拟任务\",\"attachmentsSummary\":\"模拟摘要\"}";
   }
 }

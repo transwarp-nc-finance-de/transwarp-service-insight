@@ -39,7 +39,7 @@ jobs:
         run: |
           curl --fail --retry 5 http://localhost:5173/sandbox
           test "$(curl --fail --silent http://localhost:5173/api/v1/health | jq -r .status)" = "UP"
-          precheck="$(curl --fail --silent -H 'Content-Type: application/json' -d '{"title":"模拟数据：Compose 冒烟","description":"模拟数据：验证本地预诊闭环"}' http://localhost:5173/api/v1/precheck-sessions)"
+          precheck="$(curl --fail --silent -H 'Content-Type: application/json' -d '{"title":"模拟数据：Compose 冒烟","description":"模拟数据：验证本地预诊闭环","product":"Inceptor","module":"SQL","version":"1.0","severity":"P2","impactScope":"单个模拟任务","attachmentsSummary":"模拟附件摘要"}' http://localhost:5173/api/v1/precheck-sessions)"
           echo "$precheck" | jq -e '.humanReviewRequired == true and .references[0].mockData == true and .runSequence == 1 and (.allowedActions | index("CONTINUE_SUBMISSION")) != null and .degradation.code == "DETERMINISTIC_MOCK"'
           precheck_id="$(echo "$precheck" | jq -r .precheckId)"
           session_id="$(echo "$precheck" | jq -r .sessionId)"
