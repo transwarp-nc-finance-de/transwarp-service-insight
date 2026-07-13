@@ -1,5 +1,11 @@
 # 变更记录
 
+## 2026/07/12：AIOps 宿主边界与应用工作流重构
+
+- 将独立表单重新定位为 Mock AIOps Sandbox，新增不含 SLA 表单的 Embed 页面、复用 PrecheckPanel 和 HostBridge/postMessage v1.0 协议骨架。
+- 将预诊编排收归 Application 层，拆除粗粒度执行端口，增加细粒度能力 Port、内存 Session Repository，并让初次预诊与追问形成递增 Run。
+- 继续提交与反馈解耦，任何失败均允许 AIOps 原流程人工提交；全部结果仍为 `模拟数据`，未接真实 AIOps、数据库、RAG、模型或外部服务。
+
 ## 2026/07/12：模块化架构与反馈审计骨架
 
 - 增加应用层、领域模型和 Port/Adapter 骨架，Mock 实现迁入 infrastructure。
