@@ -56,7 +56,7 @@ paths:
   /api/v1/precheck/follow-up:
     post:
       summary: 生成 SLA 预诊追问辅助回复（模拟数据）
-      description: 无状态、无持久化的确定性 Mock；不校验 precheckId 是否对应既有预诊。
+      description: 兼容入口；按 precheckId 加载进程内 Session 并创建递增 Run。会话重启即清空。
       operationId: createPrecheckFollowUp
       requestBody:
         required: true
@@ -82,8 +82,61 @@ paths:
                 fallbackReason: 模拟数据：未调用真实数据库、RAG、大模型或外部服务。
         '400':
           $ref: '#/components/responses/BadRequest'
+        '404':
+          description: 预诊会话不存在或已失效
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/v1/precheck-sessions:
+    post:
+      summary: 创建预诊 Session 与 Run 1（模拟数据）
+      operationId: createPrecheckSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PrecheckRequest' }
+      responses:
+        '200':
+          description: Session 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PrecheckResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /api/v1/precheck-sessions/{sessionId}/runs:
+    parameters:
+      - { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: 在既有 Session 中创建下一次 Run（模拟数据）
+      operationId: createPrecheckSessionRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SessionRunRequest' }
+      responses:
+        '200':
+          description: Run 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowUpResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { description: Session 不存在或已失效 }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /api/v1/precheck-sessions/{sessionId}:
+    parameters:
+      - { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: 查询进程内预诊 Session
+      operationId: getPrecheckSession
+      responses:
+        '200':
+          description: Session 状态和受控 Run 摘要
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PrecheckSessionResponse' }
+        '404': { description: Session 不存在或已失效 }
+        '500': { $ref: '#/components/responses/InternalError' }
   /api/v1/precheck/feedback:
     post:
       summary: 记录预诊反馈（模拟内存数据）
@@ -126,21 +179,31 @@ components:
         severity: { type: string, maxLength: 100 }
         impactScope: { type: string, maxLength: 2000 }
         attachmentsSummary: { type: string, maxLength: 5000 }
+        context: { $ref: '#/components/schemas/PrecheckContextMetadata' }
+    PrecheckContextMetadata:
+      type: object
+      description: 可选宿主元数据；旧扁平请求不提供时按 SANDBOX/v1 兼容映射。
+      properties:
+        sourceSystem: { type: string, enum: [AIOPS, SANDBOX] }
+        hostRequestId: { type: string, maxLength: 100 }
+        formSchemaVersion: { type: string, maxLength: 32 }
     ReferenceItem:
       type: object
       required: [sourceType, title, excerpt, url, mockData]
       properties:
-        sourceType: { type: string, enum: [PRODUCT_MANUAL, HISTORICAL_SLA] }
+        sourceType: { type: string, enum: [PRODUCT_MANUAL, WIKI, TRAINING_MATERIAL, USER_MANUAL, HISTORICAL_SLA, OPEN_SOURCE_REFERENCE, AIOPS_CONTEXT, MOCK] }
         title: { type: string }
         excerpt: { type: string }
         url: { type: string, format: uri }
         mockData: { type: boolean }
     PrecheckResponse:
       type: object
-      required: [precheckId, sessionId, summary, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion]
+      required: [precheckId, sessionId, runId, runSequence, summary, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion, executionMetadata, degradation]
       properties:
         precheckId: { type: string, format: uuid }
         sessionId: { type: string, format: uuid }
+        runId: { type: string, format: uuid }
+        runSequence: { type: integer, minimum: 1 }
         summary: { type: string }
         recommendations: { type: array, items: { type: string } }
         references: { type: array, items: { $ref: '#/components/schemas/ReferenceItem' } }
@@ -157,6 +220,8 @@ components:
         modelVersion: { type: string, description: 当前确定性 Mock 固定为不适用标识 }
         promptVersion: { type: string, description: 当前表示 Mock 规则版本，不代表真实 Prompt }
         indexVersion: { type: string, description: 当前固定为无索引标识 }
+        executionMetadata: { $ref: '#/components/schemas/ExecutionMetadata' }
+        degradation: { $ref: '#/components/schemas/Degradation' }
     FollowUpRequest:
       type: object
       required: [precheckId, message]
@@ -164,13 +229,40 @@ components:
       properties:
         precheckId: { type: string, format: uuid }
         message: { type: string, minLength: 1, maxLength: 5000 }
+    SessionRunRequest:
+      type: object
+      required: [message]
+      additionalProperties: false
+      properties:
+        message: { type: string, minLength: 1, maxLength: 5000 }
+    PrecheckSessionResponse:
+      type: object
+      required: [sessionId, precheckId, status, runs]
+      properties:
+        sessionId: { type: string, format: uuid }
+        precheckId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/PrecheckStatus' }
+        runs:
+          type: array
+          items: { $ref: '#/components/schemas/RunSummary' }
+    RunSummary:
+      type: object
+      required: [runId, sequence, status, inputSummary]
+      properties:
+        runId: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        status: { $ref: '#/components/schemas/PrecheckStatus' }
+        inputSummary: { type: string, description: 不包含业务正文的受控摘要 }
     FollowUpResponse:
       type: object
-      required: [followUpId, precheckId, reply, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion]
+      required: [followUpId, precheckId, sessionId, runId, runSequence, reply, recommendations, references, confidence, confidenceReason, humanReviewRequired, missingInformation, fallbackReason, nextAction, nextActionReason, allowedActions, status, policyVersion, modelVersion, promptVersion, indexVersion, executionMetadata, degradation]
       additionalProperties: false
       properties:
         followUpId: { type: string, format: uuid }
         precheckId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        runId: { type: string, format: uuid }
+        runSequence: { type: integer, minimum: 1 }
         reply: { type: string }
         recommendations: { type: array, items: { type: string } }
         references: { type: array, items: { $ref: '#/components/schemas/ReferenceItem' } }
@@ -187,6 +279,23 @@ components:
         modelVersion: { type: string }
         promptVersion: { type: string }
         indexVersion: { type: string }
+        executionMetadata: { $ref: '#/components/schemas/ExecutionMetadata' }
+        degradation: { $ref: '#/components/schemas/Degradation' }
+    ExecutionMetadata:
+      type: object
+      required: [policyVersion, promptVersion, modelVersion, indexVersion]
+      properties:
+        policyVersion: { type: string }
+        promptVersion: { type: string }
+        modelVersion: { type: string }
+        indexVersion: { type: string }
+    Degradation:
+      type: object
+      required: [degraded, code, message]
+      properties:
+        degraded: { type: boolean }
+        code: { type: string, enum: [DETERMINISTIC_MOCK, KNOWLEDGE_UNAVAILABLE, GENERATION_UNAVAILABLE, INSUFFICIENT_EVIDENCE, TIMEOUT] }
+        message: { type: string }
     FeedbackRequest:
       type: object
       required: [precheckId, adoptionStatus, continuedSubmission]

@@ -6,6 +6,9 @@ import java.util.UUID;
 public record FollowUpResult(
     UUID followUpId,
     UUID precheckId,
+    UUID sessionId,
+    UUID runId,
+    int runSequence,
     String reply,
     List<String> recommendations,
     List<Evidence> evidence,
@@ -21,4 +24,6 @@ public record FollowUpResult(
     String policyVersion,
     String modelVersion,
     String promptVersion,
-    String indexVersion) {}
+    String indexVersion,
+    ExecutionMetadata executionMetadata,
+    Degradation degradation) {}
