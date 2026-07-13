@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SandboxHostBridge } from './SandboxHostBridge'
 import { PostMessageHostBridge } from './PostMessageHostBridge'
 import { PROTOCOL_VERSION, type PrecheckContext } from './protocol'
+import { parseInitMessage } from './validation'
 
 const context: PrecheckContext = {
   sourceSystem: 'SANDBOX',
@@ -62,13 +63,25 @@ describe('AIOps HostBridge protocol', () => {
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'https://evil.example',
-        data: { type: 'TSI_INIT', version: PROTOCOL_VERSION, requestId: 'bad', payload: context },
+        data: {
+          type: 'TSI_INIT',
+          version: PROTOCOL_VERSION,
+          requestId: 'bad',
+          timestamp: new Date().toISOString(),
+          payload: context,
+        },
       }),
     )
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'https://aiops.example',
-        data: { type: 'TSI_INIT', version: PROTOCOL_VERSION, requestId: 'good', payload: context },
+        data: {
+          type: 'TSI_INIT',
+          version: PROTOCOL_VERSION,
+          requestId: 'good',
+          timestamp: new Date().toISOString(),
+          payload: context,
+        },
       }),
     )
     await expect(initialization).resolves.toEqual({ requestId: 'good', debug: false })
@@ -82,7 +95,13 @@ describe('AIOps HostBridge protocol', () => {
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'https://aiops.example',
-        data: { type: 'TSI_INIT', version: '2.0', requestId: 'wrong-version', payload: context },
+        data: {
+          type: 'TSI_INIT',
+          version: '2.0',
+          requestId: 'wrong-version',
+          timestamp: new Date().toISOString(),
+          payload: context,
+        },
       }),
     )
     window.dispatchEvent(
@@ -92,10 +111,32 @@ describe('AIOps HostBridge protocol', () => {
           type: 'TSI_INIT',
           version: PROTOCOL_VERSION,
           requestId: 'valid-version',
+          timestamp: new Date().toISOString(),
           payload: context,
         },
       }),
     )
     await expect(initialization).resolves.toEqual({ requestId: 'valid-version', debug: false })
+  })
+
+  it('rejects malformed or oversized host context', () => {
+    expect(
+      parseInitMessage({
+        type: 'TSI_INIT',
+        version: PROTOCOL_VERSION,
+        requestId: 'request-1',
+        timestamp: new Date().toISOString(),
+        payload: { ...context, title: '' },
+      }),
+    ).toBeUndefined()
+    expect(
+      parseInitMessage({
+        type: 'TSI_INIT',
+        version: PROTOCOL_VERSION,
+        requestId: 'request-1',
+        timestamp: new Date().toISOString(),
+        payload: { ...context, descriptionPlainText: 'x'.repeat(100_001) },
+      }),
+    ).toBeUndefined()
   })
 })

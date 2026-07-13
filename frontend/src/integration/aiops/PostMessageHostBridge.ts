@@ -5,6 +5,7 @@ import {
   type HostMessageType,
   type PrecheckContext,
 } from './protocol'
+import { parseInitMessage } from './validation'
 
 export class PostMessageHostBridge implements HostBridge {
   private context?: PrecheckContext
@@ -18,20 +19,9 @@ export class PostMessageHostBridge implements HostBridge {
     return new Promise((resolve, reject) => {
       const timeout = window.setTimeout(() => reject(new Error('等待 AIOps 初始化超时')), 10000)
       const listener = (event: MessageEvent) => {
-        if (
-          !this.allowedOrigins.includes(event.origin) ||
-          JSON.stringify(event.data).length > 100_000
-        )
-          return
-        const message = event.data as Partial<HostMessage<PrecheckContext>>
-        if (
-          message.type !== 'TSI_INIT' ||
-          message.version !== PROTOCOL_VERSION ||
-          !message.requestId ||
-          !message.payload ||
-          this.handled.has(message.requestId)
-        )
-          return
+        if (!this.allowedOrigins.includes(event.origin)) return
+        const message = parseInitMessage(event.data)
+        if (!message || this.handled.has(message.requestId)) return
         this.handled.add(message.requestId)
         this.requestId = message.requestId
         this.context = message.payload
