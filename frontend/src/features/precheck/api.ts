@@ -9,7 +9,7 @@ import type {
 } from './types'
 
 export async function runPrecheck(payload: PrecheckRequest): Promise<PrecheckResponse> {
-  const response = await fetch('/api/v1/precheck', {
+  const response = await fetch('/api/v1/precheck-sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -19,10 +19,13 @@ export async function runPrecheck(payload: PrecheckRequest): Promise<PrecheckRes
 }
 
 export async function runFollowUp(payload: FollowUpRequest): Promise<FollowUpResponse> {
-  const response = await fetch('/api/v1/precheck/follow-up', {
+  const url = payload.sessionId
+    ? `/api/v1/precheck-sessions/${payload.sessionId}/runs`
+    : '/api/v1/precheck/follow-up'
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload.sessionId ? { message: payload.message } : payload),
   })
   await ensureOk(response)
   return (await response.json()) as FollowUpResponse

@@ -12,4 +12,26 @@ public record PrecheckRequest(
     @Size(max = 100, message = "版本不能超过 100 个字符") String version,
     @Size(max = 100, message = "紧急程度不能超过 100 个字符") String severity,
     @Size(max = 2000, message = "影响范围不能超过 2000 个字符") String impactScope,
-    @Size(max = 5000, message = "附件摘要不能超过 5000 个字符") String attachmentsSummary) {}
+    @Size(max = 5000, message = "附件摘要不能超过 5000 个字符") String attachmentsSummary,
+    PrecheckContextRequest context) {
+  public PrecheckRequest(
+      String title,
+      String description,
+      String product,
+      String module,
+      String version,
+      String severity,
+      String impactScope,
+      String attachmentsSummary) {
+    this(
+        title,
+        description,
+        product,
+        module,
+        version,
+        severity,
+        impactScope,
+        attachmentsSummary,
+        null);
+  }
+}

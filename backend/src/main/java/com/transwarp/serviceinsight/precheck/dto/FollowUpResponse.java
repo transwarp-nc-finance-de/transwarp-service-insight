@@ -5,6 +5,9 @@ import java.util.List;
 public record FollowUpResponse(
     String followUpId,
     String precheckId,
+    String sessionId,
+    String runId,
+    int runSequence,
     String reply,
     List<String> recommendations,
     List<ReferenceItem> references,
@@ -20,4 +23,6 @@ public record FollowUpResponse(
     String policyVersion,
     String modelVersion,
     String promptVersion,
-    String indexVersion) {}
+    String indexVersion,
+    ExecutionMetadataResponse executionMetadata,
+    DegradationResponse degradation) {}

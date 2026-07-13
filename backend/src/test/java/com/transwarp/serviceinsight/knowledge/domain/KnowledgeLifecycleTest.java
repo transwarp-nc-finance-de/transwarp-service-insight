@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.transwarp.serviceinsight.knowledge.application.KnowledgeApplicationService;
 import com.transwarp.serviceinsight.knowledge.infrastructure.memory.InMemoryKnowledgeRepository;
+import com.transwarp.serviceinsight.knowledge.infrastructure.mock.MockDataAccessPolicy;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -35,10 +36,13 @@ class KnowledgeLifecycleTest {
   }
 
   @Test
-  void rejectsNonMockDocumentInCurrentStage() {
-    assertThatThrownBy(() -> new KnowledgeDocument(UUID.randomUUID(), "真实资料", false))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("模拟数据");
+  void classifiesAuthorizationWithoutHardCodingEnvironmentPolicy() {
+    var document = new KnowledgeDocument(UUID.randomUUID(), "公开资料元数据", false);
+    assertThat(document.dataClassification())
+        .isEqualTo(KnowledgeDocument.DataClassification.INTERNAL);
+    assertThat(document.authorizationStatus())
+        .isEqualTo(KnowledgeDocument.AuthorizationStatus.PENDING);
+    assertThat(new MockDataAccessPolicy().allows(document)).isFalse();
   }
 
   private KnowledgeVersion version() {

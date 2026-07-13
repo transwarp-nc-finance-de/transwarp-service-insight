@@ -1,13 +1,10 @@
 name: CI
-
 on:
   pull_request:
   push:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -18,7 +15,6 @@ jobs:
         with: { distribution: temurin, java-version: '21', cache: maven }
       - run: ./mvnw spotless:check test
       - run: ./mvnw package -DskipTests
-
   frontend:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: frontend } }
@@ -32,7 +28,6 @@ jobs:
       - run: npm run openapi:check
       - run: npm test
       - run: npm run build
-
   compose-smoke:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
@@ -40,37 +35,21 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker compose build
       - run: docker compose up -d --wait
-      - name: Smoke test frontend, health, precheck, follow-up and feedback
+      - name: Smoke test Sandbox, Session/Run API and feedback
         run: |
-          curl --fail --retry 5 http://localhost:5173/
+          curl --fail --retry 5 http://localhost:5173/sandbox
           test "$(curl --fail --silent http://localhost:5173/api/v1/health | jq -r .status)" = "UP"
-          precheck="$(curl --fail --silent \
-            -H 'Content-Type: application/json' \
-            -d '{"title":"模拟数据：Compose 冒烟","description":"模拟数据：验证本地预诊闭环"}' \
-            http://localhost:5173/api/v1/precheck)"
-          echo "$precheck" | jq -e '
-            .humanReviewRequired == true and
-            .references[0].mockData == true and
-            (.allowedActions | index("CONTINUE_SUBMISSION")) != null and
-            .policyVersion == "mock-policy-v1" and
-            .modelVersion == "not-applicable-deterministic-mock"'
+          precheck="$(curl --fail --silent -H 'Content-Type: application/json' -d '{"title":"模拟数据：Compose 冒烟","description":"模拟数据：验证本地预诊闭环","product":"Inceptor","module":"SQL","version":"1.0","severity":"P2","impactScope":"单个模拟任务","attachmentsSummary":"模拟附件摘要"}' http://localhost:5173/api/v1/precheck-sessions)"
+          echo "$precheck" | jq -e '.humanReviewRequired == true and .references[0].mockData == true and .runSequence == 1 and (.allowedActions | index("CONTINUE_SUBMISSION")) != null and .degradation.code == "DETERMINISTIC_MOCK"'
           precheck_id="$(echo "$precheck" | jq -r .precheckId)"
-          curl --fail --silent \
-            -H 'Content-Type: application/json' \
-            -d "{\"precheckId\":\"$precheck_id\",\"message\":\"模拟数据：补充脱敏日志\"}" \
-            http://localhost:5173/api/v1/precheck/follow-up | jq -e '
-              .humanReviewRequired == true and
-              .references[0].mockData == true and
-              (.allowedActions | index("CONTINUE_SUBMISSION")) != null'
-          curl --fail --silent \
-            -H 'Content-Type: application/json' \
-            -d "{\"precheckId\":\"$precheck_id\",\"adoptionStatus\":\"PARTIALLY_ADOPTED\",\"feedbackReason\":\"模拟数据\",\"continuedSubmission\":true}" \
-            http://localhost:5173/api/v1/precheck/feedback | jq -e '
-              .recorded == true and .mockData == true and .continuedSubmission == true'
+          session_id="$(echo "$precheck" | jq -r .sessionId)"
+          curl --fail --silent -H 'Content-Type: application/json' -d '{"message":"模拟数据：补充脱敏日志"}' "http://localhost:5173/api/v1/precheck-sessions/$session_id/runs" | jq -e '.runSequence == 2 and .references[0].mockData == true and (.allowedActions | index("CONTINUE_SUBMISSION")) != null'
+          curl --fail --silent "http://localhost:5173/api/v1/precheck-sessions/$session_id" | jq -e '.runs | length == 2'
+          curl --fail --silent -H 'Content-Type: application/json' -d "{\"precheckId\":\"$precheck_id\",\"adoptionStatus\":\"PARTIALLY_ADOPTED\",\"feedbackReason\":\"模拟数据\",\"continuedSubmission\":false}" http://localhost:5173/api/v1/precheck/feedback | jq -e '.recorded == true and .mockData == true and .continuedSubmission == false'
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend
-          curl --fail http://localhost:5173/
+          curl --fail http://localhost:5173/sandbox
           status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5173/api/v1/health)"
           test "$status" = "502" || test "$status" = "504"
       - if: always()

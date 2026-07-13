@@ -10,6 +10,8 @@ const props = defineProps<{
   conversation: ConversationTurn[]
   feedbackLoading: boolean
   feedbackMessage: string
+  debug?: boolean
+  emptyMessage?: string
 }>()
 const draft = defineModel<string>('draft', { required: true })
 const emit = defineEmits<{
@@ -42,7 +44,7 @@ const actionLabels = {
         ><span>必须人工审核</span>
       </div>
       <p class="conversation-note">置信度依据：{{ result.confidenceReason }}</p>
-      <p class="conversation-note">
+      <p v-if="debug" class="conversation-note">
         会话 {{ result.sessionId }} · 策略 {{ result.policyVersion }} · 规则
         {{ result.promptVersion }} · 模型 {{ result.modelVersion }} · 索引 {{ result.indexVersion }}
       </p>
@@ -70,7 +72,7 @@ const actionLabels = {
           <span v-for="item in result.missingInformation" :key="item">{{ item }}</span>
         </div>
       </template>
-      <p class="fallback">{{ result.fallbackReason }}</p>
+      <p class="fallback">降级 {{ result.degradation.code }}：{{ result.degradation.message }}</p>
       <section class="feedback" aria-label="预诊反馈">
         <h3>反馈（模拟数据）</h3>
         <div class="quick-actions">
@@ -115,7 +117,7 @@ const actionLabels = {
               ><span>必须人工审核</span>
             </div>
             <p class="conversation-note">置信度依据：{{ turn.response.confidenceReason }}</p>
-            <p class="conversation-note">
+            <p v-if="debug" class="conversation-note">
               策略 {{ turn.response.policyVersion }} · 规则 {{ turn.response.promptVersion }} · 模型
               {{ turn.response.modelVersion }} · 索引 {{ turn.response.indexVersion }}
             </p>
@@ -137,7 +139,9 @@ const actionLabels = {
             <div class="chips">
               <span v-for="item in turn.response.missingInformation" :key="item">{{ item }}</span>
             </div>
-            <p class="fallback">{{ turn.response.fallbackReason }}</p>
+            <p class="fallback">
+              降级 {{ turn.response.degradation.code }}：{{ turn.response.degradation.message }}
+            </p>
           </div>
         </div>
         <div v-if="followUpError" class="error follow-up-error">{{ followUpError }}</div>
@@ -154,6 +158,8 @@ const actionLabels = {
         </form>
       </section>
     </div>
-    <div v-else class="empty">填写表单后点击“智能预诊”，结果将在这里展示。</div>
+    <div v-else class="empty">
+      {{ emptyMessage || '填写表单后点击“智能预诊”，结果将在这里展示。' }}
+    </div>
   </aside>
 </template>

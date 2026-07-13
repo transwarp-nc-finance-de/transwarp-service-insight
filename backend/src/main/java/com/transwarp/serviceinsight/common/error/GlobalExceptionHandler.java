@@ -1,5 +1,7 @@
 package com.transwarp.serviceinsight.common.error;
 
+import com.transwarp.serviceinsight.precheck.application.PrecheckSessionIdNotFoundException;
+import com.transwarp.serviceinsight.precheck.application.PrecheckSessionNotFoundException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -50,5 +52,21 @@ public class GlobalExceptionHandler {
         .body(
             new ApiError(
                 "INTERNAL_ERROR", "预诊服务暂时不可用，请稍后重试或继续人工提交", Map.of(), Instant.now(), traceId));
+  }
+
+  @ExceptionHandler({
+    PrecheckSessionNotFoundException.class,
+    PrecheckSessionIdNotFoundException.class
+  })
+  ResponseEntity<ApiError> sessionNotFound(RuntimeException exception) {
+    var traceId = UUID.randomUUID().toString();
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(
+            new ApiError(
+                "SESSION_NOT_FOUND",
+                "预诊会话不存在或已失效，可重新发起预诊或继续人工提交",
+                Map.of(),
+                Instant.now(),
+                traceId));
   }
 }

@@ -1,44 +1,13 @@
-# 验收标准
+# 当前验收标准
 
-## 目的
+状态：ACTIVE。
 
-本文档定义技术 MVP M1 及后续设计的阶段性验收标准。
-
-## 适用范围
-
-适用于 `Transwarp Service Insight` 的阶段评审和后续任务拆分。当前阶段为技术 MVP M1，仅验收本地 Vue 前端、Spring Boot Mock API、契约、测试和人工降级闭环，不验收真实试点或生产能力。
-
-## 正文
-
-### 技术 MVP M1 验收
-
-- Vue 前端可本地运行，覆盖 SLA 表单、预诊 loading、结果面板、失败提示和始终可用的人工继续提交模拟；SLA 是否提交及提交内容均由人工确认。
-- Spring Boot Mock API 实现 `POST /api/v1/precheck`，返回确定性模拟预诊结果，并对非法请求返回带 `traceId` 的结构化错误。
-- 已实现接口以 `docs/api/openapi.yaml` 为唯一契约，请求、响应和错误行为与契约一致。
-- 智能预诊结果包含依据来源、置信度、人工介入建议和待补充信息；建议仅供参考，不作为最终根因、最终方案或正式复盘结论。
-- API 失败或信息不足时不得阻断人工继续提交，不得以智能输出替代人工审核。
-- 所有结果、链接和示例均标注 `模拟数据`，不出现真实客户、真实 SLA、真实日志或真实内部链接。
-- 不接真实数据库、RAG、模型、AIOps、ITSM、Wiki、历史 SLA、外部服务或生产环境。
-
-### 2026/07/12 当前技术验收证据
-
-- 后端 `spotless:check test` 通过，覆盖预诊、追问、反馈、审计脱敏、Session/Run 和知识生命周期。
-- 前端 ESLint、Prettier、组件测试和生产构建通过，覆盖多轮追问、反馈、失败降级与人工继续提交。
-- OpenAPI 校验、镜像构建和 Compose 健康/API 冒烟通过；实际数量以当次命令输出和 CI 为准，避免文档固化过期计数。
-- 本记录仅代表本地技术 MVP 与 Mock 架构骨架验收，不代表业务签字、真实试点批准、生产验收或上线批准。
-
-### 后续设计验收
-
-- 未实现接口和未来方案必须标记为 `DRAFT`，不提供真实服务地址或鉴权实现。
-- RAG 设计明确仅 `APPROVED` 知识可进入线上检索。
-- LLM 设计明确不输出最终根因或正式处理结论。
-- ITSM / AIOps 集成设计明确 AI 不可用时不阻塞人工提交。
-- 安全设计覆盖脱敏、权限、提示注入防御、幻觉拦截和审计。
-- 测试计划覆盖文档完整性、链接、Demo、RAG 评估、LLM 安全和集成降级。
-
-### 不验收事项
-
-- 不验收真实知识库命中率。
-- 不验收真实模型生成质量。
-- 不验收真实工单系统联调。
-- 不验收真实数据库、真实接口或生产部署能力。
+- AIOps 是 SLA 表单、枚举、原有校验和最终提交主体；Service Insight 不创建 SLA。
+- `/sandbox` 是本地 Mock AIOps；`/embed` 不显示完整 SLA 表单；PrecheckPanel 可复用。
+- HostBridge 和 postMessage v1.0 校验 origin、version、requestId、大小与重复初始化。
+- 应用层拥有预诊工作流；Infrastructure 不依赖 HTTP DTO；ArchUnit 规则真实执行。
+- 初次预诊创建 Session/Run 1，追问创建递增 Run；无效 Session 返回结构化错误。
+- 所有结果包含模拟依据、置信度原因、人工介入建议、待补充信息、结构化降级和 `CONTINUE_SUBMISSION`。
+- 反馈失败、预诊失败和用户未采纳均不阻断 AIOps 原流程人工提交。
+- OpenAPI、Java DTO、TypeScript 类型和行为测试一致；后端、前端、Compose 与浏览器冒烟通过后方可交付。
+- 不接真实 AIOps、数据库、RAG、LLM、多 Agent、真实数据或真实 SLA 提交。

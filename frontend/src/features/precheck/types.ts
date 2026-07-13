@@ -7,10 +7,19 @@ export interface PrecheckRequest {
   severity?: string
   impactScope?: string
   attachmentsSummary?: string
+  context?: { sourceSystem: 'AIOPS' | 'SANDBOX'; hostRequestId: string; formSchemaVersion: string }
 }
 
 export interface ReferenceItem {
-  sourceType: 'PRODUCT_MANUAL' | 'HISTORICAL_SLA'
+  sourceType:
+    | 'PRODUCT_MANUAL'
+    | 'WIKI'
+    | 'TRAINING_MATERIAL'
+    | 'USER_MANUAL'
+    | 'HISTORICAL_SLA'
+    | 'OPEN_SOURCE_REFERENCE'
+    | 'AIOPS_CONTEXT'
+    | 'MOCK'
   title: string
   excerpt: string
   url: string
@@ -20,6 +29,8 @@ export interface ReferenceItem {
 export interface PrecheckResponse {
   precheckId: string
   sessionId: string
+  runId: string
+  runSequence: number
   summary: string
   recommendations: string[]
   references: ReferenceItem[]
@@ -36,16 +47,22 @@ export interface PrecheckResponse {
   modelVersion: string
   promptVersion: string
   indexVersion: string
+  executionMetadata: ExecutionMetadata
+  degradation: Degradation
 }
 
 export interface FollowUpRequest {
   precheckId: string
+  sessionId?: string
   message: string
 }
 
 export interface FollowUpResponse {
   followUpId: string
   precheckId: string
+  sessionId: string
+  runId: string
+  runSequence: number
   reply: string
   recommendations: string[]
   references: ReferenceItem[]
@@ -62,6 +79,20 @@ export interface FollowUpResponse {
   modelVersion: string
   promptVersion: string
   indexVersion: string
+  executionMetadata: ExecutionMetadata
+  degradation: Degradation
+}
+
+export interface ExecutionMetadata {
+  policyVersion: string
+  promptVersion: string
+  modelVersion: string
+  indexVersion: string
+}
+export interface Degradation {
+  degraded: boolean
+  code: string
+  message: string
 }
 
 export type NextAction =

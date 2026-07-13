@@ -1,6 +1,8 @@
 # Transwarp Service Insight
 
-`Transwarp Service Insight` 当前聚焦 **SLA 智能预诊助手**技术 MVP。M2 通过 Vue 页面、Spring Boot Mock API、Nginx 和 Docker Compose，提供可在本地独立安装、启动和验收的工程闭环。
+`Transwarp Service Insight` 当前聚焦外挂在 AIOps SLA 流程中的智能预诊能力。AIOps 是正式表单、枚举、校验和最终提交的宿主；本仓库提供独立预诊后端、嵌入式面板以及本地 Mock AIOps Sandbox。
+
+能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；AIOps Host Integration `PROTOTYPE`；Persistence、Knowledge Ingestion、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
 > 当前全部业务内容均为 `模拟数据`。系统不接入真实客户数据、ITSM、AIOps、RAG、LLM、数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
 
@@ -124,7 +126,7 @@ curl --fail --silent http://127.0.0.1:5173/api/v1/health
 
 ### 5.3 `模拟数据` 预诊验收
 
-1. 打开 <http://127.0.0.1:5173>。
+1. 打开 <http://127.0.0.1:5173/sandbox>。该页面不是正式 SLA 入口；`/embed` 仅用于验证嵌入式预诊面板。
 2. 在必填的“问题标题”和“问题描述”中填写不含真实客户信息的模拟内容，例如“`模拟数据：查询响应变慢`”。
 3. 点击“智能预诊”，确认页面展示摘要、建议、依据来源、置信度、人工介入建议和待补充信息。
 4. 确认输出明确为 `模拟数据`，且没有将建议表述为最终根因或最终处理结论。

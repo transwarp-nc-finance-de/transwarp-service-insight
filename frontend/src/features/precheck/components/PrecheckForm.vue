@@ -37,7 +37,7 @@ function continueSubmission() {
 
 <template>
   <form class="card" @submit.prevent="submitPrecheck">
-    <h2>新建 SLA</h2>
+    <h2>模拟 AIOps SLA 表单</h2>
     <label>标题 *<input v-model="form.title" maxlength="200" /></label>
     <label>问题描述 *<textarea v-model="form.description" rows="5" maxlength="10000" /></label>
     <div class="grid">

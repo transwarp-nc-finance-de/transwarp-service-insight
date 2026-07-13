@@ -5,6 +5,8 @@ import java.util.List;
 public record PrecheckResponse(
     String precheckId,
     String sessionId,
+    String runId,
+    int runSequence,
     String summary,
     List<String> recommendations,
     List<ReferenceItem> references,
@@ -20,4 +22,6 @@ public record PrecheckResponse(
     String policyVersion,
     String modelVersion,
     String promptVersion,
-    String indexVersion) {}
+    String indexVersion,
+    ExecutionMetadataResponse executionMetadata,
+    DegradationResponse degradation) {}

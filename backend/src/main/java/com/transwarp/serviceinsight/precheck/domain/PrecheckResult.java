@@ -6,6 +6,8 @@ import java.util.UUID;
 public record PrecheckResult(
     UUID precheckId,
     UUID sessionId,
+    UUID runId,
+    int runSequence,
     String summary,
     List<String> recommendations,
     List<Evidence> evidence,
@@ -21,4 +23,6 @@ public record PrecheckResult(
     String policyVersion,
     String modelVersion,
     String promptVersion,
-    String indexVersion) {}
+    String indexVersion,
+    ExecutionMetadata executionMetadata,
+    Degradation degradation) {}
