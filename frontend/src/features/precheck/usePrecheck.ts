@@ -59,6 +59,7 @@ export function usePrecheck() {
     try {
       const response = await runFollowUp({
         precheckId: result.value.precheckId,
+        sessionId: result.value.sessionId,
         message: normalized,
       })
       conversation.value.push({ message: normalized, response })

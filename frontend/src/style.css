@@ -24,6 +24,33 @@ header {
   margin-right: 14px;
   color: #74a7ff;
 }
+header nav {
+  display: flex;
+  gap: 16px;
+}
+header a {
+  color: white;
+}
+.sandbox-warning {
+  padding: 12px;
+  border-left: 4px solid #2864c7;
+  background: #e8f0ff;
+}
+.sandbox-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+.sandbox-toggle input {
+  width: auto;
+}
+.embed-page {
+  max-width: 760px;
+}
+.continue-host {
+  margin: 16px 26px 26px;
+}
 .badge,
 .meta span,
 .chips span {

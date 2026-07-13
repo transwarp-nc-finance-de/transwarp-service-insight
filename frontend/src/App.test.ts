@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import App from './App.vue'
+import SandboxPage from './pages/SandboxPage.vue'
+const App = SandboxPage
 import type {
   FeedbackResponse,
   FollowUpResponse,
@@ -10,6 +11,8 @@ import type {
 const response: PrecheckResponse = {
   precheckId: '123e4567-e89b-12d3-a456-426614174000',
   sessionId: '523e4567-e89b-12d3-a456-426614174000',
+  runId: '623e4567-e89b-12d3-a456-426614174000',
+  runSequence: 1,
   summary: '模拟预诊辅助摘要，不是最终根因。',
   recommendations: ['请人工核对影响范围。'],
   references: [
@@ -34,11 +37,21 @@ const response: PrecheckResponse = {
   modelVersion: 'not-applicable-deterministic-mock',
   promptVersion: 'mock-rule-v1',
   indexVersion: 'not-applicable-no-index',
+  executionMetadata: {
+    policyVersion: 'mock-policy-v1',
+    promptVersion: 'mock-rule-v1',
+    modelVersion: 'not-applicable-deterministic-mock',
+    indexVersion: 'not-applicable-no-index',
+  },
+  degradation: { degraded: true, code: 'DETERMINISTIC_MOCK', message: '模拟数据' },
 }
 
 const followUpResponse: FollowUpResponse = {
   followUpId: '223e4567-e89b-12d3-a456-426614174000',
   precheckId: response.precheckId,
+  sessionId: response.sessionId,
+  runId: '723e4567-e89b-12d3-a456-426614174000',
+  runSequence: 2,
   reply: '模拟数据：已记录日志线索，不是最终根因。',
   recommendations: ['请人工核对错误时间。'],
   references: response.references,
@@ -55,6 +68,13 @@ const followUpResponse: FollowUpResponse = {
   modelVersion: 'not-applicable-deterministic-mock',
   promptVersion: 'mock-rule-v1',
   indexVersion: 'not-applicable-no-index',
+  executionMetadata: {
+    policyVersion: 'mock-policy-v1',
+    promptVersion: 'mock-rule-v1',
+    modelVersion: 'not-applicable-deterministic-mock',
+    indexVersion: 'not-applicable-no-index',
+  },
+  degradation: { degraded: true, code: 'DETERMINISTIC_MOCK', message: '模拟数据' },
 }
 
 const feedbackResponse: FeedbackResponse = {
@@ -72,7 +92,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('SLA precheck flow', () => {
   it('renders summary, source and missing information after success', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok(response)))
-    const wrapper = mount(App)
+    const wrapper = mount(SandboxPage)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(wrapper.text()).toContain(response.summary)
@@ -99,7 +119,7 @@ describe('SLA precheck flow', () => {
 
   it('validates required input without blocking manual submission', async () => {
     const wrapper = mount(App)
-    await wrapper.get('input').setValue('')
+    await wrapper.get('form input').setValue('')
     await wrapper.get('form').trigger('submit')
     expect(wrapper.text()).toContain('请先填写标题和问题描述')
     await wrapper.get('button.secondary').trigger('click')
@@ -160,7 +180,7 @@ describe('SLA precheck flow', () => {
     await wrapper.get('.follow-up-form textarea').setValue('补充一个脱敏现象')
     await wrapper.get('.follow-up-form').trigger('submit')
     await flushPromises()
-    expect(fetchMock.mock.calls[1][0]).toBe('/api/v1/precheck/follow-up')
+    expect(fetchMock.mock.calls[1][0]).toBe(`/api/v1/precheck-sessions/${response.sessionId}/runs`)
     const turns = wrapper.findAll('.turn')
     expect(turns).toHaveLength(2)
     expect(turns[0].text()).toContain('补充日志现象')
@@ -226,9 +246,6 @@ describe('SLA precheck flow', () => {
       .fn()
       .mockResolvedValueOnce(ok(response))
       .mockResolvedValueOnce(ok(feedbackResponse))
-      .mockResolvedValueOnce(
-        ok({ ...feedbackResponse, adoptionStatus: 'IGNORED', continuedSubmission: true }),
-      )
     vi.stubGlobal('fetch', fetchMock)
     const wrapper = mount(App)
     await wrapper.get('form').trigger('submit')
@@ -239,8 +256,8 @@ describe('SLA precheck flow', () => {
     expect(wrapper.text()).toContain('已记录本次反馈（模拟数据）')
     await wrapper.get('button.secondary').trigger('click')
     await flushPromises()
-    expect(fetchMock.mock.calls[2][0]).toBe('/api/v1/precheck/feedback')
-    expect(wrapper.text()).toContain('提交内容仍由人工确认')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('已交还 Mock AIOps 人工确认')
     expect(wrapper.text()).toContain('未调用真实提交接口')
   })
 })
