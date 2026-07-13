@@ -7,19 +7,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.transwarp.serviceinsight.precheck.application.ContinuePrecheckUseCase;
+import com.transwarp.serviceinsight.precheck.application.ContinueSessionPrecheckUseCase;
 import com.transwarp.serviceinsight.precheck.application.CreatePrecheckUseCase;
+import com.transwarp.serviceinsight.precheck.application.GetPrecheckSessionUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PrecheckController.class)
+@Import(PrecheckApiMapper.class)
 class PrecheckErrorTest {
   @Autowired private MockMvc mockMvc;
   @MockitoBean private CreatePrecheckUseCase createPrecheck;
   @MockitoBean private ContinuePrecheckUseCase continuePrecheck;
+  @MockitoBean private ContinueSessionPrecheckUseCase continueSession;
+  @MockitoBean private GetPrecheckSessionUseCase getSession;
 
   @Test
   void hidesUnexpectedFailureDetails() throws Exception {

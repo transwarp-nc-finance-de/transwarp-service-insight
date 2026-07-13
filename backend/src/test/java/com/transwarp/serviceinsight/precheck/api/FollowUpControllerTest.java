@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.transwarp.serviceinsight.precheck.domain.PrecheckSession;
+import com.transwarp.serviceinsight.precheck.port.PrecheckSessionRepository;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,9 +20,13 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class FollowUpControllerTest {
   @Autowired private MockMvc mockMvc;
+  @Autowired private PrecheckSessionRepository sessions;
 
   @Test
   void returnsStructuredMockResponse() throws Exception {
+    sessions.save(
+        new PrecheckSession(
+            UUID.randomUUID(), UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "test"));
     mockMvc
         .perform(
             post("/api/v1/precheck/follow-up")
