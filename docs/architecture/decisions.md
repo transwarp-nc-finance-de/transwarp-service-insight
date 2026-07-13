@@ -16,6 +16,8 @@
 - [ADR-0002：Workflow-first](decisions/ADR-0002-workflow-first.md)
 - [ADR-0003：存储按里程碑演进](decisions/ADR-0003-storage-evolution.md)
 - [ADR-0004：OpenAPI 唯一契约](decisions/ADR-0004-api-contract.md)
+- [ADR-0005：一期采用 PostgreSQL 混合检索](decisions/ADR-0005-hybrid-retrieval.md)
+- [ADR-0006：一期新语义通过 API v2 演进](decisions/ADR-0006-v2-api-evolution.md)
 
 | 日期 | 状态 | 背景 | 决定 | 影响 |
 |---|---|---|---|---|

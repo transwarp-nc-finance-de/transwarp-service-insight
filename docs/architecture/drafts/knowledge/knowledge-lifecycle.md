@@ -18,7 +18,6 @@
 DRAFT -> REVIEW -> APPROVED / REJECTED -> EXPIRED / DEPRECATED
 ```
 
-只有 `APPROVED` 知识可被线上检索。`DEPRECATED` 仅用于审计和历史追溯。所有状态变更必须记录操作人、时间、原因和审核意见。
+只有已完成双索引并进入 `PUBLISHED` 的当前知识版本可被检索。`APPROVED` 表示人工审核已通过但尚未完成原子发布，不能参与检索；`DEPRECATED` 仅用于审计和历史追溯。所有状态变更必须记录操作人、时间、原因和审核意见。
 
 真实知识必须经过授权、脱敏、权限过滤和人工审核后才能进入检索范围。
-
