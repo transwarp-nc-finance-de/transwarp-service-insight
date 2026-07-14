@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "openapi:check": "swagger-cli validate ../docs/api/openapi.yaml",
+    "openapi:v1:check": "swagger-cli validate ../docs/api/openapi.yaml",
+    "openapi:v2:check": "swagger-cli validate ../docs/api/openapi-v2.yaml",
+    "openapi:check": "npm run openapi:v1:check && npm run openapi:v2:check",
     "test": "vitest run"
   },
   "dependencies": {

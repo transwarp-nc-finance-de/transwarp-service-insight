@@ -25,7 +25,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: npm run openapi:check
+      - name: Validate v1 and v2 OpenAPI contracts
+        run: npm run openapi:check
       - run: npm test
       - run: npm run build
   compose-smoke:
