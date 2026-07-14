@@ -29,3 +29,17 @@
 - 访谈结论必须区分：`CONFIRMED`（用户明确确认）、`ASSUMPTION`（为推进工作作出的可撤销假设）、`OPEN QUESTION`（需用户或项目成员确认）、`EXTERNAL QUESTION`（需外部系统、供应商或其他责任方确认）。
 - 访谈 Skill 只负责澄清和记录，不得自动越级生成实施计划或开始编码。用户直接下达明确实现任务时，可按任务授权直接规划和实施，不受此限制。
 - 假设与未决问题不得伪装成已确认事实；需要长期跟踪的内容归入 `docs/project/open-questions.md`，外部结论返回后再由人工确认其状态。
+
+## Agent skills
+
+### Issue tracker
+
+本仓库使用 GitHub Issues 跟踪 Spec 和实施 Ticket。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+使用五个默认 Triage 角色标签。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+采用单上下文布局，复用现有 `docs/` 文档体系与 `docs/architecture/decisions/` ADR。详见 `docs/agents/domain.md`。
