@@ -1,0 +1,1578 @@
+openapi: 3.0.3
+info:
+  title: Transwarp Service Insight API v2（DRAFT）
+  version: 2.0.0-draft.1
+  description: |
+    **DRAFT / 未实现 / NOT_READY**。本文件只定义一期本地模拟闭环的候选契约，
+    不代表 Controller、Mapper、持久化、身份、检索、模型或外部系统已经实现。
+    所有业务示例均为 `模拟数据`；只允许模拟、公开或脱敏数据。
+
+    v1 仍是唯一已实现契约。v2 不创建正式 SLA、工单、ticketId 或提交回执；
+    智能输出仅供人工参考，必须保留依据、置信度、人工介入建议和待补充信息，
+    且不得阻断人工继续提交。SLA 提交及内容始终由人工确认。
+  x-api-status: DRAFT
+  x-owner: API 负责人
+  x-last-reviewed: '2026-07-14'
+  x-source-of-truth-for: 未实现 API v2 候选 HTTP 契约
+  x-implementation-status: NOT_IMPLEMENTED
+  x-readiness: NOT_READY_PENDING_HUMAN_APPROVAL
+  x-scope: PHASE_1_LOCAL_SIMULATION_ONLY
+servers:
+  - url: /api/v2
+    description: 相对路径；不声明真实服务地址
+tags:
+  - { name: AuthSession, description: 本地预置模拟身份会话 }
+  - { name: KnowledgeDocument, description: 知识文档及不可变原始文件 }
+  - { name: KnowledgeVersion, description: 知识版本与显式治理命令 }
+  - { name: ParseTask, description: 不可变解析任务 }
+  - { name: IndexTask, description: 不可变双索引任务 }
+  - { name: Evidence, description: 每次读取重新授权的受控依据 }
+  - { name: PrecheckSession, description: 预诊 Session 与最多三次 Run }
+  - { name: Feedback, description: 独立反馈命令 }
+  - { name: SubmissionContinuation, description: 独立模拟继续提交确认 }
+  - { name: EvaluationRun, description: 固定模拟评估集运行 }
+  - { name: Metrics, description: 权限过滤后的聚合指标 }
+  - { name: AuditEvent, description: 不含业务正文的结构化审计 }
+  - { name: CompletenessPolicy, description: 版本化完整度策略只读视图 }
+  - { name: AdminReset, description: 仅本地环境的受控异步重置 }
+security:
+  - CookieAuth: []
+paths:
+  /auth-sessions:
+    post:
+      tags: [AuthSession]
+      operationId: createAuthSession
+      summary: 使用预置模拟身份建立本地会话
+      description: 仅限本地模拟环境；不提供注册、JWT、SSO 或真实组织同步。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAuthSessionRequest' }
+            example: { userCode: mock-precheck-user, mockData: true }
+      responses:
+        '201':
+          description: 模拟会话已建立
+          headers:
+            Set-Cookie: { schema: { type: string }, description: HttpOnly、SameSite Cookie }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+              example: { sessionId: 11111111-1111-4111-8111-111111111111, userCode: mock-precheck-user, displayName: 预诊用户（模拟数据）, roles: [PRECHECK_USER], productLineCodes: [TDH], expiresAt: '2026-07-14T10:00:00Z', mockData: true }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /auth-sessions/current:
+    get:
+      tags: [AuthSession]
+      operationId: getCurrentAuthSession
+      summary: 查询当前本地会话
+      responses:
+        '200': { $ref: '#/components/responses/AuthSessionOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    delete:
+      tags: [AuthSession]
+      operationId: deleteCurrentAuthSession
+      summary: 退出当前本地会话
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      responses:
+        '204': { description: 会话已删除 }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /knowledge-documents:
+    post:
+      tags: [KnowledgeDocument]
+      operationId: createKnowledgeDocument
+      summary: 上传不可变原始知识文件并创建草稿版本
+      description: 仅接受 Markdown、TXT、文本型 PDF；原始字节上限依次为 5 MB、5 MB、20 MB，持久化前校验。成功时同时创建 ParseTask。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: '#/components/schemas/CreateKnowledgeDocumentRequest' }
+            encoding:
+              metadata: { contentType: application/json }
+              file: { contentType: 'text/markdown, text/plain, application/pdf' }
+      responses:
+        '201':
+          description: 文档、草稿版本和解析任务已创建
+          headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeDocumentCreated' }
+              example:
+                document: { documentId: 22222222-2222-4222-8222-222222222222, title: TDH 排查手册（模拟数据）, productLine: { code: TDH, displayName: TDH（模拟数据） }, currentPublishedVersionId: null, createdAt: '2026-07-14T08:00:00Z', mockData: true }
+                version: { versionId: 33333333-3333-4333-8333-333333333333, documentId: 22222222-2222-4222-8222-222222222222, revisionNumber: 1, status: DRAFT, submittedBy: null, approvedBy: null, createdAt: '2026-07-14T08:00:00Z', updatedAt: '2026-07-14T08:00:00Z', mockData: true }
+                parseTask: { taskId: 44444444-4444-4444-8444-444444444444, resourceId: 33333333-3333-4333-8333-333333333333, status: PENDING, attempt: 0, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: null, completedAt: null, mockData: true }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '413': { $ref: '#/components/responses/FileLimitError' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    get:
+      tags: [KnowledgeDocument]
+      operationId: listKnowledgeDocuments
+      summary: 分页查询有权查看的知识文档
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, title], default: createdAt } }
+        - { name: productLineCode, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/KnowledgeDocumentPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-documents/{documentId}:
+    parameters: [{ $ref: '#/components/parameters/DocumentId' }]
+    get:
+      tags: [KnowledgeDocument]
+      operationId: getKnowledgeDocument
+      summary: 查询知识文档
+      responses:
+        '200': { $ref: '#/components/responses/KnowledgeDocumentOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /knowledge-versions:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: createKnowledgeVersion
+      summary: 为已发布文档上传新原始文件并创建新草稿版本
+      description: 不原地修改已发布版本；成功时创建新 ParseTask。文件限制与首次上传一致。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: '#/components/schemas/CreateKnowledgeVersionRequest' }
+            encoding:
+              metadata: { contentType: application/json }
+              file: { contentType: 'text/markdown, text/plain, application/pdf' }
+      responses:
+        '201': { $ref: '#/components/responses/KnowledgeVersionCreated' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '413': { $ref: '#/components/responses/FileLimitError' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    get:
+      tags: [KnowledgeVersion]
+      operationId: listKnowledgeVersions
+      summary: 分页查询知识版本
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, updatedAt, status], default: createdAt } }
+        - { name: documentId, in: query, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/KnowledgeVersionStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/KnowledgeVersionPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}:
+    parameters: [{ $ref: '#/components/parameters/VersionId' }]
+    get:
+      tags: [KnowledgeVersion]
+      operationId: getKnowledgeVersion
+      summary: 查询不可变知识版本
+      responses:
+        '200': { $ref: '#/components/responses/KnowledgeVersionOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/revisions:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: createKnowledgeDraftRevision
+      summary: 创建新的草稿修订并使旧 Chunk/索引失效
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/VersionId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: '#/components/schemas/CreateKnowledgeRevisionRequest' }
+            encoding: { revision: { contentType: application/json } }
+      responses:
+        '201': { $ref: '#/components/responses/KnowledgeRevisionCreated' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/review-submissions:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: submitKnowledgeVersionForReview
+      summary: 提交知识版本审核
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/CommandReason' }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReviewSubmitted' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+  /knowledge-versions/{versionId}/draft-returns:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: returnKnowledgeVersionToDraft
+      summary: 将审核中版本退回草稿
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/RequiredCommandReason' }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReturnedToDraft' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+  /knowledge-versions/{versionId}/approvals:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: approveKnowledgeVersion
+      summary: 由不同身份的审核人批准知识版本
+      description: 提交人不得批准本人提交的版本；ADMIN 不获得绕过能力。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/CommandReason' }
+      responses:
+        '200': { $ref: '#/components/responses/KnowledgeVersionApproved' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/DutySeparationError' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/publications:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: publishKnowledgeVersion
+      summary: 创建双索引发布任务
+      description: 仅 APPROVED 可执行；FTS 与向量索引均成功后才原子发布并废弃旧版，半索引版本不可检索。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/CommandReason' }
+      responses:
+        '202': { $ref: '#/components/responses/IndexTaskAccepted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/DutySeparationError' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/deprecations:
+    post:
+      tags: [KnowledgeVersion]
+      operationId: deprecateKnowledgeVersion
+      summary: 废弃知识版本
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/RequiredCommandReason' }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionDeprecated' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+
+  /parse-tasks:
+    get:
+      tags: [ParseTask]
+      operationId: listParseTasks
+      summary: 分页查询解析任务
+      description: 任务由上传或草稿修订创建；历史失败任务不可变，不提供任意状态修改。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, status], default: createdAt } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+        - { name: versionId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/ParseTaskPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /parse-tasks/{taskId}:
+    parameters: [{ $ref: '#/components/parameters/TaskId' }]
+    get:
+      tags: [ParseTask]
+      operationId: getParseTask
+      summary: 查询不可变解析任务
+      responses:
+        '200': { $ref: '#/components/responses/ParseTaskOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /index-tasks:
+    get:
+      tags: [IndexTask]
+      operationId: listIndexTasks
+      summary: 分页查询双索引任务
+      description: 任务由发布命令创建；最大尝试次数为 3，历史失败任务不可变。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, status], default: createdAt } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+        - { name: versionId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/IndexTaskPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /index-tasks/{taskId}:
+    parameters: [{ $ref: '#/components/parameters/TaskId' }]
+    get:
+      tags: [IndexTask]
+      operationId: getIndexTask
+      summary: 查询不可变双索引任务
+      responses:
+        '200': { $ref: '#/components/responses/IndexTaskOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /evidence/{evidenceId}:
+    parameters: [{ $ref: '#/components/parameters/EvidenceId' }]
+    get:
+      tags: [Evidence]
+      operationId: getEvidence
+      summary: 重新授权后读取受控依据
+      description: 不提供可枚举列表；每次按当前身份和产品线范围重新授权。不存在与无权限统一返回安全 404。
+      responses:
+        '200':
+          description: 已授权依据；不返回路径或直接文件 URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+              example: { evidenceId: 55555555-5555-4555-8555-555555555555, document: { documentId: 22222222-2222-4222-8222-222222222222, title: TDH 排查手册（模拟数据） }, versionId: 33333333-3333-4333-8333-333333333333, chunkId: 66666666-6666-4666-8666-666666666666, excerpt: 模拟数据：检查组件版本和完整错误码。, contentHash: 'sha256:9f86d081884c7d659a2feaa0c55ad015', mockData: true }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /precheck-sessions:
+    post:
+      tags: [PrecheckSession]
+      operationId: createPrecheckSession
+      summary: 创建 Session 与 Run 1
+      description: |
+        `sourceSystem + hostRequestId` 是业务幂等键。规范化上下文相同则返回原 Session/Run（200），
+        不同则 409 且不覆盖原记录。规范化哈希包含稳定业务编码、正文、补充信息及附件元数据；
+        统一 Unicode 和换行、去除首尾空白并稳定排序。目录 displayName 不参与语义哈希；
+        未知补充编码保留并参与哈希，但不参与策略或权限判断。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePrecheckSessionRequest' }
+            example:
+              context:
+                sourceSystem: SANDBOX
+                hostRequestId: mock-host-1001
+                formSchemaVersion: '1.0'
+                issueType: { code: FUNCTIONAL_FAILURE, displayName: 功能故障（模拟数据） }
+                productLine: { code: TDH, displayName: TDH（模拟数据） }
+                product: { code: INCEPTOR, displayName: Inceptor（模拟数据） }
+                component: { code: SQL_ENGINE, displayName: SQL 引擎（模拟数据） }
+                version: 9.1.0-mock
+                severity: { code: S2, displayName: S2（模拟数据） }
+                serviceType: { code: CONSULTATION, displayName: 咨询（模拟数据） }
+                title: 模拟数据：查询失败
+                descriptionPlainText: 模拟数据：执行脱敏 SQL 时返回错误码 MOCK-1001。
+                additionalInformation: [{ fieldCode: ERROR_MESSAGE, displayName: 完整错误信息（模拟数据）, value: MOCK-1001 }]
+                impactScope: 模拟数据：单个测试任务
+                attachments: [{ attachmentId: mock-att-1, fileName: error.log, mediaType: text/plain, byteSize: 1280 }]
+      responses:
+        '201': { $ref: '#/components/responses/PrecheckSessionCreated' }
+        '200': { $ref: '#/components/responses/PrecheckSessionReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/PrecheckContextConflict' }
+        '503': { $ref: '#/components/responses/PrecheckUnavailable' }
+    get:
+      tags: [PrecheckSession]
+      operationId: listPrecheckSessions
+      summary: 分页查询本人有权读取的 Session
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, updatedAt, status], default: updatedAt } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/SessionStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/PrecheckSessionPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /precheck-sessions/{sessionId}:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    get:
+      tags: [PrecheckSession]
+      operationId: getPrecheckSession
+      summary: 读取或恢复本人 Session
+      description: 每次重新校验身份和产品线权限；终态只读，ADMIN 不得接管他人 Session。
+      responses:
+        '200': { $ref: '#/components/responses/PrecheckSessionOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /precheck-sessions/{sessionId}/runs:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    get:
+      tags: [PrecheckSession]
+      operationId: listPrecheckRuns
+      summary: 分页查询 Session 的不可变 Run
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [sequence, createdAt], default: sequence } }
+      responses:
+        '200': { $ref: '#/components/responses/PrecheckRunPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    post:
+      tags: [PrecheckSession]
+      operationId: createPrecheckRun
+      summary: 使用完整 Context 快照创建下一 Run
+      description: 产品线、产品或组件变化要求新建 Session；第 4 次 Run 返回 RUN_LIMIT_REACHED。Run 完成、信息完整或达到上限均不终止 Session。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePrecheckRunRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/PrecheckRunCreated' }
+        '200': { $ref: '#/components/responses/PrecheckRunReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/RunConflict' }
+        '503': { $ref: '#/components/responses/PrecheckUnavailable' }
+  /precheck-sessions/{sessionId}/runs/{runId}:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }, { $ref: '#/components/parameters/RunId' }]
+    get:
+      tags: [PrecheckSession]
+      operationId: getPrecheckRun
+      summary: 查询不可变 Run 及完整结果
+      responses:
+        '200': { $ref: '#/components/responses/PrecheckRunOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /precheck-sessions/{sessionId}/self-service-confirmations:
+    post:
+      tags: [PrecheckSession]
+      operationId: confirmPrecheckSelfService
+      summary: 人工确认采纳建议并结束预诊
+      description: 显式将 Session 终止为 SELF_SERVICE_CONFIRMED；建议本身不构成最终根因或正式方案。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/SessionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/ConfirmationReason' }
+      responses:
+        '201': { $ref: '#/components/responses/SessionTerminationCreated' }
+        '200': { $ref: '#/components/responses/SessionTerminationReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /feedback:
+    post:
+      tags: [Feedback]
+      operationId: createFeedback
+      summary: 独立记录预诊反馈
+      description: 不终止 Session，失败不影响模拟继续提交。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFeedbackRequest' }
+            example: { sessionId: 77777777-7777-4777-8777-777777777777, runId: 88888888-8888-4888-8888-888888888888, adoptionStatus: PARTIALLY_ADOPTED, helpfulness: HELPFUL, reason: 模拟数据：建议方向有帮助，仍需人工核对。 }
+      responses:
+        '201': { $ref: '#/components/responses/FeedbackCreated' }
+        '200': { $ref: '#/components/responses/FeedbackReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /feedback/{feedbackId}:
+    parameters: [{ $ref: '#/components/parameters/FeedbackId' }]
+    get:
+      tags: [Feedback]
+      operationId: getFeedback
+      summary: 查询本人反馈
+      responses:
+        '200': { $ref: '#/components/responses/FeedbackOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /submission-continuations:
+    post:
+      tags: [SubmissionContinuation]
+      operationId: createSubmissionContinuation
+      summary: 人工确认模拟继续提交并终止 Session
+      description: 只记录本地模拟确认与审计，不创建 SLA、工单草稿、ticketId 或提交回执。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSubmissionContinuationRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/SubmissionContinuationCreated' }
+        '200': { $ref: '#/components/responses/SubmissionContinuationReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /submission-continuations/{continuationId}:
+    parameters: [{ $ref: '#/components/parameters/ContinuationId' }]
+    get:
+      tags: [SubmissionContinuation]
+      operationId: getSubmissionContinuation
+      summary: 查询模拟继续提交确认
+      responses:
+        '200': { $ref: '#/components/responses/SubmissionContinuationOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /evaluation-runs:
+    post:
+      tags: [EvaluationRun]
+      operationId: createEvaluationRun
+      summary: 异步运行固定模拟评估集
+      description: 小样本工程评估，不代表生产效果；运行状态不可任意修改。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateEvaluationRunRequest' }
+            example: { evaluationSetVersion: mock-eval-v1, note: 模拟数据：回归验证 }
+      responses:
+        '202': { $ref: '#/components/responses/EvaluationRunAccepted' }
+        '200': { $ref: '#/components/responses/EvaluationRunReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    get:
+      tags: [EvaluationRun]
+      operationId: listEvaluationRuns
+      summary: 分页查询评估运行
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, status], default: createdAt } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/EvaluationRunPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /evaluation-runs/{taskId}:
+    parameters: [{ $ref: '#/components/parameters/TaskId' }]
+    get:
+      tags: [EvaluationRun]
+      operationId: getEvaluationRun
+      summary: 查询评估运行及聚合结果
+      responses:
+        '200': { $ref: '#/components/responses/EvaluationRunOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /metrics:
+    get:
+      tags: [Metrics]
+      operationId: getMetrics
+      summary: 查询权限过滤后的聚合指标
+      description: 不返回问题、附件、反馈或知识正文，不能用于自动判责。
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: productLineCode, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: 权限过滤的聚合指标
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Metrics' }
+              example: { from: '2026-07-01T00:00:00Z', to: '2026-07-14T00:00:00Z', precheckCount: 30, successRate: 0.9, degradationRate: 0.1, averageRunCount: 1.4, informationSupplementRate: 0.3, evidenceHitRate: 0.8, adoptionRate: 0.5, continuationRate: 0.4, retrievalP95Ms: 120, embeddingP95Ms: 80, mockData: true }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /audit-events:
+    get:
+      tags: [AuditEvent]
+      operationId: listAuditEvents
+      summary: 分页查询结构化审计事件
+      description: 仅结构化元数据和稳定引用 ID，不复制业务正文。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [occurredAt, action], default: occurredAt } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: subjectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/AuditEventPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /audit-events/{eventId}:
+    parameters: [{ $ref: '#/components/parameters/EventId' }]
+    get:
+      tags: [AuditEvent]
+      operationId: getAuditEvent
+      summary: 查询单个结构化审计事件
+      responses:
+        '200': { $ref: '#/components/responses/AuditEventOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /completeness-policies:
+    get:
+      tags: [CompletenessPolicy]
+      operationId: listCompletenessPolicies
+      summary: 分页查询完整度策略版本
+      description: 只读；不提供运行时编辑或发布接口。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, policyVersion], default: createdAt } }
+        - { name: issueTypeCode, in: query, schema: { $ref: '#/components/schemas/IssueTypeCode' } }
+      responses:
+        '200': { $ref: '#/components/responses/CompletenessPolicyPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /completeness-policies/{policyVersion}:
+    parameters: [{ $ref: '#/components/parameters/PolicyVersion' }]
+    get:
+      tags: [CompletenessPolicy]
+      operationId: getCompletenessPolicy
+      summary: 查询完整度策略版本
+      responses:
+        '200': { $ref: '#/components/responses/CompletenessPolicyOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /admin/resets:
+    post:
+      tags: [AdminReset]
+      operationId: createAdminReset
+      summary: 二次确认后异步重置本地模拟数据
+      description: 仅明确标识的本地环境可用；不是备份、恢复、灾备或生产删除能力。
+      security: [{ CookieAuth: [], CsrfToken: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAdminResetRequest' }
+            example: { environmentCode: LOCAL, confirmationPhrase: RESET LOCAL MOCK DATA, reason: 模拟数据：恢复演示初始状态 }
+      responses:
+        '202': { $ref: '#/components/responses/AdminResetAccepted' }
+        '200': { $ref: '#/components/responses/AdminResetReplayed' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    get:
+      tags: [AdminReset]
+      operationId: listAdminResets
+      summary: 分页查询本地重置任务
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, status], default: createdAt } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/AdminResetPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /admin/resets/{resetId}:
+    parameters: [{ $ref: '#/components/parameters/ResetId' }]
+    get:
+      tags: [AdminReset]
+      operationId: getAdminReset
+      summary: 查询本地重置任务
+      responses:
+        '200': { $ref: '#/components/responses/AdminResetOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: SESSION
+      description: 仅本地预置模拟身份的服务端会话 Cookie
+    CsrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: 所有 Cookie 会话写操作必须携带
+  parameters:
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 }, description: 1 起始页码 }
+    Size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+    SortDirection: { name: sortDirection, in: query, schema: { type: string, enum: [ASC, DESC], default: DESC } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 128 }, description: 调用方生成；与请求语义哈希共同约束重放 }
+    DocumentId: { name: documentId, in: path, required: true, schema: { type: string, format: uuid } }
+    VersionId: { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
+    TaskId: { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+    EvidenceId: { name: evidenceId, in: path, required: true, schema: { type: string, format: uuid } }
+    SessionId: { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
+    RunId: { name: runId, in: path, required: true, schema: { type: string, format: uuid } }
+    FeedbackId: { name: feedbackId, in: path, required: true, schema: { type: string, format: uuid } }
+    ContinuationId: { name: continuationId, in: path, required: true, schema: { type: string, format: uuid } }
+    EventId: { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+    PolicyVersion: { name: policyVersion, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    ResetId: { name: resetId, in: path, required: true, schema: { type: string, format: uuid } }
+  headers:
+    IdempotencyReplayed: { description: 是否返回既有成功结果, schema: { type: boolean } }
+  requestBodies:
+    CommandReason:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/CommandReason' } } }
+    RequiredCommandReason:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/RequiredCommandReason' } } }
+    ConfirmationReason:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/ConfirmationReason' } } }
+  schemas:
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, requestId, timestamp, fieldErrors, retryable, safeDetails]
+      properties:
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, UNAUTHENTICATED, INSUFFICIENT_ROLE, RESOURCE_NOT_FOUND, DUTY_SEPARATION_VIOLATION, ILLEGAL_STATE_TRANSITION, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_CONTEXT_CONFLICT, NEW_SESSION_REQUIRED, RUN_LIMIT_REACHED, FILE_TOO_LARGE, UNSUPPORTED_FILE_TYPE, PDF_TEXT_LAYER_REQUIRED, SERVICE_UNAVAILABLE, TASK_FAILED, CSRF_VALIDATION_FAILED, LOCAL_ENVIRONMENT_REQUIRED]
+        message: { type: string, description: 可安全展示的信息 }
+        requestId: { type: string, format: uuid }
+        timestamp: { type: string, format: date-time }
+        fieldErrors: { type: array, items: { $ref: '#/components/schemas/FieldError' } }
+        retryable: { type: boolean }
+        safeDetails: { type: object, additionalProperties: true, description: 不含正文、路径、堆栈、Token 或越权资源信息 }
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, code, message]
+      properties:
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+    PageMetadata:
+      type: object
+      additionalProperties: false
+      required: [page, size, totalItems, totalPages, sortBy, sortDirection]
+      properties:
+        page: { type: integer, minimum: 1 }
+        size: { type: integer, minimum: 1, maximum: 100 }
+        totalItems: { type: integer, format: int64, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+        sortBy: { type: string }
+        sortDirection: { type: string, enum: [ASC, DESC] }
+    CatalogValue:
+      type: object
+      additionalProperties: false
+      required: [code, displayName]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 100 }
+        displayName: { type: string, minLength: 1, maxLength: 200 }
+    IssueTypeCode: { type: string, enum: [FUNCTIONAL_FAILURE, PERFORMANCE_DEGRADATION, INSTALLATION_CONFIGURATION, DATA_CORRECTNESS] }
+    IssueTypeValue:
+      allOf:
+        - { $ref: '#/components/schemas/CatalogValue' }
+        - type: object
+          properties: { code: { $ref: '#/components/schemas/IssueTypeCode' } }
+    Role: { type: string, enum: [PRECHECK_USER, KNOWLEDGE_EDITOR, KNOWLEDGE_REVIEWER, ADMIN] }
+    AuthSession:
+      type: object
+      additionalProperties: false
+      required: [sessionId, userCode, displayName, roles, productLineCodes, expiresAt, mockData]
+      properties:
+        sessionId: { type: string, format: uuid }
+        userCode: { type: string }
+        displayName: { type: string }
+        roles: { type: array, minItems: 1, uniqueItems: true, items: { $ref: '#/components/schemas/Role' } }
+        productLineCodes: { type: array, uniqueItems: true, items: { type: string } }
+        expiresAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    CreateAuthSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [userCode, mockData]
+      properties:
+        userCode: { type: string, minLength: 1, maxLength: 100 }
+        mockData: { type: boolean, enum: [true] }
+
+    KnowledgeDocument:
+      type: object
+      additionalProperties: false
+      required: [documentId, title, productLine, currentPublishedVersionId, createdAt, mockData]
+      properties:
+        documentId: { type: string, format: uuid }
+        title: { type: string }
+        productLine: { $ref: '#/components/schemas/CatalogValue' }
+        currentPublishedVersionId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    KnowledgeDocumentMetadata:
+      type: object
+      additionalProperties: false
+      required: [title, productLine, sourceType, mockData]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        productLine: { $ref: '#/components/schemas/CatalogValue' }
+        sourceType: { type: string, enum: [PRODUCT_MANUAL, TRAINING_MATERIAL, USER_MANUAL, OPEN_SOURCE_REFERENCE, MOCK] }
+        mockData: { type: boolean, enum: [true] }
+    CreateKnowledgeDocumentRequest:
+      type: object
+      additionalProperties: false
+      required: [metadata, file]
+      properties:
+        metadata: { $ref: '#/components/schemas/KnowledgeDocumentMetadata' }
+        file: { type: string, format: binary, description: Markdown/TXT 最大 5242880 字节；文本型 PDF 最大 20971520 字节 }
+    CreateKnowledgeVersionMetadata:
+      type: object
+      additionalProperties: false
+      required: [documentId, note, mockData]
+      properties:
+        documentId: { type: string, format: uuid }
+        note: { type: string, maxLength: 1000 }
+        mockData: { type: boolean, enum: [true] }
+    CreateKnowledgeVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [metadata, file]
+      properties:
+        metadata: { $ref: '#/components/schemas/CreateKnowledgeVersionMetadata' }
+        file: { type: string, format: binary, description: Markdown/TXT 最大 5242880 字节；文本型 PDF 最大 20971520 字节 }
+    KnowledgeVersionStatus: { type: string, enum: [DRAFT, IN_REVIEW, APPROVED, PUBLISHED, DEPRECATED] }
+    KnowledgeVersion:
+      type: object
+      additionalProperties: false
+      required: [versionId, documentId, revisionNumber, status, submittedBy, approvedBy, createdAt, updatedAt, mockData]
+      properties:
+        versionId: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        revisionNumber: { type: integer, minimum: 1 }
+        status: { $ref: '#/components/schemas/KnowledgeVersionStatus' }
+        submittedBy: { type: string, nullable: true }
+        approvedBy: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    KnowledgeDraftRevision:
+      type: object
+      additionalProperties: false
+      required: [revisionId, versionId, revisionNumber, title, productLine, cleanedTextHash, parseWarningNotes, createdAt, mockData]
+      properties:
+        revisionId: { type: string, format: uuid }
+        versionId: { type: string, format: uuid }
+        revisionNumber: { type: integer, minimum: 1 }
+        title: { type: string }
+        productLine: { $ref: '#/components/schemas/CatalogValue' }
+        cleanedTextHash: { type: string, pattern: '^sha256:' }
+        parseWarningNotes: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    KnowledgeRevisionInput:
+      type: object
+      additionalProperties: false
+      required: [title, productLine, cleanedText, parseWarningNotes]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        productLine: { $ref: '#/components/schemas/CatalogValue' }
+        cleanedText: { type: string, minLength: 1, maxLength: 5000000 }
+        parseWarningNotes: { type: array, maxItems: 100, items: { type: string, maxLength: 1000 } }
+    CreateKnowledgeRevisionRequest:
+      type: object
+      additionalProperties: false
+      required: [revision]
+      properties: { revision: { $ref: '#/components/schemas/KnowledgeRevisionInput' } }
+    KnowledgeDocumentCreated:
+      type: object
+      additionalProperties: false
+      required: [document, version, parseTask]
+      properties:
+        document: { $ref: '#/components/schemas/KnowledgeDocument' }
+        version: { $ref: '#/components/schemas/KnowledgeVersion' }
+        parseTask: { $ref: '#/components/schemas/ParseTask' }
+    KnowledgeVersionCreatedBody:
+      type: object
+      additionalProperties: false
+      required: [version, parseTask]
+      properties:
+        version: { $ref: '#/components/schemas/KnowledgeVersion' }
+        parseTask: { $ref: '#/components/schemas/ParseTask' }
+    KnowledgeRevisionCreatedBody:
+      type: object
+      additionalProperties: false
+      required: [revision, parseTask]
+      properties:
+        revision: { $ref: '#/components/schemas/KnowledgeDraftRevision' }
+        parseTask: { $ref: '#/components/schemas/ParseTask' }
+    KnowledgeVersionCommandResult:
+      type: object
+      additionalProperties: false
+      required: [version, auditEventId]
+      properties:
+        version: { $ref: '#/components/schemas/KnowledgeVersion' }
+        auditEventId: { type: string, format: uuid }
+    CommandReason:
+      type: object
+      additionalProperties: false
+      properties: { reason: { type: string, maxLength: 1000 } }
+    RequiredCommandReason:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+    ConfirmationReason:
+      type: object
+      additionalProperties: false
+      required: [confirmed, reason]
+      properties:
+        confirmed: { type: boolean, enum: [true] }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+
+    TaskStatus: { type: string, enum: [PENDING, RUNNING, SUCCEEDED, FAILED] }
+    TaskError:
+      type: object
+      additionalProperties: false
+      required: [code, message, retryable]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        retryable: { type: boolean }
+    TaskBase:
+      type: object
+      required: [taskId, resourceId, status, attempt, maxAttempts, error, nextRetryAt, createdAt, startedAt, completedAt, mockData]
+      properties:
+        taskId: { type: string, format: uuid }
+        resourceId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        attempt: { type: integer, minimum: 0, maximum: 3 }
+        maxAttempts: { type: integer, enum: [3] }
+        error: { allOf: [{ $ref: '#/components/schemas/TaskError' }], nullable: true }
+        nextRetryAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        mockData: { type: boolean, enum: [true] }
+    ParseTask: { allOf: [{ $ref: '#/components/schemas/TaskBase' }] }
+    IndexTask:
+      allOf:
+        - { $ref: '#/components/schemas/TaskBase' }
+        - type: object
+          required: [ftsStatus, embeddingStatus]
+          properties:
+            ftsStatus: { $ref: '#/components/schemas/TaskStatus' }
+            embeddingStatus: { $ref: '#/components/schemas/TaskStatus' }
+    Evidence:
+      type: object
+      additionalProperties: false
+      required: [evidenceId, document, versionId, chunkId, excerpt, contentHash, mockData]
+      properties:
+        evidenceId: { type: string, format: uuid }
+        document:
+          type: object
+          additionalProperties: false
+          required: [documentId, title]
+          properties:
+            documentId: { type: string, format: uuid }
+            title: { type: string }
+        versionId: { type: string, format: uuid }
+        chunkId: { type: string, format: uuid }
+        excerpt: { type: string, maxLength: 2000 }
+        contentHash: { type: string, pattern: '^sha256:' }
+        mockData: { type: boolean, enum: [true] }
+    AdditionalInformationItem:
+      type: object
+      additionalProperties: false
+      required: [fieldCode, displayName, value]
+      properties:
+        fieldCode: { type: string, minLength: 1, maxLength: 100 }
+        displayName: { type: string, minLength: 1, maxLength: 200 }
+        value: { type: string, maxLength: 10000 }
+    AttachmentMetadata:
+      type: object
+      additionalProperties: false
+      required: [attachmentId, fileName, mediaType, byteSize]
+      properties:
+        attachmentId: { type: string, minLength: 1, maxLength: 200, description: 不透明模拟附件 ID }
+        fileName: { type: string, minLength: 1, maxLength: 255 }
+        mediaType: { type: string, minLength: 1, maxLength: 100 }
+        byteSize: { type: integer, format: int64, minimum: 0 }
+    PrecheckContext:
+      type: object
+      additionalProperties: false
+      required: [sourceSystem, hostRequestId, formSchemaVersion, issueType, productLine, title, descriptionPlainText]
+      properties:
+        sourceSystem: { type: string, enum: [AIOPS, SANDBOX] }
+        hostRequestId: { type: string, minLength: 1, maxLength: 100 }
+        formSchemaVersion: { type: string, minLength: 1, maxLength: 32 }
+        issueType: { $ref: '#/components/schemas/IssueTypeValue' }
+        productLine: { $ref: '#/components/schemas/CatalogValue' }
+        product: { $ref: '#/components/schemas/CatalogValue' }
+        component: { $ref: '#/components/schemas/CatalogValue' }
+        version: { type: string, maxLength: 100 }
+        severity: { $ref: '#/components/schemas/CatalogValue' }
+        serviceType: { $ref: '#/components/schemas/CatalogValue' }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        descriptionPlainText: { type: string, minLength: 1, maxLength: 10000 }
+        additionalInformation: { type: array, maxItems: 100, default: [], items: { $ref: '#/components/schemas/AdditionalInformationItem' } }
+        impactScope: { type: string, maxLength: 2000 }
+        attachments: { type: array, maxItems: 20, default: [], items: { $ref: '#/components/schemas/AttachmentMetadata' } }
+      description: |
+        完整冻结字段快照。规范化哈希统一 Unicode/换行、去除字符串首尾空白，
+        缺省的 additionalInformation/attachments 按空数组处理；两者分别按 fieldCode/value、
+        attachmentId/元数据稳定排序。
+        目录 displayName 不入语义哈希；未知补充编码保留且入哈希，但不参与策略或权限判断。
+    CreatePrecheckSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [context]
+      properties: { context: { $ref: '#/components/schemas/PrecheckContext' } }
+    CreatePrecheckRunRequest:
+      type: object
+      additionalProperties: false
+      required: [context]
+      properties: { context: { $ref: '#/components/schemas/PrecheckContext' } }
+    SessionStatus: { type: string, enum: [ACTIVE, TERMINATED] }
+    SessionTerminationReason: { type: string, enum: [CONTINUED_SUBMISSION, SELF_SERVICE_CONFIRMED] }
+    RunStatus: { type: string, enum: [RECEIVED, VALIDATED, COMPLETED, NEED_MORE_INFORMATION, DEGRADED, FAILED, CANCELLED] }
+    AllowedAction: { type: string, enum: [SUPPLEMENT_INFORMATION, CONTINUE_SUBMISSION, CONFIRM_SELF_SERVICE] }
+    ConfidenceLevel: { type: string, enum: [HIGH, MEDIUM, LOW] }
+    RetrievalMode: { type: string, enum: [HYBRID, FTS_ONLY, UNAVAILABLE] }
+    CapabilityStatus:
+      type: object
+      additionalProperties: false
+      required: [available, code, message]
+      properties:
+        available: { type: boolean }
+        code: { type: string }
+        message: { type: string }
+    RetrievalDegradation:
+      type: object
+      additionalProperties: false
+      required: [mode, fts, embedding, degraded]
+      properties:
+        mode: { $ref: '#/components/schemas/RetrievalMode' }
+        fts: { $ref: '#/components/schemas/CapabilityStatus' }
+        embedding: { $ref: '#/components/schemas/CapabilityStatus' }
+        degraded: { type: boolean }
+      description: Embedding 故障进入 FTS_ONLY；FTS 不可用且无已确认替代路径时为 UNAVAILABLE，并返回无证据结果。
+    CompletenessAssessment:
+      type: object
+      additionalProperties: false
+      required: [complete, policyVersion, missingFieldCodes, reasons]
+      properties:
+        complete: { type: boolean }
+        policyVersion: { type: string }
+        missingFieldCodes: { type: array, uniqueItems: true, items: { type: string } }
+        reasons: { type: array, items: { type: string } }
+      description: 仅提供补充建议，不是继续提交门禁。
+    EvidenceReference:
+      type: object
+      additionalProperties: false
+      required: [evidenceId, title, excerpt, mockData]
+      properties:
+        evidenceId: { type: string, format: uuid }
+        title: { type: string }
+        excerpt: { type: string, maxLength: 500 }
+        mockData: { type: boolean, enum: [true] }
+    PrecheckResult:
+      type: object
+      additionalProperties: false
+      required: [summary, recommendations, completeness, confidence, confidenceReasons, evidence, humanInterventionAdvice, missingInformation, allowedActions, disclaimer, retrieval, mockData]
+      properties:
+        summary: { type: string }
+        recommendations: { type: array, items: { type: string } }
+        completeness: { $ref: '#/components/schemas/CompletenessAssessment' }
+        confidence: { $ref: '#/components/schemas/ConfidenceLevel' }
+        confidenceReasons: { type: array, minItems: 1, items: { type: string } }
+        evidence: { type: array, items: { $ref: '#/components/schemas/EvidenceReference' } }
+        humanInterventionAdvice: { type: array, minItems: 1, items: { type: string } }
+        missingInformation: { type: array, items: { type: string } }
+        allowedActions: { type: array, minItems: 1, uniqueItems: true, items: { $ref: '#/components/schemas/AllowedAction' } }
+        disclaimer: { type: string, description: 必须说明非最终根因、最终方案或正式复盘结论 }
+        retrieval: { $ref: '#/components/schemas/RetrievalDegradation' }
+        mockData: { type: boolean, enum: [true] }
+    PrecheckRun:
+      type: object
+      additionalProperties: false
+      required: [runId, sessionId, sequence, status, contextSnapshot, result, createdAt, completedAt]
+      properties:
+        runId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1, maximum: 3 }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        contextSnapshot: { $ref: '#/components/schemas/PrecheckContext' }
+        result: { $ref: '#/components/schemas/PrecheckResult' }
+        createdAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time, nullable: true }
+    PrecheckSession:
+      type: object
+      additionalProperties: false
+      required: [sessionId, ownerUserCode, status, terminationReason, latestRun, runCount, maxRuns, createdAt, updatedAt, mockData]
+      properties:
+        sessionId: { type: string, format: uuid }
+        ownerUserCode: { type: string }
+        status: { $ref: '#/components/schemas/SessionStatus' }
+        terminationReason: { allOf: [{ $ref: '#/components/schemas/SessionTerminationReason' }], nullable: true }
+        latestRun: { $ref: '#/components/schemas/PrecheckRun' }
+        runCount: { type: integer, minimum: 1, maximum: 3 }
+        maxRuns: { type: integer, enum: [3] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    SessionTermination:
+      type: object
+      additionalProperties: false
+      required: [sessionId, status, reason, terminatedAt, auditEventId, mockData]
+      properties:
+        sessionId: { type: string, format: uuid }
+        status: { type: string, enum: [TERMINATED] }
+        reason: { $ref: '#/components/schemas/SessionTerminationReason' }
+        terminatedAt: { type: string, format: date-time }
+        auditEventId: { type: string, format: uuid }
+        mockData: { type: boolean, enum: [true] }
+
+    AdoptionStatus: { type: string, enum: [ADOPTED, PARTIALLY_ADOPTED, IGNORED] }
+    Helpfulness: { type: string, enum: [HELPFUL, NOT_HELPFUL] }
+    CreateFeedbackRequest:
+      type: object
+      additionalProperties: false
+      required: [sessionId, runId, adoptionStatus]
+      properties:
+        sessionId: { type: string, format: uuid }
+        runId: { type: string, format: uuid }
+        adoptionStatus: { $ref: '#/components/schemas/AdoptionStatus' }
+        helpfulness: { $ref: '#/components/schemas/Helpfulness' }
+        reason: { type: string, maxLength: 2000 }
+    Feedback:
+      type: object
+      additionalProperties: false
+      required: [feedbackId, sessionId, runId, adoptionStatus, helpfulness, reason, recordedAt, mockData]
+      properties:
+        feedbackId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        runId: { type: string, format: uuid }
+        adoptionStatus: { $ref: '#/components/schemas/AdoptionStatus' }
+        helpfulness: { allOf: [{ $ref: '#/components/schemas/Helpfulness' }], nullable: true }
+        reason: { type: string, nullable: true }
+        recordedAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    CreateSubmissionContinuationRequest:
+      type: object
+      additionalProperties: false
+      required: [sessionId, confirmed]
+      properties:
+        sessionId: { type: string, format: uuid }
+        confirmed: { type: boolean, enum: [true] }
+        reason: { type: string, maxLength: 2000 }
+    SubmissionContinuation:
+      type: object
+      additionalProperties: false
+      required: [continuationId, sessionId, confirmedBy, confirmedAt, reason, auditEventId, mockData]
+      properties:
+        continuationId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        confirmedBy: { type: string }
+        confirmedAt: { type: string, format: date-time }
+        reason: { type: string, nullable: true }
+        auditEventId: { type: string, format: uuid }
+        mockData: { type: boolean, enum: [true] }
+      description: 不含 ticketId、工单草稿或提交回执。
+
+    CreateEvaluationRunRequest:
+      type: object
+      additionalProperties: false
+      required: [evaluationSetVersion]
+      properties:
+        evaluationSetVersion: { type: string, minLength: 1, maxLength: 64 }
+        note: { type: string, maxLength: 1000 }
+    EvaluationSummary:
+      type: object
+      additionalProperties: false
+      required: [sampleCount, permissionLeakageRate, citationErrorRate, degradationPassRate, recallAt5, disclaimer]
+      properties:
+        sampleCount: { type: integer, minimum: 0 }
+        permissionLeakageRate: { type: number, minimum: 0, maximum: 1 }
+        citationErrorRate: { type: number, minimum: 0, maximum: 1 }
+        degradationPassRate: { type: number, minimum: 0, maximum: 1 }
+        recallAt5: { type: number, minimum: 0, maximum: 1 }
+        disclaimer: { type: string, enum: [小样本工程评估，不代表生产效果] }
+    EvaluationRun:
+      allOf:
+        - { $ref: '#/components/schemas/TaskBase' }
+        - type: object
+          required: [evaluationSetVersion, summary]
+          properties:
+            evaluationSetVersion: { type: string }
+            summary: { allOf: [{ $ref: '#/components/schemas/EvaluationSummary' }], nullable: true }
+    Metrics:
+      type: object
+      additionalProperties: false
+      required: [from, to, precheckCount, successRate, degradationRate, averageRunCount, informationSupplementRate, evidenceHitRate, adoptionRate, continuationRate, retrievalP95Ms, embeddingP95Ms, mockData]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        precheckCount: { type: integer, minimum: 0 }
+        successRate: { type: number, minimum: 0, maximum: 1 }
+        degradationRate: { type: number, minimum: 0, maximum: 1 }
+        averageRunCount: { type: number, minimum: 0, maximum: 3 }
+        informationSupplementRate: { type: number, minimum: 0, maximum: 1 }
+        evidenceHitRate: { type: number, minimum: 0, maximum: 1 }
+        adoptionRate: { type: number, minimum: 0, maximum: 1 }
+        continuationRate: { type: number, minimum: 0, maximum: 1 }
+        retrievalP95Ms: { type: integer, minimum: 0 }
+        embeddingP95Ms: { type: integer, minimum: 0 }
+        mockData: { type: boolean, enum: [true] }
+    AuditEvent:
+      type: object
+      additionalProperties: false
+      required: [eventId, actorUserCode, action, subjectType, subjectId, outcome, metadata, occurredAt, mockData]
+      properties:
+        eventId: { type: string, format: uuid }
+        actorUserCode: { type: string }
+        action: { type: string }
+        subjectType: { type: string }
+        subjectId: { type: string, format: uuid }
+        outcome: { type: string, enum: [SUCCEEDED, FAILED, DENIED] }
+        metadata: { type: object, additionalProperties: true, description: 不含标题、描述、附件、反馈正文、路径、Token 或思维过程 }
+        occurredAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    CompletenessPolicy:
+      type: object
+      additionalProperties: false
+      required: [policyVersion, issueType, generalFieldCodes, issueSpecificFieldCodes, createdAt, mockData]
+      properties:
+        policyVersion: { type: string }
+        issueType: { $ref: '#/components/schemas/IssueTypeValue' }
+        generalFieldCodes:
+          type: array
+          items: { type: string, enum: [PRODUCT, COMPONENT, VERSION, SEVERITY, IMPACT_SCOPE, OCCURRED_AT] }
+        issueSpecificFieldCodes: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        mockData: { type: boolean, enum: [true] }
+    CreateAdminResetRequest:
+      type: object
+      additionalProperties: false
+      required: [environmentCode, confirmationPhrase, reason]
+      properties:
+        environmentCode: { type: string, enum: [LOCAL] }
+        confirmationPhrase: { type: string, enum: [RESET LOCAL MOCK DATA] }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    AdminReset:
+      allOf:
+        - { $ref: '#/components/schemas/TaskBase' }
+        - type: object
+          required: [environmentCode, confirmedBy, auditEventId]
+          properties:
+            environmentCode: { type: string, enum: [LOCAL] }
+            confirmedBy: { type: string }
+            auditEventId: { type: string, format: uuid }
+    KnowledgeDocumentPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/KnowledgeDocument' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    KnowledgeVersionPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/KnowledgeVersion' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    ParseTaskPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/ParseTask' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    IndexTaskPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/IndexTask' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    PrecheckSessionPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/PrecheckSession' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    PrecheckRunPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/PrecheckRun' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    EvaluationRunPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/EvaluationRun' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    AuditEventPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/AuditEvent' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    CompletenessPolicyPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/CompletenessPolicy' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+    AdminResetPage: { type: object, additionalProperties: false, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/AdminReset' } }, page: { $ref: '#/components/schemas/PageMetadata' } } }
+
+  responses:
+    ValidationError:
+      description: 请求或字段校验失败
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+          example: { code: VALIDATION_ERROR, message: 请求字段校验失败, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [{ field: context.title, code: REQUIRED, message: 标题不能为空 }], retryable: false, safeDetails: { mockData: true } }
+    Unauthenticated:
+      description: 会话不存在或已失效
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: UNAUTHENTICATED, message: 请重新建立本地模拟会话, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    Forbidden:
+      description: 角色、产品线或 CSRF 权限不足
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: INSUFFICIENT_ROLE, message: 当前身份无权执行该操作, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    DutySeparationError:
+      description: 职责分离校验失败；ADMIN 也不得绕过
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: DUTY_SEPARATION_VIOLATION, message: 提交人与审核人必须是不同身份, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    SafeNotFound:
+      description: 资源不存在或当前身份无权读取；不区分两种情况
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: RESOURCE_NOT_FOUND, message: 资源不存在, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: {} } } }
+    IdempotencyConflict:
+      description: 同一幂等键用于不同规范化请求
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: IDEMPOTENCY_KEY_CONFLICT, message: 幂等键已用于不同请求, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    IdempotencyOrStateConflict:
+      description: 幂等键冲突或资源状态不允许该命令
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, examples: { idempotency: { value: { code: IDEMPOTENCY_KEY_CONFLICT, message: 幂等键已用于不同请求, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } }, state: { value: { code: ILLEGAL_STATE_TRANSITION, message: 当前状态不允许该命令, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } } } }
+    PrecheckContextConflict:
+      description: 同一 sourceSystem + hostRequestId 对应不同规范化上下文
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: IDEMPOTENCY_CONTEXT_CONFLICT, message: 宿主请求已关联不同上下文，原记录未覆盖, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    RunConflict:
+      description: 新 Session 要求、三轮上限、终态或幂等冲突
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+          examples:
+            newSession: { value: { code: NEW_SESSION_REQUIRED, message: 产品线、产品或组件变化需要新建 Session, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } }
+            limit: { value: { code: RUN_LIMIT_REACHED, message: 已达到最多三次 Run, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { maxRuns: 3, mockData: true } } }
+            idempotency: { value: { code: IDEMPOTENCY_KEY_CONFLICT, message: 幂等键已用于不同请求, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } }
+    FileLimitError:
+      description: 原始文件字节数超过格式上限
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: FILE_TOO_LARGE, message: 文件超过允许的原始字节上限, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [{ field: file, code: MAX_BYTES, message: 文本型 PDF 最大 20971520 字节 }], retryable: false, safeDetails: { mediaType: application/pdf, maxBytes: 20971520, mockData: true } } } }
+    UnsupportedMediaType:
+      description: 文件类型不支持或 PDF 无文本层
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: PDF_TEXT_LAYER_REQUIRED, message: 一期只接受包含可提取文本层的 PDF, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [{ field: file, code: TEXT_LAYER_REQUIRED, message: 不支持扫描 PDF 或 OCR }], retryable: false, safeDetails: { mockData: true } } } }
+    ServiceUnavailable:
+      description: 本地依赖暂时不可用
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: SERVICE_UNAVAILABLE, message: 服务暂时不可用，请稍后重试, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: true, safeDetails: { mockData: true } } } }
+    PrecheckUnavailable:
+      description: 无已确认替代路径的基础能力不可用；不阻断人工继续提交
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: SERVICE_UNAVAILABLE, message: 预诊暂时不可用，仍可人工继续提交, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: true, safeDetails: { allowedActions: [CONTINUE_SUBMISSION], mockData: true } } } }
+    AuthSessionOk: { description: 当前本地模拟会话, content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } } }
+    KnowledgeDocumentOk: { description: 知识文档, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeDocument' } } } }
+    KnowledgeDocumentPageOk: { description: 分页知识文档, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeDocumentPage' } } } }
+    KnowledgeVersionOk: { description: 知识版本, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersion' } } } }
+    KnowledgeVersionPageOk: { description: 分页知识版本, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersionPage' } } } }
+    KnowledgeVersionCreated:
+      description: 草稿版本和解析任务已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersionCreatedBody' } } }
+    KnowledgeRevisionCreated:
+      description: 草稿修订和新解析任务已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeRevisionCreatedBody' } } }
+    KnowledgeVersionReviewSubmitted:
+      description: 版本已进入审核中
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/KnowledgeVersionCommandResult' }
+          example: { version: { versionId: 33333333-3333-4333-8333-333333333333, documentId: 22222222-2222-4222-8222-222222222222, revisionNumber: 1, status: IN_REVIEW, submittedBy: mock-editor, approvedBy: null, createdAt: '2026-07-14T08:00:00Z', updatedAt: '2026-07-14T08:05:00Z', mockData: true }, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc }
+    KnowledgeVersionReturnedToDraft:
+      description: 版本已退回草稿
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersionCommandResult' }, example: { version: { versionId: 33333333-3333-4333-8333-333333333333, documentId: 22222222-2222-4222-8222-222222222222, revisionNumber: 1, status: DRAFT, submittedBy: mock-editor, approvedBy: null, createdAt: '2026-07-14T08:00:00Z', updatedAt: '2026-07-14T08:06:00Z', mockData: true }, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc } } }
+    KnowledgeVersionApproved:
+      description: 不同身份的审核人已批准版本
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersionCommandResult' }, example: { version: { versionId: 33333333-3333-4333-8333-333333333333, documentId: 22222222-2222-4222-8222-222222222222, revisionNumber: 1, status: APPROVED, submittedBy: mock-editor, approvedBy: mock-reviewer, createdAt: '2026-07-14T08:00:00Z', updatedAt: '2026-07-14T08:10:00Z', mockData: true }, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc } } }
+    KnowledgeVersionDeprecated:
+      description: 版本已废弃
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersionCommandResult' }, example: { version: { versionId: 33333333-3333-4333-8333-333333333333, documentId: 22222222-2222-4222-8222-222222222222, revisionNumber: 1, status: DEPRECATED, submittedBy: mock-editor, approvedBy: mock-reviewer, createdAt: '2026-07-14T08:00:00Z', updatedAt: '2026-07-14T08:20:00Z', mockData: true }, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc } } }
+    IndexTaskAccepted:
+      description: 双索引发布任务已创建；尚未代表版本已发布
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/IndexTask' }
+          example: { taskId: 99999999-9999-4999-8999-999999999999, resourceId: 33333333-3333-4333-8333-333333333333, status: PENDING, attempt: 0, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: null, completedAt: null, mockData: true, ftsStatus: PENDING, embeddingStatus: PENDING }
+    ParseTaskOk:
+      description: 不可变解析任务
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ParseTask' }
+          examples:
+            pending:
+              summary: 模拟数据：解析任务等待执行
+              value: { taskId: 44444444-4444-4444-8444-444444444444, resourceId: 33333333-3333-4333-8333-333333333333, status: PENDING, attempt: 0, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: null, completedAt: null, mockData: true }
+            failed:
+              summary: 模拟数据：确定性解析失败，不自动重试
+              value: { taskId: 44444444-4444-4444-8444-444444444444, resourceId: 33333333-3333-4333-8333-333333333333, status: FAILED, attempt: 1, maxAttempts: 3, error: { code: PDF_TEXT_LAYER_REQUIRED, message: 模拟数据：PDF 无可提取文本层, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:00:02Z', mockData: true }
+    ParseTaskPageOk: { description: 分页解析任务, content: { application/json: { schema: { $ref: '#/components/schemas/ParseTaskPage' } } } }
+    IndexTaskOk:
+      description: 不可变双索引任务
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/IndexTask' }
+          examples:
+            succeeded:
+              summary: 模拟数据：两路索引均成功
+              value: { taskId: 99999999-9999-4999-8999-999999999999, resourceId: 33333333-3333-4333-8333-333333333333, status: SUCCEEDED, attempt: 1, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:00:10Z', mockData: true, ftsStatus: SUCCEEDED, embeddingStatus: SUCCEEDED }
+            failed:
+              summary: 模拟数据：向量索引重试耗尽，版本保持 APPROVED
+              value: { taskId: 99999999-9999-4999-8999-999999999999, resourceId: 33333333-3333-4333-8333-333333333333, status: FAILED, attempt: 3, maxAttempts: 3, error: { code: EMBEDDING_TIMEOUT, message: 模拟数据：三次尝试后仍超时, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, ftsStatus: SUCCEEDED, embeddingStatus: FAILED }
+    IndexTaskPageOk: { description: 分页双索引任务, content: { application/json: { schema: { $ref: '#/components/schemas/IndexTaskPage' } } } }
+    PrecheckSessionCreated:
+      description: Session 与 Run 1 已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PrecheckSession' }
+          example:
+            sessionId: 77777777-7777-4777-8777-777777777777
+            ownerUserCode: mock-precheck-user
+            status: ACTIVE
+            terminationReason: null
+            latestRun:
+              runId: 88888888-8888-4888-8888-888888888888
+              sessionId: 77777777-7777-4777-8777-777777777777
+              sequence: 1
+              status: NEED_MORE_INFORMATION
+              contextSnapshot: { sourceSystem: SANDBOX, hostRequestId: mock-host-1001, formSchemaVersion: '1.0', issueType: { code: FUNCTIONAL_FAILURE, displayName: 功能故障（模拟数据） }, productLine: { code: TDH, displayName: TDH（模拟数据） }, title: 模拟数据：查询失败, descriptionPlainText: 模拟数据：脱敏问题描述, additionalInformation: [], attachments: [] }
+              result:
+                summary: 模拟数据：当前信息不足，以下仅为辅助方向。
+                recommendations: [请人工核对完整错误码和复现步骤。]
+                completeness: { complete: false, policyVersion: mock-completeness-v1, missingFieldCodes: [ERROR_MESSAGE, REPRODUCTION_STEPS], reasons: [功能故障策略需要更多信息。] }
+                confidence: LOW
+                confidenceReasons: [关键信息缺失。]
+                evidence: []
+                humanInterventionAdvice: [建议由 SLA 处理人核对，用户仍可继续提交。]
+                missingInformation: [完整错误信息, 复现步骤]
+                allowedActions: [SUPPLEMENT_INFORMATION, CONTINUE_SUBMISSION]
+                disclaimer: 本结果不是最终根因、最终方案或正式复盘结论，须人工确认。
+                retrieval: { mode: FTS_ONLY, fts: { available: true, code: AVAILABLE, message: 全文检索可用 }, embedding: { available: false, code: EMBEDDING_UNAVAILABLE, message: 模拟数据：Embedding 暂时不可用 }, degraded: true }
+                mockData: true
+              createdAt: '2026-07-14T08:00:00Z'
+              completedAt: '2026-07-14T08:00:01Z'
+            runCount: 1
+            maxRuns: 3
+            createdAt: '2026-07-14T08:00:00Z'
+            updatedAt: '2026-07-14T08:00:01Z'
+            mockData: true
+    PrecheckSessionReplayed:
+      description: 相同业务幂等键与相同规范化上下文，返回原 Session/Run
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckSession' } } }
+    PrecheckSessionOk: { description: Session 详情, content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckSession' } } } }
+    PrecheckSessionPageOk: { description: 分页 Session, content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckSessionPage' } } } }
+    PrecheckRunCreated:
+      description: 下一 Run 已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckRun' } } }
+    PrecheckRunReplayed:
+      description: 返回原 Run
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckRun' } } }
+    PrecheckRunOk: { description: Run 详情, content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckRun' } } } }
+    PrecheckRunPageOk: { description: 分页 Run, content: { application/json: { schema: { $ref: '#/components/schemas/PrecheckRunPage' } } } }
+    SessionTerminationCreated:
+      description: Session 已由用户明确终止
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/SessionTermination' } } }
+    SessionTerminationReplayed:
+      description: 返回原终止结果
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/SessionTermination' } } }
+    FeedbackCreated:
+      description: 反馈已独立记录
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' }, example: { feedbackId: 12121212-1212-4212-8212-121212121212, sessionId: 77777777-7777-4777-8777-777777777777, runId: 88888888-8888-4888-8888-888888888888, adoptionStatus: PARTIALLY_ADOPTED, helpfulness: HELPFUL, reason: 模拟数据：建议方向有帮助, recordedAt: '2026-07-14T08:05:00Z', mockData: true } } }
+    FeedbackReplayed:
+      description: 返回原反馈
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } }
+    FeedbackOk: { description: 反馈详情, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }
+    SubmissionContinuationCreated:
+      description: 模拟继续提交确认已记录，Session 以 CONTINUED_SUBMISSION 终止
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SubmissionContinuation' }
+          example: { continuationId: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb, sessionId: 77777777-7777-4777-8777-777777777777, confirmedBy: mock-precheck-user, confirmedAt: '2026-07-14T08:05:00Z', reason: 模拟数据：人工选择继续原流程, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc, mockData: true }
+    SubmissionContinuationReplayed:
+      description: 返回原模拟继续提交确认
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/SubmissionContinuation' } } }
+    SubmissionContinuationOk: { description: 模拟继续提交确认详情, content: { application/json: { schema: { $ref: '#/components/schemas/SubmissionContinuation' } } } }
+    EvaluationRunAccepted:
+      description: 评估运行已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/EvaluationRun' } } }
+    EvaluationRunReplayed:
+      description: 返回原评估运行
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/EvaluationRun' } } }
+    EvaluationRunOk:
+      description: 评估运行详情
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/EvaluationRun' }
+          examples:
+            succeeded:
+              summary: 模拟数据：固定评估集运行成功
+              value: { taskId: dddddddd-dddd-4ddd-8ddd-dddddddddddd, resourceId: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee, status: SUCCEEDED, attempt: 1, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, evaluationSetVersion: mock-eval-v1, summary: { sampleCount: 30, permissionLeakageRate: 0, citationErrorRate: 0, degradationPassRate: 1, recallAt5: 0.83, disclaimer: 小样本工程评估，不代表生产效果 } }
+            failed:
+              summary: 模拟数据：评估任务异步失败
+              value: { taskId: dddddddd-dddd-4ddd-8ddd-dddddddddddd, resourceId: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee, status: FAILED, attempt: 3, maxAttempts: 3, error: { code: EVALUATION_RESOURCE_UNAVAILABLE, message: 模拟数据：评估资源暂时不可用且重试耗尽, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, evaluationSetVersion: mock-eval-v1, summary: null }
+    EvaluationRunPageOk: { description: 分页评估运行, content: { application/json: { schema: { $ref: '#/components/schemas/EvaluationRunPage' } } } }
+    AuditEventOk: { description: 结构化审计事件, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEvent' }, example: { eventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc, actorUserCode: mock-reviewer, action: KNOWLEDGE_VERSION_APPROVED, subjectType: KnowledgeVersion, subjectId: 33333333-3333-4333-8333-333333333333, outcome: SUCCEEDED, metadata: { policyVersion: mock-policy-v1, mockData: true }, occurredAt: '2026-07-14T08:10:00Z', mockData: true } } } }
+    AuditEventPageOk: { description: 分页审计事件, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEventPage' } } } }
+    CompletenessPolicyOk: { description: 只读完整度策略, content: { application/json: { schema: { $ref: '#/components/schemas/CompletenessPolicy' }, example: { policyVersion: mock-completeness-v1, issueType: { code: FUNCTIONAL_FAILURE, displayName: 功能故障（模拟数据） }, generalFieldCodes: [PRODUCT, COMPONENT, VERSION, SEVERITY, IMPACT_SCOPE, OCCURRED_AT], issueSpecificFieldCodes: [ERROR_MESSAGE, REPRODUCTION_STEPS, RECENT_CHANGES], createdAt: '2026-07-14T08:00:00Z', mockData: true } } } }
+    CompletenessPolicyPageOk: { description: 分页完整度策略, content: { application/json: { schema: { $ref: '#/components/schemas/CompletenessPolicyPage' } } } }
+    AdminResetAccepted:
+      description: 本地模拟数据重置任务已创建
+      headers: { Idempotency-Replayed: { $ref: '#/components/headers/IdempotencyReplayed' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/AdminReset' } } }
+    AdminResetReplayed:
+      description: 返回原本地重置任务
+      headers: { Idempotency-Replayed: { description: 固定为 true, schema: { type: boolean, enum: [true] } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/AdminReset' } } }
+    AdminResetOk:
+      description: 本地重置任务详情
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/AdminReset' }
+          examples:
+            succeeded:
+              summary: 模拟数据：本地重置成功
+              value: { taskId: ffffffff-ffff-4fff-8fff-ffffffffffff, resourceId: ffffffff-ffff-4fff-8fff-ffffffffffff, status: SUCCEEDED, attempt: 1, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, environmentCode: LOCAL, confirmedBy: mock-admin, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc }
+            failed:
+              summary: 模拟数据：本地重置异步失败并保留审计
+              value: { taskId: ffffffff-ffff-4fff-8fff-ffffffffffff, resourceId: ffffffff-ffff-4fff-8fff-ffffffffffff, status: FAILED, attempt: 3, maxAttempts: 3, error: { code: RESET_FAILED, message: 模拟数据：本地初始化资源暂时不可用, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, environmentCode: LOCAL, confirmedBy: mock-admin, auditEventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc }
+    AdminResetPageOk: { description: 分页本地重置任务, content: { application/json: { schema: { $ref: '#/components/schemas/AdminResetPage' } } } }
