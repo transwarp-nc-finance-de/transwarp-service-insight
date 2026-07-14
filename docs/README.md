@@ -2,6 +2,8 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
+当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`。批准进入实施不代表 API v2 或一期目标能力已经实现。
+
 首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
 
 ## ACTIVE
@@ -15,7 +17,7 @@
 
 ## DRAFT / ARCHIVED
 
-[API v2 候选契约](api/openapi-v2.yaml)与[v1→v2 映射](api/v1-v2-mapping.md)已于 2026-07-14 由用户以 API、产品、安全负责人身份批准进入实施，但仍是未实现 DRAFT；[目标架构](architecture/target-architecture.md)、[离线知识流程](architecture/knowledge-ingestion-flow.md) 与 `architecture/drafts/` 中的材料也均为未实现目标设计。`archive/` 保存 Demo、旧计划、旧 API 草案、源文档和历史提示词，不作为当前入口。
+[API v2 候选契约](api/openapi-v2.yaml)与[v1→v2 映射](api/v1-v2-mapping.md)已于 2026-07-14 由用户以 API、产品、安全负责人身份批准进入实施，状态为 `APPROVED_FOR_IMPLEMENTATION`，但仍是未实现 DRAFT；[目标架构](architecture/target-architecture.md)、[离线知识流程](architecture/knowledge-ingestion-flow.md) 与 `architecture/drafts/` 中的材料也均为未实现目标设计。`archive/` 保存 Demo、旧计划、旧 API 草案、源文档和历史提示词，不作为当前入口。
 
 ## 文档内容应该写在哪里
 

@@ -2,6 +2,8 @@
 
 状态：ACTIVE，Last reviewed: 2026-07-14。当前实现与一期目标必须分开解读。
 
+统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`。
+
 当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、Docker Compose、OpenAPI 和 CI。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
 
 前端 `/sandbox` 是 Mock AIOps，仅用于本地开发、联调、演示和自动化测试；`/embed` 是不复制 SLA 表单的嵌入式预诊面板。用户始终可忽略建议并由 AIOps 继续原有提交，反馈失败不影响提交。
@@ -72,8 +74,8 @@
 - 完整度策略的通用待补充项为产品、组件、版本、问题级别、影响范围和 `OCCURRED_AT`。类型专属项为：功能故障的 `ERROR_MESSAGE / REPRODUCTION_STEPS / RECENT_CHANGES`；性能下降的 `TIME_WINDOW / BASELINE_METRIC / CURRENT_METRIC / WORKLOAD_IDENTIFIER`；安装配置的 `OPERATION_GOAL / EXECUTED_STEPS / ENVIRONMENT_SUMMARY / ERROR_MESSAGE`；数据正确性的 `EXPECTED_RESULT / ACTUAL_RESULT / AFFECTED_DATA_SCOPE / QUERY_OR_JOB_ID`。全部为建议项，不是提交门禁。
 - `sourceSystem + hostRequestId` 作为一期真实幂等键：相同规范化上下文重试返回原 Session/Run，同键不同上下文返回安全冲突并审计，不静默覆盖；新的 `hostRequestId` 可主动重新预诊。
 - 当前 `/api/v1` 字段、语义与行为保持不变；重定义后的一期 Context、知识治理、独立反馈/继续提交、引用和评估能力使用 `/api/v2`。新旧 DTO 通过 Mapper 进入应用用例，领域模型不依赖 HTTP 版本。本轮不修改 OpenAPI。
-- 一期冻结以下 v2 资源组职责与路径前缀：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。具体方法、Schema、错误码与分页在实施前通过 DRAFT 契约评审，本轮不承诺完整 CRUD。
-- 进入实现前必须完整定义并人工确认 v2 OpenAPI，覆盖资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射。该门禁完成前整体状态为 `NOT_READY`，且不得将已确认领域语义表述为已实现 API；本轮不修改 `docs/api/openapi.yaml`。
+- 一期冻结以下 v2 资源组职责与路径前缀：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。具体方法、Schema、错误码与分页已通过 DRAFT 契约评审；API v2 为 `APPROVED_FOR_IMPLEMENTATION`，但本轮不承诺完整 CRUD 已实现。
+- v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射，并于 2026-07-14 获人工批准；契约状态为 `APPROVED_FOR_IMPLEMENTATION`，一期实施状态为 `READY_FOR_IMPLEMENTATION`。该批准不代表 v2 已实现，也不修改当前唯一已实现的 `docs/api/openapi.yaml`（v1 Mock）。
 - 一期本地完整纵向闭环以“模拟继续提交已记录，反馈和审计已持久化，固定评估集可产出最小质量评估结果”为验收终点。
 - 最小评估用于证明检索、引用、权限与降级行为，不要求建设完整运营后台。
 - 一期闭环不以生成或保存模拟 SLA 单据、工单草稿或提交回执为验收内容；Service Insight 仍不创建正式 SLA。

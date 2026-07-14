@@ -8,14 +8,14 @@
 
 ## 一期已确认预留边界
 
-一期冻结 `PrecheckContext` 的宿主无关领域语义：`sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`product`、`component`、`version`、`issueLevel`、`serviceType`、`title`、`descriptionPlainText`、`additionalInformation`、`impactScope` 与附件元数据。领域对象与 HTTP DTO 通过 Mapper 隔离；当前 v1 OpenAPI 无法完整表达该语义，本轮不修改已实现契约。
+一期冻结 `PrecheckContext` 的宿主无关领域语义：`sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`product`、`component`、`version`、`issueLevel`、`serviceType`、`title`、`descriptionPlainText`、`additionalInformation`、`impactScope` 与附件元数据。领域对象与 HTTP DTO 通过 Mapper 隔离；当前 v1 OpenAPI 无法完整表达该语义且保持不变；已批准实施的 API v2 DRAFT 负责表达目标语义。
 
-一期创建 Session 的必需字段为 `sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`title`、`descriptionPlainText`。缺失时预诊请求失败，但宿主继续提交流程仍可用。当前 v1 只强制标题和描述，目标兼容方案尚未确认。
+一期创建 Session 的必需字段为 `sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`title`、`descriptionPlainText`。缺失时预诊请求失败，但宿主继续提交流程仍可用。当前 v1 只强制标题和描述且保持兼容；目标字段已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达，真实 AIOps 字段映射仍待外部确认。
 
 `additionalInformation` 是稳定编码、显示名和纯文本值组成的条目集合。未知宿主编码保留用于追溯，但只有当前策略认识的编码参与完整度判断；未知值不得扩大权限或改变规则。
 
 一期 Sandbox 只验证 `模拟数据` 问题附件 ID 与文件名、媒体类型、大小元数据，不访问附件内容。真实 AIOps 附件授权与 `AttachmentAccessPort` 推迟到二期。
 
-一期在 Sandbox 中真实验证 `sourceSystem + hostRequestId` 幂等：相同规范化上下文的重试复用原 Session/Run，同键不同上下文返回冲突；新 ID 允许主动重新预诊。当前 v1 契约仅把 `hostRequestId` 定义为可选元数据，尚未表达完整幂等行为。
+一期在 Sandbox 中真实验证 `sourceSystem + hostRequestId` 幂等：相同规范化上下文的重试复用原 Session/Run，同键不同上下文返回冲突；新 ID 允许主动重新预诊。当前 v1 契约仅把 `hostRequestId` 定义为可选元数据且保持不变；完整幂等行为已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
 
 一期模拟继续提交不生成 ticketId。未来 `hostTicketId` 只作为二期 DRAFT 关联字段，由真实 AIOps 提交结果提供；Service Insight 不自行生成或冒充宿主工单标识。
