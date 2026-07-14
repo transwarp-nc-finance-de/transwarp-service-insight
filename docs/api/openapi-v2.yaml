@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Transwarp Service Insight API v2（APPROVED_FOR_IMPLEMENTATION）
-  version: 2.0.0-draft.1
+  version: 2.0.0-draft.2
   description: |
     **DRAFT / 未实现 / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
     已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；该批准不代表
@@ -13,7 +13,7 @@ info:
     且不得阻断人工继续提交。SLA 提交及内容始终由人工确认。
   x-api-status: APPROVED_FOR_IMPLEMENTATION
   x-owner: API 负责人
-  x-last-reviewed: '2026-07-14'
+  x-last-reviewed: '2026-07-15'
   x-source-of-truth-for: 未实现 API v2 候选 HTTP 契约
   x-implementation-status: NOT_IMPLEMENTED
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
@@ -49,7 +49,10 @@ paths:
       tags: [AuthSession]
       operationId: createAuthSession
       summary: 使用预置模拟身份建立本地会话
-      description: 仅限本地模拟环境；不提供注册、JWT、SSO 或真实组织同步。
+      description: |
+        仅限本地模拟环境；不提供注册、JWT、SSO 或真实组织同步。成功时创建绑定该 Session 的高熵
+        CSRF Token，并仅通过 `X-CSRF-Token` 响应头发放；Token 不进入 JSON、可读 Cookie 或 localStorage。
+        新建、切换模拟身份或替换 Session 时生成新 Token，旧 Session 与 Token 立即失效。
       security: []
       requestBody:
         required: true
@@ -62,6 +65,8 @@ paths:
           description: 模拟会话已建立
           headers:
             Set-Cookie: { schema: { type: string }, description: HttpOnly、SameSite Cookie }
+            X-CSRF-Token: { $ref: '#/components/headers/CsrfToken' }
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuthSession' }
@@ -74,6 +79,9 @@ paths:
       tags: [AuthSession]
       operationId: getCurrentAuthSession
       summary: 查询当前本地会话
+      description: |
+        返回当前 Session 绑定的 CSRF Token，供页面刷新后恢复内存状态；同一 Session 内只返回而不轮换。
+        响应不得被缓存，Token 不进入 JSON、可读 Cookie 或 localStorage。
       responses:
         '200': { $ref: '#/components/responses/AuthSessionOk' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -82,11 +90,15 @@ paths:
       tags: [AuthSession]
       operationId: deleteCurrentAuthSession
       summary: 退出当前本地会话
+      description: |
+        成功时原子失效当前 Session 与其 CSRF Token。缺失、未知、已退出或过期 Session 返回
+        `401 UNAUTHENTICATED`；有效 Session 下 Token 缺失、为空、不匹配或属于其他 Session 返回
+        `403 CSRF_VALIDATION_FAILED`；身份权限不足返回 `403 INSUFFICIENT_ROLE`。
       security: [{ CookieAuth: [], CsrfToken: [] }]
       responses:
         '204': { description: 会话已删除 }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CsrfValidationFailed' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
   /knowledge-documents:
@@ -118,7 +130,7 @@ paths:
                 parseTask: { taskId: 44444444-4444-4444-8444-444444444444, resourceId: 33333333-3333-4333-8333-333333333333, status: PENDING, attempt: 0, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: null, completedAt: null, mockData: true }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '409': { $ref: '#/components/responses/IdempotencyConflict' }
         '413': { $ref: '#/components/responses/FileLimitError' }
         '415': { $ref: '#/components/responses/UnsupportedMediaType' }
@@ -171,7 +183,7 @@ paths:
         '201': { $ref: '#/components/responses/KnowledgeVersionCreated' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '413': { $ref: '#/components/responses/FileLimitError' }
@@ -205,6 +217,60 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/parse-preview:
+    parameters: [{ $ref: '#/components/parameters/VersionId' }]
+    get:
+      tags: [ParseTask]
+      operationId: getKnowledgeVersionParsePreview
+      summary: 查询知识版本的解析预览摘要
+      description: |
+        `KNOWLEDGE_EDITOR` 仅可读取本人创建或提交且在本人产品线范围内的版本；
+        `KNOWLEDGE_REVIEWER` 仅可读取本人产品线范围内已进入 `IN_REVIEW` 及后续状态的版本。
+        `ADMIN` 不因管理员身份自动获得正文预览权限。每次读取重新校验当前角色、产品线和对象可见性。
+        解析成功且存在警告仍返回 `SUCCEEDED` 与非空 `warnings`，不引入 `SUCCEEDED_WITH_WARNINGS`。
+      responses:
+        '200': { $ref: '#/components/responses/ParsePreviewOk' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/ParsePreviewConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/parse-preview/blocks:
+    parameters: [{ $ref: '#/components/parameters/VersionId' }]
+    get:
+      tags: [ParseTask]
+      operationId: listKnowledgeVersionParsedBlocks
+      summary: 按解析顺序分页查询规范化文本块
+      description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，不支持任意排序，不在单个响应中返回整个文件。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200': { $ref: '#/components/responses/ParsedBlockPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/ParsePreviewConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /knowledge-versions/{versionId}/parse-preview/chunks:
+    parameters: [{ $ref: '#/components/parameters/VersionId' }]
+    get:
+      tags: [ParseTask]
+      operationId: listKnowledgeVersionChunkPreviews
+      summary: 按切片顺序分页查询结构化 Chunk 预览
+      description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，文本块与 Chunk 独立分页，不支持任意排序。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200': { $ref: '#/components/responses/ChunkPreviewPageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/ParsePreviewConflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /knowledge-versions/{versionId}/revisions:
     post:
       tags: [KnowledgeVersion]
@@ -224,7 +290,7 @@ paths:
         '201': { $ref: '#/components/responses/KnowledgeRevisionCreated' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -233,10 +299,12 @@ paths:
       tags: [KnowledgeVersion]
       operationId: submitKnowledgeVersionForReview
       summary: 提交知识版本审核
+      description: |
+        `parseResultHash` 必须匹配当前 `SUCCEEDED` 解析结果，否则返回 `409 ILLEGAL_STATE_TRANSITION`。
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody: { $ref: '#/components/requestBodies/CommandReason' }
-      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReviewSubmitted' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+      requestBody: { $ref: '#/components/requestBodies/ReviewSubmission' }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReviewSubmitted' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/CookieWriteForbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
   /knowledge-versions/{versionId}/draft-returns:
     post:
       tags: [KnowledgeVersion]
@@ -245,21 +313,25 @@ paths:
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { $ref: '#/components/requestBodies/RequiredCommandReason' }
-      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReturnedToDraft' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionReturnedToDraft' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/CookieWriteForbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
   /knowledge-versions/{versionId}/approvals:
     post:
       tags: [KnowledgeVersion]
       operationId: approveKnowledgeVersion
       summary: 由不同身份的审核人批准知识版本
-      description: 提交人不得批准本人提交的版本；ADMIN 不获得绕过能力。
+      description: |
+        提交人不得批准本人提交的版本；ADMIN 不获得绕过能力。`parseResultHash` 必须匹配当前解析结果；
+        有警告时 `acknowledgedWarningCodes` 必须完整覆盖当前稳定警告码集合，无警告时允许空数组。
+        缺失或过期确认返回 `409 ILLEGAL_STATE_TRANSITION`。审计只保存哈希、警告码、审核主体和时间，
+        不复制解析正文；警告确认不构成自动批准。
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody: { $ref: '#/components/requestBodies/CommandReason' }
+      requestBody: { $ref: '#/components/requestBodies/KnowledgeApproval' }
       responses:
         '200': { $ref: '#/components/responses/KnowledgeVersionApproved' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/DutySeparationError' }
+        '403': { $ref: '#/components/responses/KnowledgeReviewForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -276,7 +348,7 @@ paths:
         '202': { $ref: '#/components/responses/IndexTaskAccepted' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/DutySeparationError' }
+        '403': { $ref: '#/components/responses/KnowledgeReviewForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -288,7 +360,7 @@ paths:
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { $ref: '#/components/requestBodies/RequiredCommandReason' }
-      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionDeprecated' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
+      responses: { '200': { $ref: '#/components/responses/KnowledgeVersionDeprecated' }, '400': { $ref: '#/components/responses/ValidationError' }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { $ref: '#/components/responses/CookieWriteForbidden' }, '404': { $ref: '#/components/responses/SafeNotFound' }, '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }, '503': { $ref: '#/components/responses/ServiceUnavailable' } }
 
   /parse-tasks:
     get:
@@ -406,7 +478,7 @@ paths:
         '200': { $ref: '#/components/responses/PrecheckSessionReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '409': { $ref: '#/components/responses/PrecheckContextConflict' }
         '503': { $ref: '#/components/responses/PrecheckUnavailable' }
     get:
@@ -471,7 +543,7 @@ paths:
         '200': { $ref: '#/components/responses/PrecheckRunReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/RunConflict' }
         '503': { $ref: '#/components/responses/PrecheckUnavailable' }
@@ -500,7 +572,7 @@ paths:
         '200': { $ref: '#/components/responses/SessionTerminationReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -524,7 +596,7 @@ paths:
         '200': { $ref: '#/components/responses/FeedbackReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -557,7 +629,7 @@ paths:
         '200': { $ref: '#/components/responses/SubmissionContinuationReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
         '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -592,7 +664,7 @@ paths:
         '200': { $ref: '#/components/responses/EvaluationRunReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '409': { $ref: '#/components/responses/IdempotencyConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
     get:
@@ -721,7 +793,7 @@ paths:
         '200': { $ref: '#/components/responses/AdminResetReplayed' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403': { $ref: '#/components/responses/CookieWriteForbidden' }
         '409': { $ref: '#/components/responses/IdempotencyConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
     get:
@@ -758,12 +830,18 @@ components:
       type: apiKey
       in: cookie
       name: SESSION
-      description: 仅本地预置模拟身份的服务端会话 Cookie
+      description: |
+        仅本地预置模拟身份的服务端会话 Cookie。Session 过期、退出、身份切换或被替换时立即失效；
+        与其绑定的 CSRF Token 同步失效。Session 与 Token 均不得跨模拟身份重用。
     CsrfToken:
       type: apiKey
       in: header
       name: X-CSRF-Token
-      description: 所有 Cookie 会话写操作必须携带
+      description: |
+        所有 Cookie 会话写操作必须携带。Token 是绑定单个服务端 Session 的高熵随机值，同一 Session 内稳定且
+        不按请求滚动轮换；通过登录 `201` 首次发放，通过 current `200` 恢复。新建、切换身份或替换 Session
+        时生成新 Token；退出或会话过期时同步失效。一期不提供独立刷新端点，需要换 Token 时重新建立模拟会话。
+        Token 只允许保存在浏览器内存中，不得进入 JSON、可读 Cookie、localStorage、safeDetails、日志或审计。
   parameters:
     Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 }, description: 1 起始页码 }
     Size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
@@ -782,6 +860,12 @@ components:
     ResetId: { name: resetId, in: path, required: true, schema: { type: string, format: uuid } }
   headers:
     IdempotencyReplayed: { description: 是否返回既有成功结果, schema: { type: boolean } }
+    CsrfToken:
+      description: 当前服务端 Session 绑定的 CSRF Token；仅供浏览器保存在内存中
+      schema: { type: string, minLength: 32 }
+    NoStore:
+      description: 认证会话与 CSRF Token 响应不得缓存
+      schema: { type: string, enum: [no-store] }
   requestBodies:
     CommandReason:
       required: true
@@ -789,6 +873,12 @@ components:
     RequiredCommandReason:
       required: true
       content: { application/json: { schema: { $ref: '#/components/schemas/RequiredCommandReason' } } }
+    ReviewSubmission:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/ReviewSubmissionRequest' } } }
+    KnowledgeApproval:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeApprovalRequest' } } }
     ConfirmationReason:
       required: true
       content: { application/json: { schema: { $ref: '#/components/schemas/ConfirmationReason' } } }
@@ -800,7 +890,7 @@ components:
       properties:
         code:
           type: string
-          enum: [VALIDATION_ERROR, UNAUTHENTICATED, INSUFFICIENT_ROLE, RESOURCE_NOT_FOUND, DUTY_SEPARATION_VIOLATION, ILLEGAL_STATE_TRANSITION, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_CONTEXT_CONFLICT, NEW_SESSION_REQUIRED, RUN_LIMIT_REACHED, FILE_TOO_LARGE, UNSUPPORTED_FILE_TYPE, PDF_TEXT_LAYER_REQUIRED, SERVICE_UNAVAILABLE, TASK_FAILED, CSRF_VALIDATION_FAILED, LOCAL_ENVIRONMENT_REQUIRED]
+          enum: [VALIDATION_ERROR, UNAUTHENTICATED, INSUFFICIENT_ROLE, RESOURCE_NOT_FOUND, DUTY_SEPARATION_VIOLATION, ILLEGAL_STATE_TRANSITION, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_CONTEXT_CONFLICT, NEW_SESSION_REQUIRED, RUN_LIMIT_REACHED, FILE_TOO_LARGE, UNSUPPORTED_FILE_TYPE, PDF_TEXT_LAYER_REQUIRED, SERVICE_UNAVAILABLE, TASK_FAILED, PARSE_PREVIEW_NOT_READY, CSRF_VALIDATION_FAILED, LOCAL_ENVIRONMENT_REQUIRED]
         message: { type: string, description: 可安全展示的信息 }
         requestId: { type: string, format: uuid }
         timestamp: { type: string, format: date-time }
@@ -974,6 +1064,25 @@ components:
       properties:
         version: { $ref: '#/components/schemas/KnowledgeVersion' }
         auditEventId: { type: string, format: uuid }
+    ReviewSubmissionRequest:
+      type: object
+      additionalProperties: false
+      required: [parseResultHash]
+      properties:
+        parseResultHash: { $ref: '#/components/schemas/Sha256Hash' }
+        reason: { type: string, maxLength: 1000 }
+    KnowledgeApprovalRequest:
+      type: object
+      additionalProperties: false
+      required: [parseResultHash, acknowledgedWarningCodes]
+      properties:
+        parseResultHash: { $ref: '#/components/schemas/Sha256Hash' }
+        acknowledgedWarningCodes:
+          type: array
+          maxItems: 4
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/ParseWarningCode' }
+        reason: { type: string, maxLength: 1000 }
     CommandReason:
       type: object
       additionalProperties: false
@@ -992,6 +1101,99 @@ components:
         reason: { type: string, minLength: 1, maxLength: 1000 }
 
     TaskStatus: { type: string, enum: [PENDING, RUNNING, SUCCEEDED, FAILED] }
+    Sha256Hash:
+      type: string
+      pattern: '^sha256:[a-f0-9]{64}$'
+      description: 小写十六进制 SHA-256 摘要，包含 `sha256:` 前缀
+    ParseWarningCode:
+      type: string
+      enum: [IMAGE_CONTENT_IGNORED, TABLE_STRUCTURE_FLATTENED, READING_ORDER_UNCERTAIN, CONTENT_LOSS_SUSPECTED]
+    ParseWarning:
+      type: object
+      additionalProperties: false
+      required: [code, message, occurrenceCount]
+      properties:
+        code: { $ref: '#/components/schemas/ParseWarningCode' }
+        message: { type: string, minLength: 1, maxLength: 1000, description: 不含宿主路径、文件 URL、堆栈或原始字节的安全描述 }
+        structurePath: { type: string, minLength: 1, maxLength: 1000, description: 可选的规范化文档结构路径 }
+        occurrenceCount: { type: integer, minimum: 1 }
+    ChunkingRule:
+      type: object
+      additionalProperties: false
+      required: [version, strategy, maxTokens, overlapTokens]
+      properties:
+        version: { type: string, minLength: 1, maxLength: 64 }
+        strategy: { type: string, enum: [STRUCTURE_FIRST] }
+        maxTokens: { type: integer, enum: [400] }
+        overlapTokens: { type: integer, enum: [50] }
+    ParsePreview:
+      type: object
+      additionalProperties: false
+      required: [versionId, parseTaskId, parseStatus, parserVersion, parseResultHash, parsedBlockCount, chunkCount, warnings, chunkingRule, mockData]
+      properties:
+        versionId: { type: string, format: uuid }
+        parseTaskId: { type: string, format: uuid }
+        parseStatus: { type: string, enum: [SUCCEEDED], description: 有警告时仍为 SUCCEEDED }
+        parserVersion: { type: string, minLength: 1, maxLength: 64 }
+        parseResultHash:
+          allOf: [{ $ref: '#/components/schemas/Sha256Hash' }]
+          description: 绑定当前解析结果、聚合警告集合、解析器版本和结构顺序；新草稿修订或重新解析后变化
+        parsedBlockCount: { type: integer, format: int64, minimum: 0 }
+        chunkCount: { type: integer, format: int64, minimum: 0 }
+        warnings: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/ParseWarning' } }
+        chunkingRule: { $ref: '#/components/schemas/ChunkingRule' }
+        mockData: { type: boolean, enum: [true] }
+    ParsedBlock:
+      type: object
+      additionalProperties: false
+      required: [blockId, sequence, structurePath, text, contentHash]
+      properties:
+        blockId: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        structurePath: { type: string, minLength: 1, maxLength: 1000 }
+        text: { type: string, minLength: 1, maxLength: 5000000 }
+        contentHash:
+          allOf: [{ $ref: '#/components/schemas/Sha256Hash' }]
+          description: 规范化文本块内容的 SHA-256
+    ChunkPreview:
+      type: object
+      additionalProperties: false
+      required: [chunkId, sequence, structurePath, text, tokenCount, contentHash, chunkingRuleVersion]
+      properties:
+        chunkId: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        structurePath: { type: string, minLength: 1, maxLength: 1000 }
+        text: { type: string, minLength: 1, maxLength: 5000000 }
+        tokenCount: { type: integer, minimum: 1, maximum: 400 }
+        contentHash:
+          allOf: [{ $ref: '#/components/schemas/Sha256Hash' }]
+          description: 规范化 Chunk 内容的 SHA-256
+        chunkingRuleVersion: { type: string, minLength: 1, maxLength: 64 }
+    ParsePreviewPageMetadata:
+      type: object
+      additionalProperties: false
+      required: [page, size, totalItems, totalPages, sortBy, sortDirection]
+      properties:
+        page: { type: integer, minimum: 1 }
+        size: { type: integer, minimum: 1, maximum: 100 }
+        totalItems: { type: integer, format: int64, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+        sortBy: { type: string, enum: [sequence] }
+        sortDirection: { type: string, enum: [ASC] }
+    ParsedBlockPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ParsedBlock' } }
+        page: { $ref: '#/components/schemas/ParsePreviewPageMetadata' }
+    ChunkPreviewPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ChunkPreview' } }
+        page: { $ref: '#/components/schemas/ParsePreviewPageMetadata' }
     TaskError:
       type: object
       additionalProperties: false
@@ -1015,7 +1217,9 @@ components:
         startedAt: { type: string, format: date-time, nullable: true }
         completedAt: { type: string, format: date-time, nullable: true }
         mockData: { type: boolean, enum: [true] }
-    ParseTask: { allOf: [{ $ref: '#/components/schemas/TaskBase' }] }
+    ParseTask:
+      description: 解析成功且存在警告时状态仍为 SUCCEEDED；聚合警告通过 parse-preview 读取，不增加 SUCCEEDED_WITH_WARNINGS。
+      allOf: [{ $ref: '#/components/schemas/TaskBase' }]
     IndexTask:
       allOf:
         - { $ref: '#/components/schemas/TaskBase' }
@@ -1351,11 +1555,33 @@ components:
       description: 会话不存在或已失效
       content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: UNAUTHENTICATED, message: 请重新建立本地模拟会话, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
     Forbidden:
-      description: 角色、产品线或 CSRF 权限不足
+      description: 角色或产品线权限不足
       content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: INSUFFICIENT_ROLE, message: 当前身份无权执行该操作, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
-    DutySeparationError:
-      description: 职责分离校验失败；ADMIN 也不得绕过
-      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: DUTY_SEPARATION_VIOLATION, message: 提交人与审核人必须是不同身份, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    CsrfValidationFailed:
+      description: Session 有效，但 CSRF Token 缺失、为空、不匹配或属于其他 Session
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: CSRF_VALIDATION_FAILED, message: CSRF 校验失败，请恢复当前会话 Token 后重试, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } } } }
+    CookieWriteForbidden:
+      description: Cookie 写操作的 CSRF 校验失败或角色、产品线权限不足；按稳定 code 区分
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+          examples:
+            csrfValidationFailed:
+              value: { code: CSRF_VALIDATION_FAILED, message: CSRF 校验失败，请恢复当前会话 Token 后重试, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } }
+            insufficientRole:
+              value: { code: INSUFFICIENT_ROLE, message: 当前身份无权执行该操作, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } }
+    KnowledgeReviewForbidden:
+      description: Cookie 写操作的 CSRF、角色或职责分离校验失败；按稳定 code 区分
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+          examples:
+            csrfValidationFailed:
+              value: { code: CSRF_VALIDATION_FAILED, message: CSRF 校验失败，请恢复当前会话 Token 后重试, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } }
+            insufficientRole:
+              value: { code: INSUFFICIENT_ROLE, message: 当前身份无权执行该操作, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } }
+            dutySeparation:
+              value: { code: DUTY_SEPARATION_VIOLATION, message: 提交人与审核人必须是不同身份, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { mockData: true } }
     SafeNotFound:
       description: 资源不存在或当前身份无权读取；不区分两种情况
       content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: RESOURCE_NOT_FOUND, message: 资源不存在, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: {} } } }
@@ -1389,7 +1615,12 @@ components:
     PrecheckUnavailable:
       description: 无已确认替代路径的基础能力不可用；不阻断人工继续提交
       content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { code: SERVICE_UNAVAILABLE, message: 预诊暂时不可用，仍可人工继续提交, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-14T08:00:00Z', fieldErrors: [], retryable: true, safeDetails: { allowedActions: [CONTINUE_SUBMISSION], mockData: true } } } }
-    AuthSessionOk: { description: 当前本地模拟会话, content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } } }
+    AuthSessionOk:
+      description: 当前本地模拟会话；返回当前 Session Token 且禁止缓存
+      headers:
+        X-CSRF-Token: { $ref: '#/components/headers/CsrfToken' }
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+      content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } }
     KnowledgeDocumentOk: { description: 知识文档, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeDocument' } } } }
     KnowledgeDocumentPageOk: { description: 分页知识文档, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeDocumentPage' } } } }
     KnowledgeVersionOk: { description: 知识版本, content: { application/json: { schema: { $ref: '#/components/schemas/KnowledgeVersion' } } } }
@@ -1441,6 +1672,50 @@ components:
               summary: 模拟数据：确定性解析失败，不自动重试
               value: { taskId: 44444444-4444-4444-8444-444444444444, resourceId: 33333333-3333-4333-8333-333333333333, status: FAILED, attempt: 1, maxAttempts: 3, error: { code: PDF_TEXT_LAYER_REQUIRED, message: 模拟数据：PDF 无可提取文本层, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:00:02Z', mockData: true }
     ParseTaskPageOk: { description: 分页解析任务, content: { application/json: { schema: { $ref: '#/components/schemas/ParseTaskPage' } } } }
+    ParsePreviewOk:
+      description: 解析预览摘要；警告最多聚合为 100 条
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ParsePreview' }
+          example:
+            versionId: 33333333-3333-4333-8333-333333333333
+            parseTaskId: 44444444-4444-4444-8444-444444444444
+            parseStatus: SUCCEEDED
+            parserVersion: mock-parser-v1
+            parseResultHash: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            parsedBlockCount: 2
+            chunkCount: 2
+            warnings: [{ code: TABLE_STRUCTURE_FLATTENED, message: 模拟数据：表格已转换为安全纯文本。, structurePath: section-1/table-1, occurrenceCount: 1 }]
+            chunkingRule: { version: mock-structure-first-v1, strategy: STRUCTURE_FIRST, maxTokens: 400, overlapTokens: 50 }
+            mockData: true
+    ParsedBlockPageOk:
+      description: 固定按 sequence ASC 返回的规范化文本块分页
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ParsedBlockPage' }
+          example:
+            items: [{ blockId: 45454545-4545-4454-8454-454545454545, sequence: 1, structurePath: section-1/paragraph-1, text: 模拟数据：检查组件版本和完整错误码。, contentHash: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb }]
+            page: { page: 1, size: 20, totalItems: 1, totalPages: 1, sortBy: sequence, sortDirection: ASC }
+    ChunkPreviewPageOk:
+      description: 固定按 sequence ASC 返回的结构化 Chunk 预览分页
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ChunkPreviewPage' }
+          example:
+            items: [{ chunkId: 66666666-6666-4666-8666-666666666666, sequence: 1, structurePath: section-1, text: 模拟数据：检查组件版本和完整错误码。, tokenCount: 12, contentHash: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc, chunkingRuleVersion: mock-structure-first-v1 }]
+            page: { page: 1, size: 20, totalItems: 1, totalPages: 1, sortBy: sequence, sortDirection: ASC }
+    ParsePreviewConflict:
+      description: 解析预览尚未就绪或当前解析任务已失败；TASK_FAILED 的 retryable 取决于任务的安全错误分类
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+          examples:
+            pending:
+              value: { code: PARSE_PREVIEW_NOT_READY, message: 解析预览尚未就绪, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: true, safeDetails: { taskId: 44444444-4444-4444-8444-444444444444, status: PENDING } }
+            running:
+              value: { code: PARSE_PREVIEW_NOT_READY, message: 解析预览尚未就绪, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: true, safeDetails: { taskId: 44444444-4444-4444-8444-444444444444, status: RUNNING } }
+            failed:
+              value: { code: TASK_FAILED, message: 解析任务失败, requestId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa, timestamp: '2026-07-15T08:00:00Z', fieldErrors: [], retryable: false, safeDetails: { taskId: 44444444-4444-4444-8444-444444444444, status: FAILED } }
     IndexTaskOk:
       description: 不可变双索引任务
       content:
