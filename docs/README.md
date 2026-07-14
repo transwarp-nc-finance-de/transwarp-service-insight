@@ -15,7 +15,7 @@
 
 ## DRAFT / ARCHIVED
 
-[API v2 候选契约](api/openapi-v2.yaml)、[v1→v2 映射](api/v1-v2-mapping.md)、[目标架构](architecture/target-architecture.md)、[离线知识流程](architecture/knowledge-ingestion-flow.md) 与 `architecture/drafts/` 中的材料均为未实现目标设计。API v2 文档只负责进入实现前的候选契约与兼容边界，人工批准前保持 `NOT_READY`；`archive/` 保存 Demo、旧计划、旧 API 草案、源文档和历史提示词，不作为当前入口。
+[API v2 候选契约](api/openapi-v2.yaml)与[v1→v2 映射](api/v1-v2-mapping.md)已于 2026-07-14 由用户以 API、产品、安全负责人身份批准进入实施，但仍是未实现 DRAFT；[目标架构](architecture/target-architecture.md)、[离线知识流程](architecture/knowledge-ingestion-flow.md) 与 `architecture/drafts/` 中的材料也均为未实现目标设计。`archive/` 保存 Demo、旧计划、旧 API 草案、源文档和历史提示词，不作为当前入口。
 
 ## 文档内容应该写在哪里
 
