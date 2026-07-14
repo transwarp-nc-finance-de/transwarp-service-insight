@@ -1,6 +1,6 @@
 # SLA 预诊助手一期 PRD
 
-Status: DRAFT
+Status: CONFIRMED
 Owner: 产品负责人
 Last reviewed: 2026-07-14
 Source of truth for: 一期本地完整纵向闭环的产品需求
@@ -17,7 +17,7 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 本文仅定义产品能力和边界，不包含后端代码、接口协议、数据库设计、真实 API 地址、真实 RAG 接入、真实大模型接入或真实 AIOps 实现。涉及 AIOps 的内容仅为后续对接的产品接口要求，不代表当前已经完成真实系统接入。
 
-当前状态：纯前端 Demo 已归档；技术 MVP 已实现 Vue、Spring Boot Mock API、页面内模拟多轮追问和本地 Compose。本文确认的本地知识治理、PostgreSQL/pgvector、RBAC、持久化反馈/审计与评估仍未实现。完整 v2 OpenAPI 尚未定义并人工确认，因此一期整体为 `NOT_READY`；真实知识、真实身份和外部集成都在一期范围外。
+当前状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`。纯前端 Demo 已归档；技术 MVP 已实现 Vue、Spring Boot Mock API、页面内模拟多轮追问和本地 Compose。本文确认的本地知识治理、PostgreSQL/pgvector、RBAC、持久化反馈/审计与评估仍未实现；真实知识、真实身份和外部集成都在一期范围外。
 
 ## 正文
 
@@ -277,11 +277,11 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 (6) 涉及示例时均标注为 `模拟数据`，不包含真实客户、真实日志、真实 SLA 或真实内部链接。
 
-### 13. 待确认事项
+### 13. 已确认状态与待确认事项
 
-(1) `OPEN QUESTION`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射；这是当前实现就绪的直接阻塞项。
+(1) `CONFIRMED`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射已获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`，但当前实现仍为 `v1 Mock`。
 
-(2) `OPEN QUESTION`：`PrecheckContext` 可选字段约束、稳定枚举、附件元数据 Schema；真实 AIOps 字段映射不属于一期。
+(2) `CONFIRMED`：`PrecheckContext` 可选字段约束、稳定枚举和附件元数据 Schema 已随 API v2 DRAFT 获人工批准；具体本地目录种子值清单仍为 `OPEN QUESTION`，真实 AIOps 字段映射不属于一期。
 
 (3) `EXTERNAL QUESTION`：默认 Embedding 模型及依赖许可证兼容性、本机资源实测和固定评估集表现；未通过前不得下载或启用模型制品。
 

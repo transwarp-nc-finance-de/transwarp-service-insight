@@ -1,23 +1,24 @@
 openapi: 3.0.3
 info:
-  title: Transwarp Service Insight API v2（DRAFT）
+  title: Transwarp Service Insight API v2（APPROVED_FOR_IMPLEMENTATION）
   version: 2.0.0-draft.1
   description: |
-    **DRAFT / 未实现 / READY_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
+    **DRAFT / 未实现 / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
     已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；该批准不代表
     Controller、Mapper、持久化、身份、检索、模型或外部系统已经实现。
     所有业务示例均为 `模拟数据`；只允许模拟、公开或脱敏数据。
 
-    v1 仍是唯一已实现契约。v2 不创建正式 SLA、工单、ticketId 或提交回执；
+    一期实施状态为 READY_FOR_IMPLEMENTATION；v1 Mock 仍是唯一当前实现。v2 不创建正式 SLA、工单、ticketId 或提交回执；
     智能输出仅供人工参考，必须保留依据、置信度、人工介入建议和待补充信息，
     且不得阻断人工继续提交。SLA 提交及内容始终由人工确认。
-  x-api-status: DRAFT
+  x-api-status: APPROVED_FOR_IMPLEMENTATION
   x-owner: API 负责人
   x-last-reviewed: '2026-07-14'
   x-source-of-truth-for: 未实现 API v2 候选 HTTP 契约
   x-implementation-status: NOT_IMPLEMENTED
-  x-readiness: READY_FOR_IMPLEMENTATION
-  x-approval-status: APPROVED
+  x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
+  x-approval-status: APPROVED_FOR_IMPLEMENTATION
+  x-current-implementation: V1_MOCK
   x-approved-on: '2026-07-14'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令

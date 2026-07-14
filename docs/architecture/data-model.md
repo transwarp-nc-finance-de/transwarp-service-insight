@@ -39,6 +39,6 @@ Source of truth for: 领域概念及未来持久化语义
 
 未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表已启用持久化。
 
-当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。本轮不修改 OpenAPI；兼容入口或 v2 方案须在实施前人工确认。
+当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
 
-当前 v1 也没有独立的有用性评价字段；一期目标接口需要表达该可选维度，但仍须服从上述兼容性人工确认。
+当前 v1 也没有独立的有用性评价字段且保持兼容；该可选维度已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
