@@ -10,6 +10,7 @@ Source of truth for: 当前技术 MVP 的用户可见实施增量
 
 ## 2026-07-15
 
+- Issue #16：交付 `mock-eval-v1` 的 30 条固定模拟案例、稳定身份/Evidence fixture manifest、JSON Schema、覆盖矩阵与规范化 SHA-256；新增独立 CI 校验和维护升级指南。本增量不实现 EvaluationRun 运行时、失败案例 Controller、指标或页面，也不变更 API v1。
 - Issue #16：确认固定评估集 `mock-eval-v1` 的最小样例结构、语言与场景覆盖，并在 API v2 DRAFT 契约中增加仅 `ADMIN` 可读的评估失败案例分页安全摘要。
 - 正常执行但未达到工程门禁的评估任务保持 `SUCCEEDED`，由 `gatePassed=false` 表示质量未通过；失败案例不得暴露输入正文、无权 Evidence 标识或摘录、宿主路径及内部推理。
 - Issue #16 仅批准契约与范围说明，相关 v2 operation 仍标记为 `NOT_IMPLEMENTED`；API v1 契约与 Mock 行为保持不变。

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:service-insight:evaluation:mock-eval-v1:dataset",
+  "title": "mock-eval-v1 固定模拟评估集 Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["datasetVersion", "owner", "mockData", "cases"],
+  "properties": {
+    "datasetVersion": {"const": "mock-eval-v1"},
+    "owner": {"type": "string", "minLength": 1},
+    "mockData": {"const": true},
+    "cases": {"type": "array", "minItems": 30, "items": {"$ref": "#/$defs/case"}}
+  },
+  "$defs": {
+    "nonEmptyUniqueStrings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "uniqueStrings": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runSequence", "descriptionPlainText"],
+      "properties": {
+        "runSequence": {"type": "integer", "minimum": 1, "maximum": 3},
+        "descriptionPlainText": {"type": "string", "minLength": 6, "pattern": "^模拟数据："}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "datasetVersion", "languageTags", "scenarioTags", "turns", "executionIdentityCode", "allowedProductLineCodes", "expectedEvidenceIds", "forbiddenEvidenceIds", "expectedRetrievalMode", "expectedDegradation", "expectedMissingFieldCodes", "mockData"],
+      "properties": {
+        "caseId": {"type": "string", "pattern": "^mock-eval-v1-[0-9]{3}$"},
+        "datasetVersion": {"const": "mock-eval-v1"},
+        "languageTags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["LANG_ZH", "LANG_EN", "LANG_MIXED"]}},
+        "scenarioTags": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "turns": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/turn"}},
+        "executionIdentityCode": {"type": "string", "minLength": 1},
+        "allowedProductLineCodes": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "expectedEvidenceIds": {"$ref": "#/$defs/uniqueStrings"},
+        "forbiddenEvidenceIds": {"$ref": "#/$defs/uniqueStrings"},
+        "expectedRetrievalMode": {"enum": ["HYBRID", "FTS_ONLY", "NONE"]},
+        "expectedDegradation": {"enum": ["NONE", "FTS_ONLY", "UNAVAILABLE"]},
+        "expectedMissingFieldCodes": {"$ref": "#/$defs/uniqueStrings"},
+        "mockData": {"const": true}
+      }
+    }
+  }
+}
