@@ -10,6 +10,9 @@ Source of truth for: 当前技术 MVP 的用户可见实施增量
 
 ## 2026-07-15
 
+- Issue #16：确认固定评估集 `mock-eval-v1` 的最小样例结构、语言与场景覆盖，并在 API v2 DRAFT 契约中增加仅 `ADMIN` 可读的评估失败案例分页安全摘要。
+- 正常执行但未达到工程门禁的评估任务保持 `SUCCEEDED`，由 `gatePassed=false` 表示质量未通过；失败案例不得暴露输入正文、无权 Evidence 标识或摘录、宿主路径及内部推理。
+- Issue #16 仅批准契约与范围说明，相关 v2 operation 仍标记为 `NOT_IMPLEMENTED`；API v1 契约与 Mock 行为保持不变。
 - Issue #21：新增本地模拟知识首次上传、不可变 Compose 文件 volume、PostgreSQL/Flyway 元数据、异步 ParseTask、Markdown/TXT/文本型 PDF 解析，以及解析摘要、Block、Chunk 分页预览。
 - API v2 仍为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；仅真实交付的 operation 标记为 `IMPLEMENTED`，未开始修订、审核、发布、检索或 Issue #23。
 - API v1 契约与 Mock 行为保持不变；未接入真实身份、生产数据库、真实知识源或外部系统。

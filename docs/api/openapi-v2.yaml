@@ -1,10 +1,11 @@
 openapi: 3.0.3
 info:
   title: Transwarp Service Insight API v2（DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION）
-  version: 2.0.0-draft.2
+  version: 2.0.0-draft.3
   description: |
     **DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
-    已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；该批准不代表
+    已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；固定评估集与
+    失败案例增量契约于 2026-07-15 获相同角色明确批准。该批准不代表
     整个 API v2 或一期目标已经实现。当前实现本地 AuthSession 与知识上传解析预览切片：
     `POST /api/v2/auth-sessions`、`GET /api/v2/auth-sessions/current` 和
     `DELETE /api/v2/auth-sessions/current`，以及知识文件上传、单个 ParseTask 查询和三个
@@ -23,7 +24,7 @@ info:
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
   x-approval-status: APPROVED_FOR_IMPLEMENTATION
   x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION_AND_KNOWLEDGE_INGESTION
-  x-approved-on: '2026-07-14'
+  x-approved-on: '2026-07-15'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令
   x-scope: PHASE_1_LOCAL_SIMULATION_ONLY
@@ -734,6 +735,31 @@ paths:
         '200': { $ref: '#/components/responses/EvaluationRunOk' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/SafeNotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /evaluation-runs/{taskId}/failures:
+    parameters: [{ $ref: '#/components/parameters/TaskId' }]
+    get:
+      tags: [EvaluationRun]
+      operationId: listEvaluationRunFailures
+      x-implementation-status: NOT_IMPLEMENTED
+      summary: 分页查询评估失败案例
+      description: |
+        仅 `ADMIN` 可读取。失败案例只提供定位所需的模拟案例 ID、场景标签、失败检查和
+        结构化期望/实际摘要；不得返回评估输入正文、无权 Evidence ID/摘录、宿主路径或内部推理。
+        对不存在、未完成或当前身份不可读取的运行使用安全错误表示，不泄露资源存在性。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { $ref: '#/components/parameters/SortDirection' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [caseId], default: caseId } }
+        - { name: failedCheck, in: query, schema: { $ref: '#/components/schemas/EvaluationCheck' } }
+      responses:
+        '200': { $ref: '#/components/responses/EvaluationFailurePageOk' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SafeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyOrStateConflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /metrics:
     get:
@@ -1504,14 +1530,61 @@ components:
     EvaluationSummary:
       type: object
       additionalProperties: false
-      required: [sampleCount, permissionLeakageRate, citationErrorRate, degradationPassRate, recallAt5, disclaimer]
+      required: [sampleCount, gatePassed, permissionLeakageRate, citationErrorRate, degradationPassRate, recallAt5, disclaimer]
       properties:
         sampleCount: { type: integer, minimum: 0 }
+        gatePassed:
+          type: boolean
+          description: 四项工程门禁的汇总结果；门禁不通过不改变已正常执行任务的 SUCCEEDED 状态。
         permissionLeakageRate: { type: number, minimum: 0, maximum: 1 }
         citationErrorRate: { type: number, minimum: 0, maximum: 1 }
         degradationPassRate: { type: number, minimum: 0, maximum: 1 }
         recallAt5: { type: number, minimum: 0, maximum: 1 }
         disclaimer: { type: string, enum: [小样本工程评估，不代表生产效果] }
+    EvaluationCheck:
+      type: string
+      enum: [PERMISSION_LEAKAGE, CITATION_ERROR, DEGRADATION_BEHAVIOR, RECALL_AT_5, EVIDENCE_EXPECTATION, MISSING_INFORMATION, RETRIEVAL_MODE]
+    EvaluationCaseSummary:
+      type: object
+      additionalProperties: false
+      required: [evidenceCount, productLineCodes, retrievalMode, degraded, missingFieldCodes]
+      properties:
+        evidenceCount: { type: integer, minimum: 0 }
+        productLineCodes: { type: array, uniqueItems: true, items: { type: string } }
+        retrievalMode: { type: string, enum: [HYBRID, FTS_ONLY, NONE] }
+        degraded: { type: boolean }
+        missingFieldCodes: { type: array, uniqueItems: true, items: { type: string } }
+    EvaluationActualSummary:
+      type: object
+      additionalProperties: false
+      required: [evidenceCount, productLineCodes, retrievalMode, degraded, missingFieldCodes, unauthorizedEvidenceCount, citationErrorCount]
+      properties:
+        evidenceCount: { type: integer, minimum: 0 }
+        productLineCodes: { type: array, uniqueItems: true, items: { type: string } }
+        retrievalMode: { type: string, enum: [HYBRID, FTS_ONLY, NONE] }
+        degraded: { type: boolean }
+        missingFieldCodes: { type: array, uniqueItems: true, items: { type: string } }
+        unauthorizedEvidenceCount: { type: integer, minimum: 0, description: 只返回数量，不返回无权 Evidence 标识或内容。 }
+        citationErrorCount: { type: integer, minimum: 0 }
+    EvaluationFailure:
+      type: object
+      additionalProperties: false
+      required: [caseId, scenarioTags, failedChecks, failureCodes, expected, actual, mockData]
+      properties:
+        caseId: { type: string, minLength: 1, maxLength: 100, description: 固定评估集内稳定、非敏感的模拟案例标识。 }
+        scenarioTags: { type: array, minItems: 1, uniqueItems: true, items: { type: string, maxLength: 64 } }
+        failedChecks: { type: array, minItems: 1, uniqueItems: true, items: { $ref: '#/components/schemas/EvaluationCheck' } }
+        failureCodes: { type: array, minItems: 1, uniqueItems: true, items: { type: string, maxLength: 100 } }
+        expected: { $ref: '#/components/schemas/EvaluationCaseSummary' }
+        actual: { $ref: '#/components/schemas/EvaluationActualSummary' }
+        mockData: { type: boolean, enum: [true] }
+    EvaluationFailurePage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/EvaluationFailure' } }
+        page: { $ref: '#/components/schemas/PageMetadata' }
     EvaluationRun:
       allOf:
         - { $ref: '#/components/schemas/TaskBase' }
@@ -1876,11 +1949,12 @@ components:
           examples:
             succeeded:
               summary: 模拟数据：固定评估集运行成功
-              value: { taskId: dddddddd-dddd-4ddd-8ddd-dddddddddddd, resourceId: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee, status: SUCCEEDED, attempt: 1, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, evaluationSetVersion: mock-eval-v1, summary: { sampleCount: 30, permissionLeakageRate: 0, citationErrorRate: 0, degradationPassRate: 1, recallAt5: 0.83, disclaimer: 小样本工程评估，不代表生产效果 } }
+              value: { taskId: dddddddd-dddd-4ddd-8ddd-dddddddddddd, resourceId: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee, status: SUCCEEDED, attempt: 1, maxAttempts: 3, error: null, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, evaluationSetVersion: mock-eval-v1, summary: { sampleCount: 30, gatePassed: true, permissionLeakageRate: 0, citationErrorRate: 0, degradationPassRate: 1, recallAt5: 0.83, disclaimer: 小样本工程评估，不代表生产效果 } }
             failed:
               summary: 模拟数据：评估任务异步失败
               value: { taskId: dddddddd-dddd-4ddd-8ddd-dddddddddddd, resourceId: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee, status: FAILED, attempt: 3, maxAttempts: 3, error: { code: EVALUATION_RESOURCE_UNAVAILABLE, message: 模拟数据：评估资源暂时不可用且重试耗尽, retryable: false }, nextRetryAt: null, createdAt: '2026-07-14T08:00:00Z', startedAt: '2026-07-14T08:00:01Z', completedAt: '2026-07-14T08:01:00Z', mockData: true, evaluationSetVersion: mock-eval-v1, summary: null }
     EvaluationRunPageOk: { description: 分页评估运行, content: { application/json: { schema: { $ref: '#/components/schemas/EvaluationRunPage' } } } }
+    EvaluationFailurePageOk: { description: 分页评估失败案例安全摘要, content: { application/json: { schema: { $ref: '#/components/schemas/EvaluationFailurePage' } } } }
     AuditEventOk: { description: 结构化审计事件, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEvent' }, example: { eventId: cccccccc-cccc-4ccc-8ccc-cccccccccccc, actorUserCode: mock-reviewer, action: KNOWLEDGE_VERSION_APPROVED, subjectType: KnowledgeVersion, subjectId: 33333333-3333-4333-8333-333333333333, outcome: SUCCEEDED, metadata: { policyVersion: mock-policy-v1, mockData: true }, occurredAt: '2026-07-14T08:10:00Z', mockData: true } } } }
     AuditEventPageOk: { description: 分页审计事件, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEventPage' } } } }
     CompletenessPolicyOk: { description: 只读完整度策略, content: { application/json: { schema: { $ref: '#/components/schemas/CompletenessPolicy' }, example: { policyVersion: mock-completeness-v1, issueType: { code: FUNCTIONAL_FAILURE, displayName: 功能故障（模拟数据） }, generalFieldCodes: [PRODUCT, COMPONENT, VERSION, SEVERITY, IMPACT_SCOPE, OCCURRED_AT], issueSpecificFieldCodes: [ERROR_MESSAGE, REPRODUCTION_STEPS, RECENT_CHANGES], createdAt: '2026-07-14T08:00:00Z', mockData: true } } } }
