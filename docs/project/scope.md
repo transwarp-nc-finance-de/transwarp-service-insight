@@ -2,15 +2,15 @@
 
 状态：ACTIVE，Last reviewed: 2026-07-15。当前实现与一期目标必须分开解读。
 
-统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession 基础切片。
+统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession 与知识上传解析预览切片。
 
 当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、本地模拟身份 UI、Compose PostgreSQL、OpenAPI 和 CI。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
 
 前端 `/sandbox` 是 Mock AIOps，仅用于本地开发、联调、演示和自动化测试；`/embed` 是不复制 SLA 表单的嵌入式预诊面板。用户始终可忽略建议并由 AIOps 继续原有提交，反馈失败不影响提交。
 
-后端 v1 预诊继续使用应用层工作流、细粒度 Port/Mock Adapter 和进程内 Session Repository。v2 AuthSession 使用 `IdentityContextPort`、Flyway 和本地 PostgreSQL 保存四个版本化模拟身份、目录与服务端会话。初次预诊创建 Run 1，追问在同一 Session 中递增 Run。所有输入只允许模拟、公开或脱敏信息，不保存附件内容或真实敏感正文。
+后端 v1 预诊继续使用应用层工作流、细粒度 Port/Mock Adapter 和进程内 Session Repository。v2 AuthSession 使用 `IdentityContextPort`、Flyway 和本地 PostgreSQL 保存四个版本化模拟身份、目录与服务端会话；知识切片将模拟原始文件保存于 Compose volume，并将文档、草稿版本、ParseTask 与解析预览保存于本地 PostgreSQL。初次预诊创建 Run 1，追问在同一 Session 中递增 Run。所有输入只允许模拟、公开或脱敏信息，不保存附件内容或真实敏感正文。
 
-当前未接真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、知识导入、RAG、LLM、多 Agent、真实 Wiki/历史 SLA 或真实 SLA 创建接口。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
+当前未接真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、真实知识源、知识审核发布、RAG、LLM、多 Agent、真实 Wiki/历史 SLA 或真实 SLA 创建接口。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
 
 能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
@@ -53,7 +53,8 @@
 - 模拟继续提交保存用户、时间、Session、幂等键和可选原因，不生成 `ticketId` 或模拟工单。`hostTicketId` 仅作为二期 DRAFT 关联概念，待 AIOps 返回真实标识。
 - 审计只保存结构化元数据与稳定引用 ID，包括主体、Session/Run、动作、状态、策略/规则/Embedding/索引版本、Evidence ID、反馈、继续提交、错误和降级，不复制业务正文。正文只能经原领域对象重新授权读取。
 - 一期提供最小管理员评估页，可手动运行固定评估集并查看历史结果摘要和失败案例；评估运行与结果持久化。不建设实时运营大屏、A/B、告警或复杂趋势分析。
-- 一期固定评估集不少于 30 条 `模拟数据` 策划样例，覆盖精确词、语义改写、证据不足、权限隔离、Embedding 降级、多轮补充和引用核验。每条保存期望 Evidence、允许范围及预期降级或待补充信息；结果标注“小样本工程评估，不代表生产效果”。
+- 一期固定评估集版本为 `mock-eval-v1`，不少于 30 条 `模拟数据` 策划样例，覆盖中文、英文、中英混合与中英文资料互检，以及精确词、语义改写、证据不足、权限隔离、Embedding 降级、多轮补充和引用核验。每条使用稳定 `caseId`，保存语言/场景标签、Precheck 输入、期望 Evidence ID、允许产品线范围、预期检索模式、降级状态及待补充字段；结果标注“小样本工程评估，不代表生产效果”。
+- 评估失败案例仅由 `ADMIN` 分页读取，公共表示只包含稳定模拟案例 ID、场景标签、失败检查/失败码及结构化期望与实际摘要；不得返回评估输入正文、无权 Evidence ID/摘录、宿主路径或内部推理。正常执行但工程门禁未通过的评估任务状态仍为 `SUCCEEDED`，由独立 `gatePassed=false` 表示未通过。
 - 最小管理员评估页同时展示预诊次数、成功/降级率、平均 Run 数、信息补充率、引用命中率、采纳率、继续提交率及检索/Embedding 延迟的聚合摘要；不读取正文、不自动判责，也不设业务收益硬门槛。
 - 版本化本地评估集的验收门槛为：权限泄漏率 0%、引用错误率 0%、降级场景通过率 100%、Recall@5 不低于 80%。这些是小样本工程门禁，不构成生产 SLA、业务收益或模型效果承诺。
 - 一期不引入 Reranker 或 Query Rewrite；全文与向量在过滤后各召回前 20 条，使用 RRF 及固定 `k=60` 融合并返回前 5 条，同分时按知识版本 ID、Chunk ID 稳定排序。参数和规则版本受控、可审计，可由固定评估集驱动调整，但不提供运行时调参页面。
@@ -75,7 +76,7 @@
 - `sourceSystem + hostRequestId` 作为一期真实幂等键：相同规范化上下文重试返回原 Session/Run，同键不同上下文返回安全冲突并审计，不静默覆盖；新的 `hostRequestId` 可主动重新预诊。
 - 当前 `/api/v1` 字段、语义与行为保持不变；重定义后的一期 Context、知识治理、独立反馈/继续提交、引用和评估能力使用 `/api/v2`。新旧 DTO 通过 Mapper 进入应用用例，领域模型不依赖 HTTP 版本。本轮不修改 OpenAPI。
 - 一期冻结以下 v2 资源组职责与路径前缀：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。具体方法、Schema、错误码与分页已通过 DRAFT 契约评审；API v2 为 `APPROVED_FOR_IMPLEMENTATION`，但本轮不承诺完整 CRUD 已实现。
-- v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射，并于 2026-07-14 获人工批准；契约状态为 `APPROVED_FOR_IMPLEMENTATION`，一期实施状态为 `READY_FOR_IMPLEMENTATION`。当前只实现三个 AuthSession 路径，其余 v2 仍未实现；`docs/api/openapi.yaml` 的 v1 字段、状态码和无认证 Mock 行为保持不变。
+- v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射，并已获人工批准；契约整体仍为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`。当前实现三个 AuthSession operation、知识首次上传、单 ParseTask 查询和三个 parse-preview 读取 operation；其他 v2 operation 仍未实现。`docs/api/openapi.yaml` 的 v1 字段、状态码和无认证 Mock 行为保持不变。
 - 一期本地完整纵向闭环以“模拟继续提交已记录，反馈和审计已持久化，固定评估集可产出最小质量评估结果”为验收终点。
 - 最小评估用于证明检索、引用、权限与降级行为，不要求建设完整运营后台。
 - 一期闭环不以生成或保存模拟 SLA 单据、工单草稿或提交回执为验收内容；Service Insight 仍不创建正式 SLA。

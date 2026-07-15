@@ -2,6 +2,12 @@ import { onMounted, ref } from 'vue'
 import { createAuthSession, deleteCurrentAuthSession, getCurrentAuthSession } from './api'
 import { AuthApiError, type AuthSession } from './types'
 
+let sharedCsrfToken = ''
+
+export function readCsrfToken() {
+  return sharedCsrfToken
+}
+
 export function useAuthSession() {
   const session = ref<AuthSession>()
   const csrfToken = ref('')
@@ -45,11 +51,13 @@ export function useAuthSession() {
   function accept(result: { session: AuthSession; csrfToken: string }) {
     session.value = result.session
     csrfToken.value = result.csrfToken
+    sharedCsrfToken = result.csrfToken
   }
 
   function clear() {
     session.value = undefined
     csrfToken.value = ''
+    sharedCsrfToken = ''
   }
 
   function setError(cause: unknown) {

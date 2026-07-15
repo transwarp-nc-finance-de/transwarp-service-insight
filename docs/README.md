@@ -2,7 +2,7 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
-当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession/PostgreSQL 基础切片，其余 v2 与一期目标能力仍未实现。
+当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession 与知识上传解析预览切片，其余 v2 与一期目标能力仍未实现。
 
 首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
 
@@ -11,14 +11,14 @@
 - 项目：[范围](project/scope.md)、[Backlog](project/backlog.md)、[重构审计](project/refactoring-audit.md)、[路线图](project/roadmap.md)、[待确认问题](project/open-questions.md)
 - 产品：[PRD](product/prd.md)、[用户流程](product/user-flow.md)、[角色权限](product/roles-and-permissions.md)、[指标](product/metrics.md)、[验收标准](product/acceptance-criteria.md)
 - 架构：[导航](architecture/overview.md)、[当前架构](architecture/current-architecture.md)、[模块边界](architecture/module-boundaries.md)、[在线流程](architecture/online-precheck-flow.md)、[安全边界](architecture/security-boundaries.md)、[数据模型](architecture/data-model.md)、[决策记录](architecture/decisions.md)、[ADR-0005 混合检索](architecture/decisions/ADR-0005-hybrid-retrieval.md)、[ADR-0006 API v2 演进](architecture/decisions/ADR-0006-v2-api-evolution.md)
-- 开发：[M2 安装部署](../README.md)、[本地开发](development/local-development.md)、[测试策略](development/test-strategy.md)
+- 开发：[M2 安装部署](../README.md)、[本地开发](development/local-development.md)、[测试策略](development/test-strategy.md)、[变更记录](development/changelog.md)
 - Agent 协作：[Issue Tracker](agents/issue-tracker.md)、[Triage 标签](agents/triage-labels.md)、[领域文档消费规则](agents/domain.md)
 - 运维治理：[可观测性](operations/observability.md)、[数据保留与删除](operations/data-retention.md)
 - 接口：[OpenAPI](api/openapi.yaml)
 
 ## DRAFT / ARCHIVED
 
-[API v2 候选契约](api/openapi-v2.yaml)与[v1→v2 映射](api/v1-v2-mapping.md)已于 2026-07-14 由用户以 API、产品、安全负责人身份批准进入实施，状态为 `APPROVED_FOR_IMPLEMENTATION`，但仍是未实现 DRAFT；[目标架构](architecture/target-architecture.md)、[离线知识流程](architecture/knowledge-ingestion-flow.md) 与 `architecture/drafts/` 中的材料也均为未实现目标设计。`archive/` 保存 Demo、旧计划、旧 API 草案、源文档和历史提示词，不作为当前入口。
+[API v2 候选契约](api/openapi-v2.yaml)与[v1→v2 映射](api/v1-v2-mapping.md)已获准实施，整体仍为 DRAFT / PARTIALLY_IMPLEMENTED；仅 operation 级 `IMPLEMENTED` 条目可视为运行时存在。[目标架构](architecture/target-architecture.md)与 `architecture/drafts/` 中未明确实施的材料仍是目标设计。`archive/` 保存历史材料，不作为当前入口。
 
 ## 文档内容应该写在哪里
 

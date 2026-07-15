@@ -7,5 +7,7 @@ spring:
     locations: classpath:db/migration
 
 app:
+  knowledge:
+    storage-path: ${KNOWLEDGE_STORAGE_PATH:${java.io.tmpdir}/service-insight-knowledge}
   identity:
     session-ttl: PT8H

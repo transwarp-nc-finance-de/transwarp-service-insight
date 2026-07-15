@@ -34,6 +34,9 @@ services:
       DB_NAME: service_insight
       DB_USER: service_insight
       DB_PASSWORD: service_insight_local
+      KNOWLEDGE_STORAGE_PATH: /var/lib/service-insight/knowledge
+    volumes:
+      - knowledge-files:/var/lib/service-insight/knowledge
     networks: [app]
 
   frontend:
@@ -51,3 +54,4 @@ networks:
 
 volumes:
   postgres-data:
+  knowledge-files:
