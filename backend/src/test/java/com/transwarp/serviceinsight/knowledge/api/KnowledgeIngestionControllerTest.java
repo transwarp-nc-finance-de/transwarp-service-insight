@@ -8,6 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -173,6 +180,88 @@ class KnowledgeIngestionControllerTest {
         .andExpect(jsonPath("$.items[0].sequence").value(1))
         .andExpect(jsonPath("$.items[0].tokenCount").isNumber())
         .andExpect(jsonPath("$.page.sortDirection").value("ASC"));
+    mockMvc
+        .perform(
+            get("/api/v2/knowledge-versions/{versionId}/parse-preview/blocks", versionId)
+                .param("page", "0")
+                .param("size", "101")
+                .cookie(login.getResponse().getCookie("SESSION")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+  }
+
+  @Test
+  void uploadsAndParsesTxtAndTextLayerPdf() throws Exception {
+    var login = login("mock-knowledge-editor");
+    var cases =
+        List.of(
+            new UploadCase(
+                "txt",
+                new MockMultipartFile(
+                    "file", "guide.txt", "text/plain", "模拟数据：TXT 解析正文。".getBytes()),
+                "text-structure-v1"),
+            new UploadCase(
+                "pdf",
+                new MockMultipartFile(
+                    "file", "guide.pdf", "application/pdf", pdfWithText("Mock data PDF content")),
+                "pdf-text-v1"));
+
+    for (var uploadCase : cases) {
+      var upload =
+          mockMvc
+              .perform(
+                  multipart("/api/v2/knowledge-documents")
+                      .file(metadata("Format " + uploadCase.name() + "（模拟数据）", "TDH"))
+                      .file(uploadCase.file())
+                      .cookie(login.getResponse().getCookie("SESSION"))
+                      .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                      .header("Idempotency-Key", "format-" + uploadCase.name() + "-001"))
+              .andExpect(status().isCreated())
+              .andReturn();
+      var response = objectMapper.readTree(upload.getResponse().getContentAsByteArray());
+      var taskId = response.at("/parseTask/taskId").asText();
+      var versionId = response.at("/version/versionId").asText();
+      awaitSucceeded(login, taskId);
+
+      mockMvc
+          .perform(
+              get("/api/v2/knowledge-versions/{versionId}/parse-preview", versionId)
+                  .cookie(login.getResponse().getCookie("SESSION")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.parserVersion").value(uploadCase.parserVersion()))
+          .andExpect(jsonPath("$.mockData").value(true));
+    }
+  }
+
+  @Test
+  void exposesDeterministicFailureForPdfWithoutTextLayer() throws Exception {
+    var login = login("mock-knowledge-editor");
+    var upload =
+        mockMvc
+            .perform(
+                multipart("/api/v2/knowledge-documents")
+                    .file(metadata("Blank PDF（模拟数据）", "TDH"))
+                    .file(new MockMultipartFile("file", "blank.pdf", "application/pdf", blankPdf()))
+                    .cookie(login.getResponse().getCookie("SESSION"))
+                    .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                    .header("Idempotency-Key", "blank-pdf-001"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    var response = objectMapper.readTree(upload.getResponse().getContentAsByteArray());
+    var taskId = response.at("/parseTask/taskId").asText();
+    var versionId = response.at("/version/versionId").asText();
+
+    awaitTaskStatus(login, taskId, "FAILED")
+        .andExpect(jsonPath("$.attempt").value(1))
+        .andExpect(jsonPath("$.error.code").value("PDF_TEXT_LAYER_REQUIRED"))
+        .andExpect(jsonPath("$.error.retryable").value(false));
+    mockMvc
+        .perform(
+            get("/api/v2/knowledge-versions/{versionId}/parse-preview", versionId)
+                .cookie(login.getResponse().getCookie("SESSION")))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TASK_FAILED"))
+        .andExpect(jsonPath("$.retryable").value(false));
   }
 
   @Test
@@ -308,23 +397,52 @@ class KnowledgeIngestionControllerTest {
   }
 
   private void awaitSucceeded(MvcResult login, String taskId) throws Exception {
+    awaitTaskStatus(login, taskId, "SUCCEEDED");
+  }
+
+  private org.springframework.test.web.servlet.ResultActions awaitTaskStatus(
+      MvcResult login, String taskId, String expectedStatus) throws Exception {
     for (int attempt = 0; attempt < 40; attempt++) {
-      var task =
+      var taskAction =
           mockMvc
               .perform(
                   get("/api/v2/parse-tasks/{taskId}", taskId)
                       .cookie(login.getResponse().getCookie("SESSION")))
-              .andExpect(status().isOk())
-              .andReturn();
-      if ("SUCCEEDED"
-          .equals(
-              objectMapper
-                  .readTree(task.getResponse().getContentAsByteArray())
-                  .path("status")
-                  .asText())) return;
+              .andExpect(status().isOk());
+      if (expectedStatus.equals(
+          objectMapper
+              .readTree(taskAction.andReturn().getResponse().getContentAsByteArray())
+              .path("status")
+              .asText())) return taskAction;
       Thread.sleep(50);
     }
-    throw new AssertionError("Parse task did not complete in the test window");
+    throw new AssertionError("Parse task did not reach " + expectedStatus + " in the test window");
+  }
+
+  private byte[] pdfWithText(String text) throws Exception {
+    try (var document = new PDDocument();
+        var output = new ByteArrayOutputStream()) {
+      var page = new PDPage();
+      document.addPage(page);
+      try (var content = new PDPageContentStream(document, page)) {
+        content.beginText();
+        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        content.newLineAtOffset(72, 720);
+        content.showText(text);
+        content.endText();
+      }
+      document.save(output);
+      return output.toByteArray();
+    }
+  }
+
+  private byte[] blankPdf() throws Exception {
+    try (var document = new PDDocument();
+        var output = new ByteArrayOutputStream()) {
+      document.addPage(new PDPage());
+      document.save(output);
+      return output.toByteArray();
+    }
   }
 
   private MvcResult login(String userCode) throws Exception {
@@ -336,4 +454,6 @@ class KnowledgeIngestionControllerTest {
         .andExpect(status().isCreated())
         .andReturn();
   }
+
+  private record UploadCase(String name, MockMultipartFile file, String parserVersion) {}
 }

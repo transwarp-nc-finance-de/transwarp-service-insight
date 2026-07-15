@@ -8,9 +8,11 @@ import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestio
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParseTask;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParsedBlockPage;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParsedDocument;
+import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.RecoveryTask;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.TaskInput;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.UploadAggregate;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +26,8 @@ public interface KnowledgeIngestionRepository {
   Optional<ParseTask> findVisibleTaskByVersion(UUID versionId, IdentityContext identity);
 
   Optional<ParsePreview> findPreview(UUID versionId, IdentityContext identity);
+
+  List<RecoveryTask> recoverIncompleteTasks(Instant recoveredAt);
 
   ParsedBlockPage findBlocks(UUID versionId, int page, int size);
 

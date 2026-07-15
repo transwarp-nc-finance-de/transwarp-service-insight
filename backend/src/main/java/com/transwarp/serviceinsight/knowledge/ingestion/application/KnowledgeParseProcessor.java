@@ -7,11 +7,14 @@ import com.transwarp.serviceinsight.knowledge.ingestion.domain.ParseAttemptPolic
 import com.transwarp.serviceinsight.knowledge.ingestion.port.KnowledgeIngestionRepository;
 import com.transwarp.serviceinsight.knowledge.ingestion.port.OriginalFileStorage;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,13 +45,36 @@ public class KnowledgeParseProcessor {
     executor.execute(() -> process(taskId));
   }
 
+  @EventListener(ApplicationReadyEvent.class)
+  public void recoverIncompleteTasks() {
+    var recoveredAt = clock.instant();
+    repository
+        .recoverIncompleteTasks(recoveredAt)
+        .forEach(task -> scheduleRecovered(task, recoveredAt));
+  }
+
+  private void scheduleRecovered(
+      com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.RecoveryTask
+          task,
+      java.time.Instant recoveredAt) {
+    var delay = Duration.between(recoveredAt, task.nextRetryAt());
+    if (delay.isNegative() || delay.isZero()) {
+      enqueue(task.taskId());
+      return;
+    }
+    CompletableFuture.delayedExecutor(delay.toMillis(), TimeUnit.MILLISECONDS, executor)
+        .execute(() -> process(task.taskId()));
+  }
+
   private void process(UUID taskId) {
     var input = repository.claimPendingTask(taskId, clock.instant());
     if (input.isEmpty()) return;
     try {
       var bytes = storage.read(input.get().storageKey());
       repository.completeTask(
-          input.get(), parser.parse(bytes, input.get().mediaType()), clock.instant());
+          input.get(),
+          parser.parse(bytes, input.get().mediaType(), input.get().taskId()),
+          clock.instant());
     } catch (ParseFailure failure) {
       handleFailure(input.get(), failure.code(), failure.getMessage(), failure.retryable());
     } catch (Exception failure) {
@@ -67,9 +93,10 @@ public class KnowledgeParseProcessor {
       String message,
       boolean retryable) {
     if (attemptPolicy.action(retryable, input.attempt(), input.maxAttempts()) == Action.RETRY) {
-      var nextRetryAt = clock.instant().plusMillis(100);
+      var delay = attemptPolicy.retryDelay(input.attempt());
+      var nextRetryAt = clock.instant().plus(delay);
       repository.scheduleRetry(input, code, message, nextRetryAt);
-      CompletableFuture.delayedExecutor(100, TimeUnit.MILLISECONDS, executor)
+      CompletableFuture.delayedExecutor(delay.toMillis(), TimeUnit.MILLISECONDS, executor)
           .execute(() -> process(input.taskId()));
       return;
     }

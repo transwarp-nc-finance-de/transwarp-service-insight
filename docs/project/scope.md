@@ -12,7 +12,7 @@
 
 当前未接真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、真实知识源、知识审核发布、RAG、LLM、多 Agent、真实 Wiki/历史 SLA 或真实 SLA 创建接口。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
 
-能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
+能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion 首次上传与解析预览切片 `IMPLEMENTED`；审核发布、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
 ## 一期范围重定义访谈（2026-07-13）
 
@@ -53,8 +53,7 @@
 - 模拟继续提交保存用户、时间、Session、幂等键和可选原因，不生成 `ticketId` 或模拟工单。`hostTicketId` 仅作为二期 DRAFT 关联概念，待 AIOps 返回真实标识。
 - 审计只保存结构化元数据与稳定引用 ID，包括主体、Session/Run、动作、状态、策略/规则/Embedding/索引版本、Evidence ID、反馈、继续提交、错误和降级，不复制业务正文。正文只能经原领域对象重新授权读取。
 - 一期提供最小管理员评估页，可手动运行固定评估集并查看历史结果摘要和失败案例；评估运行与结果持久化。不建设实时运营大屏、A/B、告警或复杂趋势分析。
-- 一期固定评估集版本为 `mock-eval-v1`，不少于 30 条 `模拟数据` 策划样例，覆盖中文、英文、中英混合与中英文资料互检，以及精确词、语义改写、证据不足、权限隔离、Embedding 降级、多轮补充和引用核验。每条使用稳定 `caseId`，保存语言/场景标签、Precheck 输入、期望 Evidence ID、允许产品线范围、预期检索模式、降级状态及待补充字段；结果标注“小样本工程评估，不代表生产效果”。
-- 评估失败案例仅由 `ADMIN` 分页读取，公共表示只包含稳定模拟案例 ID、场景标签、失败检查/失败码及结构化期望与实际摘要；不得返回评估输入正文、无权 Evidence ID/摘录、宿主路径或内部推理。正常执行但工程门禁未通过的评估任务状态仍为 `SUCCEEDED`，由独立 `gatePassed=false` 表示未通过。
+- 一期固定评估集不少于 30 条 `模拟数据` 策划样例，覆盖精确词、语义改写、证据不足、权限隔离、Embedding 降级、多轮补充和引用核验。每条保存期望 Evidence、允许范围及预期降级或待补充信息；结果标注“小样本工程评估，不代表生产效果”。
 - 最小管理员评估页同时展示预诊次数、成功/降级率、平均 Run 数、信息补充率、引用命中率、采纳率、继续提交率及检索/Embedding 延迟的聚合摘要；不读取正文、不自动判责，也不设业务收益硬门槛。
 - 版本化本地评估集的验收门槛为：权限泄漏率 0%、引用错误率 0%、降级场景通过率 100%、Recall@5 不低于 80%。这些是小样本工程门禁，不构成生产 SLA、业务收益或模型效果承诺。
 - 一期不引入 Reranker 或 Query Rewrite；全文与向量在过滤后各召回前 20 条，使用 RRF 及固定 `k=60` 融合并返回前 5 条，同分时按知识版本 ID、Chunk ID 稳定排序。参数和规则版本受控、可审计，可由固定评估集驱动调整，但不提供运行时调参页面。

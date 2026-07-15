@@ -1,10 +1,8 @@
 package com.transwarp.serviceinsight.knowledge.ingestion.api;
 
 import com.transwarp.serviceinsight.knowledge.ingestion.application.ParsePreviewQueryService;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,8 +19,10 @@ public class ParsePreviewController {
   }
 
   @GetMapping
-  public Object summary(@PathVariable UUID versionId, HttpServletRequest request) {
-    return service.summary(cookie(request), versionId);
+  public Object summary(
+      @PathVariable UUID versionId,
+      @CookieValue(name = "SESSION", required = false) String sessionCookie) {
+    return service.summary(sessionCookie, versionId);
   }
 
   @GetMapping("/blocks")
@@ -30,8 +30,8 @@ public class ParsePreviewController {
       @PathVariable UUID versionId,
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "20") int size,
-      HttpServletRequest request) {
-    return service.blocks(cookie(request), versionId, page, size);
+      @CookieValue(name = "SESSION", required = false) String sessionCookie) {
+    return service.blocks(sessionCookie, versionId, page, size);
   }
 
   @GetMapping("/chunks")
@@ -39,16 +39,7 @@ public class ParsePreviewController {
       @PathVariable UUID versionId,
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "20") int size,
-      HttpServletRequest request) {
-    return service.chunks(cookie(request), versionId, page, size);
-  }
-
-  private String cookie(HttpServletRequest request) {
-    if (request.getCookies() == null) return null;
-    return Arrays.stream(request.getCookies())
-        .filter(value -> "SESSION".equals(value.getName()))
-        .map(Cookie::getValue)
-        .findFirst()
-        .orElse(null);
+      @CookieValue(name = "SESSION", required = false) String sessionCookie) {
+    return service.chunks(sessionCookie, versionId, page, size);
   }
 }

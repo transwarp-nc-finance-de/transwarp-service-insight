@@ -16,6 +16,7 @@ import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestio
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParsedBlock;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParsedBlockPage;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.ParsedDocument;
+import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.RecoveryTask;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.TaskError;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.TaskInput;
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.KnowledgeIngestionModels.UploadAggregate;
@@ -25,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -135,7 +137,7 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
             JOIN knowledge_version_v2 v ON v.version_id = t.resource_id
             JOIN knowledge_document d ON d.document_id = v.document_id
             WHERE v.version_id = ? AND d.product_line_code IN (%s)
-              AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'SUPERSEDED')))
+              AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'DEPRECATED')))
             """
                 .formatted(placeholders(identity.productLineCodes().size())),
             (resultSet, rowNumber) -> task(resultSet),
@@ -153,7 +155,7 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
             JOIN knowledge_version_v2 v ON v.version_id = r.version_id
             JOIN knowledge_document d ON d.document_id = v.document_id
             WHERE r.version_id = ? AND d.product_line_code IN (%s)
-              AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'SUPERSEDED')))
+              AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'DEPRECATED')))
             """
                 .formatted(placeholders(identity.productLineCodes().size())),
             (resultSet, rowNumber) ->
@@ -171,6 +173,24 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
                     true),
             previewParameters(versionId, identity));
     return previews.stream().findFirst();
+  }
+
+  @Override
+  @Transactional
+  public List<RecoveryTask> recoverIncompleteTasks(Instant recoveredAt) {
+    jdbc.update(
+        "UPDATE parse_task SET status = 'FAILED', error_code = 'PARSER_RESTART_ATTEMPTS_EXHAUSTED', error_message = 'Parsing was interrupted after the final attempt.', error_retryable = FALSE, next_retry_at = NULL, completed_at = ? WHERE status = 'RUNNING' AND attempt >= max_attempts",
+        Timestamp.from(recoveredAt));
+    jdbc.update(
+        "UPDATE parse_task SET status = 'PENDING', error_code = 'PARSER_INTERRUPTED', error_message = 'Parsing was interrupted and will be retried.', error_retryable = TRUE, next_retry_at = ? WHERE status = 'RUNNING' AND attempt < max_attempts",
+        Timestamp.from(recoveredAt));
+    return jdbc.query(
+        "SELECT task_id, COALESCE(next_retry_at, ?) AS effective_retry_at FROM parse_task WHERE status = 'PENDING' AND attempt < max_attempts ORDER BY created_at, task_id",
+        (resultSet, rowNumber) ->
+            new RecoveryTask(
+                resultSet.getObject("task_id", UUID.class),
+                resultSet.getTimestamp("effective_retry_at").toInstant()),
+        Timestamp.from(recoveredAt));
   }
 
   @Override
@@ -224,9 +244,10 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
   public Optional<TaskInput> claimPendingTask(UUID taskId, Instant startedAt) {
     var updated =
         jdbc.update(
-            "UPDATE parse_task SET status = 'RUNNING', attempt = attempt + 1, started_at = ?, next_retry_at = NULL WHERE task_id = ? AND status = 'PENDING' AND attempt < max_attempts",
+            "UPDATE parse_task SET status = 'RUNNING', attempt = attempt + 1, started_at = ?, next_retry_at = NULL WHERE task_id = ? AND status = 'PENDING' AND attempt < max_attempts AND (next_retry_at IS NULL OR next_retry_at <= ?)",
             Timestamp.from(startedAt),
-            taskId);
+            taskId,
+            Timestamp.from(startedAt));
     if (updated == 0) return Optional.empty();
     return jdbc
         .query(

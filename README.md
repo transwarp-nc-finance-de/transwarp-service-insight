@@ -265,7 +265,7 @@ cd backend
 
 macOS/Linux 将 `.\mvnw.cmd` 替换为 `./mvnw`。
 
-前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和整体仍为 DRAFT 的 v2；当前仅 v2 AuthSession 切片已实现）：
+前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和整体仍为 DRAFT 的 v2；当前已实现 v2 AuthSession 与知识上传解析预览切片）：
 
 ```powershell
 cd frontend

@@ -3,6 +3,7 @@ package com.transwarp.serviceinsight.knowledge.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.transwarp.serviceinsight.knowledge.ingestion.domain.ParseAttemptPolicy;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 class ParseAttemptPolicyTest {
@@ -14,5 +15,8 @@ class ParseAttemptPolicyTest {
     assertThat(policy.action(true, 2, 3)).isEqualTo(ParseAttemptPolicy.Action.RETRY);
     assertThat(policy.action(true, 3, 3)).isEqualTo(ParseAttemptPolicy.Action.FAIL);
     assertThat(policy.action(false, 1, 3)).isEqualTo(ParseAttemptPolicy.Action.FAIL);
+    assertThat(policy.retryDelay(1)).isEqualTo(Duration.ofMillis(100));
+    assertThat(policy.retryDelay(2)).isEqualTo(Duration.ofMillis(200));
+    assertThat(policy.retryDelay(3)).isEqualTo(Duration.ofMillis(400));
   }
 }

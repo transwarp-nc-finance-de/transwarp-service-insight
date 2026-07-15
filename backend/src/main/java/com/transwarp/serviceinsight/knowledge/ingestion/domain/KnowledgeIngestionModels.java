@@ -74,6 +74,8 @@ public final class KnowledgeIngestionModels {
       int attempt,
       int maxAttempts) {}
 
+  public record RecoveryTask(UUID taskId, Instant nextRetryAt) {}
+
   public record ParsedBlock(
       UUID blockId, int sequence, String structurePath, String text, String contentHash) {}
 

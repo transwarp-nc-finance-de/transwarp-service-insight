@@ -22,45 +22,64 @@ public class KnowledgeDocumentParser {
   static final String PARSER_VERSION = "text-structure-v1";
   static final String CHUNKING_RULE_VERSION = "structure-400-overlap-50-v1";
 
-  public ParsedDocument parse(byte[] bytes, String mediaType) {
+  public ParsedDocument parse(byte[] bytes, String mediaType, UUID parseContextId) {
     if (mediaType.equals("application/pdf")) {
-      return parsePdf(bytes);
+      return parsePdf(bytes, parseContextId);
     }
     if (!mediaType.equals("text/markdown") && !mediaType.equals("text/plain")) {
       throw new ParseFailure("UNSUPPORTED_FILE_TYPE", "The file type cannot be parsed.", false);
     }
-    return parseText(new String(bytes, StandardCharsets.UTF_8), PARSER_VERSION, List.of());
+    return parseText(
+        new String(bytes, StandardCharsets.UTF_8), PARSER_VERSION, List.of(), parseContextId);
   }
 
-  private ParsedDocument parsePdf(byte[] bytes) {
+  private ParsedDocument parsePdf(byte[] bytes, UUID parseContextId) {
     try (var document = Loader.loadPDF(bytes)) {
       var warnings = new ArrayList<ParseWarning>();
-      var hasImages = false;
+      var imageCount = 0;
       for (var page : document.getPages()) {
         var resources = page.getResources();
         if (resources == null) continue;
         for (var name : resources.getXObjectNames()) {
-          if (resources.getXObject(name) instanceof PDImageXObject) hasImages = true;
+          if (resources.getXObject(name) instanceof PDImageXObject) imageCount++;
         }
       }
-      if (hasImages) {
+      if (imageCount > 0) {
         warnings.add(
-            new ParseWarning("IMAGE_CONTENT_IGNORED", "Image content was ignored.", "document", 1));
+            new ParseWarning(
+                "IMAGE_CONTENT_IGNORED", "Image content was ignored.", "document", imageCount));
+        warnings.add(
+            new ParseWarning(
+                "CONTENT_LOSS_SUSPECTED",
+                "Ignored image content may contain text or diagrams.",
+                "document",
+                imageCount));
       }
       var text = new PDFTextStripper().getText(document);
       if (text == null || text.isBlank()) {
         throw new ParseFailure(
             "PDF_TEXT_LAYER_REQUIRED", "The PDF has no extractable text layer.", false);
       }
-      if (text.lines().anyMatch(line -> line.contains("\t") || line.matches(".*\\S {2,}\\S.*"))) {
+      var tableLikeLineCount =
+          Math.toIntExact(
+              text.lines()
+                  .filter(line -> line.contains("\t") || line.matches(".*\\S {2,}\\S.*"))
+                  .count());
+      if (tableLikeLineCount > 0) {
         warnings.add(
             new ParseWarning(
                 "TABLE_STRUCTURE_FLATTENED",
                 "Table-like content was flattened to safe text.",
                 "document",
-                1));
+                tableLikeLineCount));
+        warnings.add(
+            new ParseWarning(
+                "READING_ORDER_UNCERTAIN",
+                "The reading order of table-like content may be uncertain.",
+                "document",
+                tableLikeLineCount));
       }
-      return parseText(text, "pdf-text-v1", warnings);
+      return parseText(text, "pdf-text-v1", warnings, parseContextId);
     } catch (ParseFailure failure) {
       throw failure;
     } catch (IOException failure) {
@@ -69,7 +88,7 @@ public class KnowledgeDocumentParser {
   }
 
   private ParsedDocument parseText(
-      String rawText, String parserVersion, List<ParseWarning> warnings) {
+      String rawText, String parserVersion, List<ParseWarning> warnings, UUID parseContextId) {
     var text = rawText.replace("\r\n", "\n").trim();
     if (text.isBlank()) {
       throw new ParseFailure("EMPTY_DOCUMENT", "The document contains no parseable text.", false);
@@ -90,7 +109,12 @@ public class KnowledgeDocumentParser {
               UUID.randomUUID(), blocks.size() + 1, path, normalized, sha256(normalized)));
       addChunks(chunks, normalized, path);
     }
-    var hashMaterial = new StringBuilder(parserVersion).append('|').append(CHUNKING_RULE_VERSION);
+    var hashMaterial =
+        new StringBuilder(parserVersion)
+            .append('|')
+            .append(CHUNKING_RULE_VERSION)
+            .append('|')
+            .append(parseContextId);
     blocks.forEach(
         block ->
             hashMaterial
@@ -120,22 +144,55 @@ public class KnowledgeDocumentParser {
   }
 
   private void addChunks(List<Chunk> chunks, String text, String path) {
-    var start = 0;
-    while (start < text.length()) {
-      var end = Math.min(start + 400, text.length());
-      var value = text.substring(start, end);
+    var tokens = tokenSpans(text);
+    var startToken = 0;
+    while (startToken < tokens.size()) {
+      var endToken = Math.min(startToken + 400, tokens.size());
+      var value =
+          text.substring(tokens.get(startToken).start(), tokens.get(endToken - 1).end()).trim();
       chunks.add(
           new Chunk(
               UUID.randomUUID(),
               chunks.size() + 1,
               path,
               value,
-              value.codePointCount(0, value.length()),
+              endToken - startToken,
               sha256(value),
               CHUNKING_RULE_VERSION));
-      if (end == text.length()) break;
-      start = end - 50;
+      if (endToken == tokens.size()) break;
+      startToken = endToken - 50;
     }
+  }
+
+  private List<TokenSpan> tokenSpans(String text) {
+    var tokens = new ArrayList<TokenSpan>();
+    var offset = 0;
+    while (offset < text.length()) {
+      var codePoint = text.codePointAt(offset);
+      var nextOffset = offset + Character.charCount(codePoint);
+      if (Character.isWhitespace(codePoint)) {
+        offset = nextOffset;
+        continue;
+      }
+      if (isAsciiWord(codePoint)) {
+        var start = offset;
+        offset = nextOffset;
+        while (offset < text.length()) {
+          var nextCodePoint = text.codePointAt(offset);
+          if (!isAsciiWord(nextCodePoint)) break;
+          offset += Character.charCount(nextCodePoint);
+        }
+        tokens.add(new TokenSpan(start, offset));
+        continue;
+      }
+      tokens.add(new TokenSpan(offset, nextOffset));
+      offset = nextOffset;
+    }
+    return tokens;
+  }
+
+  private boolean isAsciiWord(int codePoint) {
+    return codePoint < 128 && (Character.isLetterOrDigit(codePoint) || codePoint == '_');
   }
 
   private String sha256(String value) {
@@ -168,4 +225,6 @@ public class KnowledgeDocumentParser {
       return retryable;
     }
   }
+
+  private record TokenSpan(int start, int end) {}
 }
