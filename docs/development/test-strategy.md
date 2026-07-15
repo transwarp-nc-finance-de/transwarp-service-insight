@@ -6,11 +6,11 @@
 
 ## 适用范围
 
-适用于 QA、产品、前端和后续 RAG、LLM、安全、集成团队评审。当前阶段验证本地 Vue 前端、Spring Boot Mock API、OpenAPI 契约和人工降级边界。
+适用于 QA、产品、前端和后续 RAG、LLM、安全、集成团队评审。当前阶段验证本地 Vue 前端、Spring Boot Mock API、本地身份/PostgreSQL 切片、OpenAPI 契约和人工降级边界。
 
 ## 正文
 
-当前阶段测试包括：后端单元与 API 行为测试、Spotless 格式检查、前端组件行为测试、ESLint、Prettier、生产构建、版本锁定的 OpenAPI 校验、前后端镜像构建及 Compose 冒烟。API 测试验证健康、初始预诊、追问、反馈、校验错误和安全异常响应；领域测试覆盖会话/运行约束、知识审核发布状态；审计测试验证不记录反馈正文。组件测试覆盖多轮顺序、失败保留、反馈以及人工继续提交硬边界。
+当前阶段测试包括：后端单元与 API 行为测试、Spotless 格式检查、前端组件行为测试、ESLint、Prettier、生产构建、版本锁定的 OpenAPI 校验、三服务镜像构建及 Compose 冒烟。API 测试验证 v1 健康/预诊/追问/反馈和 v2 AuthSession 的认证、CSRF、错误分类与生命周期；组件测试覆盖模拟登录/切换/退出、多轮顺序、失败保留、反馈以及人工继续提交硬边界；Compose 使用真实本地 PostgreSQL 验证迁移、种子和会话重启恢复。
 
 ## 一期实施测试 seam
 
@@ -20,23 +20,23 @@
 
 - 当前门禁同时校验已实现的 v1 OpenAPI 和 `APPROVED_FOR_IMPLEMENTATION`、`NOT_IMPLEMENTED` 的 v2 DRAFT OpenAPI；任一契约结构无效都必须使本地检查和 CI 失败。
 - v1 行为测试继续覆盖健康、初始预诊、Session/Run、追问、反馈、校验错误和安全异常响应，证明字段、状态码和行为保持兼容。
-- 后续 v2 实施通过 HTTP 公共行为验证认证、CSRF、RBAC、产品线授权、安全 `404`、状态机、错误码、幂等、任务状态、Run 上限和降级；API 测试不得被用来声称尚未实现的 v2 已经可用。
+- 已实现的 v2 AuthSession 切片通过 HTTP 公共行为验证四个模拟身份、Cookie、CSRF Token 发放/恢复/轮换/过期/退出、RBAC/产品线矩阵以及 `401 UNAUTHENTICATED`、`403 CSRF_VALIDATION_FAILED`。后续 v2 路径再按各自 Ticket 验证安全 `404`、状态机、错误码、幂等、任务状态、Run 上限和降级；不得把 AuthSession 测试用于声称整体 v2 已经可用。
 
 ### 领域 seam
 
-只测试复杂且确定的业务规则，包括知识生命周期与职责分离、ParseTask/IndexTask 三次尝试上限、原子发布前置条件、完整度策略、置信度规则、Session/Run 终止语义、RRF 融合与稳定排序。不为 DTO 映射、简单访问器或框架装配编写领域测试。
+只测试复杂且确定的业务规则，包括知识生命周期与职责分离、ParseTask/IndexTask 三次尝试上限、原子发布前置条件、完整度策略、置信度规则、Session/Run 终止语义、RRF 融合与稳定排序。本地身份阶段的角色/产品线矩阵通过公共 API 与真实种子联合验证；ADMIN 只能得到 ADMIN，不隐含审核或继续提交能力。不为 DTO 映射、简单访问器或框架装配编写领域测试。
 
 ### 浏览器 seam
 
-测试用户可见的关键纵向流程，包括模拟登录、知识上传与解析预览、提交/审核/发布、授权预诊、多轮补充、Evidence 查看、独立 Feedback、独立 SubmissionContinuation 及 Audit/Evaluation 页面。测试用户操作及可见结果，不测试 Vue 内部实现。未修改页面的变更仍应运行现有 v1 前端行为测试作为兼容回归。
+测试用户可见的关键纵向流程，包括模拟登录/刷新恢复/切换/退出、知识上传与解析预览、提交/审核/发布、授权预诊、多轮补充、Evidence 查看、独立 Feedback、独立 SubmissionContinuation 及 Audit/Evaluation 页面。当前模拟身份断言用户看到 `模拟数据` 标识、角色和授权产品线，不检查 CSRF `ref` 等 Vue 内部状态。未修改页面的变更仍应运行现有 v1 前端行为测试作为兼容回归。
 
 ### 系统 seam
 
-验证 Compose 服务健康、关键纵向闭环、容器重启持久化，以及显式 FTS 降级和运行中 Embedding 故障。完整模式与降级模式必须分别有可观察断言。未引入目标依赖的变更继续运行当前 frontend/backend Compose v1 冒烟；只有经授权实现对应能力后才扩展 PostgreSQL、pgvector 或 local-embedding 系统断言。
+验证 Compose 服务健康、关键纵向闭环、容器重启持久化，以及显式 FTS 降级和运行中 Embedding 故障。当前三服务 Compose 必须同时回归无认证 v1，并验证 PostgreSQL 迁移后登录、后端重启、恢复同一 Session/CSRF 和退出；重启不得重复种子。pgvector、FTS 或 local-embedding 只有在对应能力获授权并实现后才增加系统断言。
 
 ### PostgreSQL/pgvector 专项 seam
 
-仅验证必须依赖 PostgreSQL/pgvector 的行为：查询前权限过滤、唯一约束、任务并发/幂等、双索引成功后的原子版本切换、旧版本继续服务、FTS/向量/RRF 排序及重启恢复。该 seam 在对应能力实现前不适用；不得以 Mock 或恒真断言伪造专项通过。
+仅验证必须依赖 PostgreSQL/pgvector 的行为。当前 PostgreSQL 专项覆盖空库迁移、`local-identity-v1`/`local-catalog-v1` 版本化种子、主外键与唯一约束、重复启动幂等和 AuthSession 重启恢复。查询前权限过滤、任务并发/幂等、双索引原子切换、旧版本继续服务及 FTS/向量/RRF 排序待对应能力实现后增加；pgvector 当前不适用，不得以 Mock 或恒真断言伪造通过。
 
 可直接执行的本地命令及 Windows、macOS/Linux 差异统一见根目录 [README 的“测试与构建”](../../README.md#9-测试与构建)，本文只定义测试范围和通过标准。
 

@@ -47,6 +47,34 @@ jobs:
           curl --fail --silent -H 'Content-Type: application/json' -d '{"message":"模拟数据：补充脱敏日志"}' "http://localhost:5173/api/v1/precheck-sessions/$session_id/runs" | jq -e '.runSequence == 2 and .references[0].mockData == true and (.allowedActions | index("CONTINUE_SUBMISSION")) != null'
           curl --fail --silent "http://localhost:5173/api/v1/precheck-sessions/$session_id" | jq -e '.runs | length == 2'
           curl --fail --silent -H 'Content-Type: application/json' -d "{\"precheckId\":\"$precheck_id\",\"adoptionStatus\":\"PARTIALLY_ADOPTED\",\"feedbackReason\":\"模拟数据\",\"continuedSubmission\":false}" http://localhost:5173/api/v1/precheck/feedback | jq -e '.recorded == true and .mockData == true and .continuedSubmission == false'
+      - name: Verify local identity persistence and PostgreSQL seed constraints
+        run: |
+          headers="$(mktemp)"
+          cookies="$(mktemp)"
+          auth="$(curl --fail --silent -D "$headers" -c "$cookies" -H 'Content-Type: application/json' -d '{"userCode":"mock-knowledge-editor","mockData":true}' http://localhost:5173/api/v2/auth-sessions)"
+          echo "$auth" | jq -e '.userCode == "mock-knowledge-editor" and .roles == ["KNOWLEDGE_EDITOR"] and (.productLineCodes | sort) == ["STREAMING", "TDH"] and .mockData == true'
+          csrf="$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")"
+          test -n "$csrf"
+          grep -i '^Cache-Control: no-store' "$headers"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "2"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
+          docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
+          docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
+          docker compose restart backend
+          docker compose up -d --wait backend
+          restored="$(curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current)"
+          echo "$restored" | jq -e '.userCode == "mock-knowledge-editor"'
+          test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
+          docker compose restart postgres
+          docker compose up -d --wait postgres
+          docker compose restart backend
+          docker compose up -d --wait backend
+          curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current | jq -e '.userCode == "mock-knowledge-editor"'
+          test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "2"
+          curl --fail --silent -o /dev/null -b "$cookies" -H "X-CSRF-Token: $csrf" -X DELETE http://localhost:5173/api/v2/auth-sessions/current
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend

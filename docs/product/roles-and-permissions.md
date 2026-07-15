@@ -2,7 +2,7 @@
 
 Status: DRAFT  
 Owner: 产品负责人 / 安全负责人  
-Last reviewed: 2026-07-12  
+Last reviewed: 2026-07-15
 Source of truth for: 未来角色职责与权限边界
 
 ## 角色
@@ -23,11 +23,11 @@ Source of truth for: 未来角色职责与权限边界
 - 提交知识版本的身份不得批准或发布自己的版本；一名不同身份的审核人即可完成审核，不要求双人会签。
 - 职责分离由后端授权规则执行，前端按钮可见性不能作为唯一控制。
 
-以上为 `CONFIRMED` 的一期目标权限规则，不代表当前 `mock-user` 已实现该能力。
+以上为 `CONFIRMED` 的一期目标权限规则。不同的编辑与审核模拟身份已预置；知识提交、审核与职责分离业务路径尚未实现。
 
 ## 当前实现边界
 
-当前只有 `mock-user` 与 `mock-policy-v1`，仅用于验证策略 Port 和版本追踪，不构成真实认证或授权。页面、API 和内存数据均不适用于真实用户权限判断。
+当前已实现 `local-identity-v1` 的四个模拟身份、服务端 Cookie Session、CSRF、角色与 TDH/STREAMING 产品线矩阵；只适用于本地模拟数据，不构成真实认证或生产授权。v1 预诊仍使用 `mock-policy-v1` 和进程内状态。
 
 ## 一期已确认本地身份方式
 
