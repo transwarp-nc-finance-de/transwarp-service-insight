@@ -2,13 +2,13 @@
 
 `Transwarp Service Insight` 当前聚焦外挂在 AIOps SLA 流程中的智能预诊能力。AIOps 是正式表单、枚举、校验和最终提交的宿主；本仓库提供独立预诊后端、嵌入式面板以及本地 Mock AIOps Sandbox。
 
-能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；AIOps Host Integration `PROTOTYPE`；Persistence、Knowledge Ingestion、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
+能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务持久化、Knowledge Ingestion、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
-> 当前全部业务内容均为 `模拟数据`。系统不接入真实客户数据、ITSM、AIOps、RAG、LLM、数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
+> 当前全部业务内容均为 `模拟数据`。系统仅使用本地 Compose PostgreSQL 保存模拟身份、模拟目录和 AuthSession，不接入真实客户数据、ITSM、AIOps、RAG、LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
 
 ## 1. 适用范围
 
-本文面向首次接触仓库的开发和评审人员，用于完成 M2 本地工程验收。它不是生产部署方案，不包含鉴权、HTTPS、域名、持久化、高可用、监控告警、真实外部服务或生产配置。
+本文面向首次接触仓库的开发和评审人员，用于完成本地工程验收。它不是生产部署方案，不包含真实 SSO、HTTPS、域名、业务数据持久化、高可用、监控告警、真实外部服务或生产配置。
 
 当前事实以以下文档为准：
 
@@ -35,6 +35,12 @@
 +---------------------------+
 | backend 容器              |
 | Spring Boot :8080         |
++---------------------------+
+       |
+       v
++---------------------------+
+| postgres 容器             |
+| 本地模拟身份/目录/会话     |
 +---------------------------+
 ```
 
@@ -122,7 +128,9 @@ docker compose ps
 curl --fail --silent http://127.0.0.1:5173/api/v1/health
 ```
 
-预期结果：`frontend` 与 `backend` 均处于运行状态，后端为 `healthy`，健康接口返回包含 `"status": "UP"` 的 JSON。
+预期结果：`frontend`、`backend` 与 `postgres` 均处于运行状态，后端与 PostgreSQL 为 `healthy`，健康接口返回包含 `"status": "UP"` 的 JSON。
+
+页面顶部提供四个预置本地身份。选择身份后登录，确认页面显示 `模拟数据`、唯一角色及授权产品线；切换身份会轮换 Session 与 CSRF Token，退出会同时使二者失效。该能力不是 SSO 或生产鉴权。
 
 ### 5.3 `模拟数据` 预诊验收
 
@@ -148,6 +156,7 @@ docker compose ps
 docker compose logs --tail 200
 docker compose logs --tail 200 backend
 docker compose logs --tail 200 frontend
+docker compose logs --tail 200 postgres
 docker compose logs -f
 ```
 
@@ -190,7 +199,7 @@ docker compose start
 docker compose down --remove-orphans --rmi local
 ```
 
-M2 未定义数据卷，因此 `down` 不涉及业务数据持久化；仓库也不得存放真实业务数据。
+`docker compose down` 默认保留 `postgres-data` 卷，以验证迁移和会话重启持久化；只有人工明确需要清空本地模拟数据时才可增加 `--volumes`。仓库和数据卷都不得存放真实业务数据。
 
 ## 7. 常见故障排查
 
@@ -216,6 +225,7 @@ M2 未定义数据卷，因此 `down` 不涉及业务数据持久化；仓库也
 Windows PowerShell：
 
 ```powershell
+docker compose up -d --wait postgres
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
@@ -253,7 +263,7 @@ cd backend
 
 macOS/Linux 将 `.\mvnw.cmd` 替换为 `./mvnw`。
 
-前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和已批准但尚未实现的 v2 DRAFT）：
+前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和整体仍为 DRAFT 的 v2；当前仅 v2 AuthSession 切片已实现）：
 
 ```powershell
 cd frontend
@@ -302,7 +312,7 @@ docker compose up -d --build --wait
 
 - `backend/`：Spring Boot Mock API、Maven Wrapper 和后端镜像
 - `frontend/`：Vue 应用、Nginx 代理配置和前端镜像
-- `compose.yaml`：M2 本地一键交付拓扑
+- `compose.yaml`：前端、后端与本地 PostgreSQL 一键交付拓扑
 - `docs/api/openapi.yaml`：已实现 API 的唯一契约
 - `docs/`：ACTIVE 文档、DRAFT 目标设计和 ARCHIVED 历史材料
 - `prompts/`：可长期复用提示词的治理说明

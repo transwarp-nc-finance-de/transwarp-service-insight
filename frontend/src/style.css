@@ -10,7 +10,7 @@ body {
   margin: 0;
 }
 header {
-  height: 64px;
+  min-height: 64px;
   padding: 0 max(24px, calc((100% - 1180px) / 2));
   display: flex;
   align-items: center;
@@ -30,6 +30,49 @@ header nav {
 }
 header a {
   color: white;
+}
+.auth-session {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.auth-session form,
+.auth-session label,
+.identity-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.auth-session select {
+  width: 210px;
+  padding: 7px;
+}
+.auth-session button {
+  padding: 7px 10px;
+}
+.identity-action {
+  background: #74a7ff;
+  color: #11244a;
+}
+.identity-summary span {
+  white-space: nowrap;
+}
+.identity-empty {
+  margin: 0;
+  color: #b9cbea;
+}
+.identity-error {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  width: 300px;
+  padding: 8px;
+  background: #fff0f0;
+  color: #a63a3a;
+  z-index: 2;
 }
 .sandbox-warning {
   padding: 12px;
@@ -266,6 +309,18 @@ button {
   justify-self: end;
 }
 @media (max-width: 800px) {
+  header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .auth-session,
+  .auth-session form,
+  .identity-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .layout {
     grid-template-columns: 1fr;
   }

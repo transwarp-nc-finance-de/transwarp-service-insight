@@ -6,7 +6,7 @@
 
 ## 适用范围
 
-适用于 `backend/` Spring Boot Mock 服务和 `frontend/` Vue 应用。
+适用于 `backend/` Spring Boot Mock 服务、`frontend/` Vue 应用和本地 Compose PostgreSQL。
 
 ## 正文
 
@@ -22,7 +22,7 @@ Invoke-RestMethod http://localhost:5173/api/v1/health
 docker compose down --remove-orphans
 ```
 
-浏览器访问 `http://127.0.0.1:5173`。仅前端入口绑定宿主机 `127.0.0.1:5173`，后端只在 Compose 网络内提供 8080；`GET /api/v1/health` 的 `UP` 仅表示进程可服务，不代表数据库、RAG、模型或外部系统可用。
+浏览器访问 `http://127.0.0.1:5173`。前端入口绑定宿主机 `127.0.0.1:5173`，本地 PostgreSQL 仅绑定 `127.0.0.1:5432`，后端只在 Compose 网络内提供 8080；数据库只保存版本化模拟目录、模拟身份和本地会话，不得写入真实业务数据。
 
 ### 非容器开发
 
@@ -31,6 +31,7 @@ docker compose down --remove-orphans
 后端：
 
 ```powershell
+docker compose up -d --wait postgres
 cd backend
 .\mvnw.cmd spring-boot:run
 .\mvnw.cmd test
@@ -53,8 +54,8 @@ npm test
 npm run build
 ```
 
-访问 `http://localhost:5173`，Vite 将 `/api` 代理到后端。正常预诊、缺少可选信息、关闭后端三种情况下，“继续提交 SLA”都应可点击；该操作仅显示人工确认提示，不调用提交接口。
+访问 `http://localhost:5173`，Vite 将 `/api` 代理到后端。页面顶部可以使用四个预置身份完成本地模拟登录、切换和退出。正常预诊、缺少可选信息、关闭后端三种情况下，“继续提交 SLA”都应可点击；该操作仅显示人工确认提示，不调用提交接口。
 
 容器模式下关闭后端后，前端页面仍可访问，预诊会以网关错误安全失败且“继续提交 SLA”仍可人工操作（仅模拟，不调用提交接口）。常见故障及安全清理方式统一见根目录 README。不要提交个人代理、凭据或包含真实客户信息的日志。
 
-所有输出均为 `模拟数据`，未接真实 RAG、模型、AIOps、知识库、ITSM 或生产数据。
+所有输出均为 `模拟数据`，未接真实 RAG、模型、AIOps、知识库、ITSM、企业共享数据库或生产数据。

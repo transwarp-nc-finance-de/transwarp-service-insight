@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: service_insight
+      POSTGRES_USER: service_insight
+      POSTGRES_PASSWORD: service_insight_local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U service_insight -d service_insight"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks: [app]
+
   backend:
     build:
       context: ./backend
@@ -8,6 +25,15 @@ services:
       timeout: 3s
       retries: 12
       start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: service_insight
+      DB_USER: service_insight
+      DB_PASSWORD: service_insight_local
     networks: [app]
 
   frontend:
@@ -22,3 +48,6 @@ services:
 
 networks:
   app:
+
+volumes:
+  postgres-data:
