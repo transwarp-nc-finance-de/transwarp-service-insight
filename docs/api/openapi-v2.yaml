@@ -1,24 +1,27 @@
 openapi: 3.0.3
 info:
-  title: Transwarp Service Insight API v2（APPROVED_FOR_IMPLEMENTATION）
+  title: Transwarp Service Insight API v2（DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION）
   version: 2.0.0-draft.2
   description: |
-    **DRAFT / 未实现 / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
+    **DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
     已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；该批准不代表
-    Controller、Mapper、持久化、身份、检索、模型或外部系统已经实现。
+    整个 API v2 或一期目标已经实现。当前仅实现本地 AuthSession 基础切片：
+    `POST /api/v2/auth-sessions`、`GET /api/v2/auth-sessions/current` 和
+    `DELETE /api/v2/auth-sessions/current`；其余 v2 operation 均为 NOT_IMPLEMENTED。
     所有业务示例均为 `模拟数据`；只允许模拟、公开或脱敏数据。
 
-    一期实施状态为 READY_FOR_IMPLEMENTATION；v1 Mock 仍是唯一当前实现。v2 不创建正式 SLA、工单、ticketId 或提交回执；
+    一期实施状态为 READY_FOR_IMPLEMENTATION；v1 Mock 仍为兼容契约。当前 v2 切片不接真实身份、
+    生产数据库或外部系统。v2 不创建正式 SLA、工单、ticketId 或提交回执；
     智能输出仅供人工参考，必须保留依据、置信度、人工介入建议和待补充信息，
     且不得阻断人工继续提交。SLA 提交及内容始终由人工确认。
-  x-api-status: APPROVED_FOR_IMPLEMENTATION
+  x-api-status: DRAFT
   x-owner: API 负责人
   x-last-reviewed: '2026-07-15'
-  x-source-of-truth-for: 未实现 API v2 候选 HTTP 契约
-  x-implementation-status: NOT_IMPLEMENTED
+  x-source-of-truth-for: DRAFT API v2 HTTP 契约及 operation 级实施状态
+  x-implementation-status: PARTIALLY_IMPLEMENTED
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
   x-approval-status: APPROVED_FOR_IMPLEMENTATION
-  x-current-implementation: V1_MOCK
+  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION
   x-approved-on: '2026-07-14'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令
@@ -48,6 +51,7 @@ paths:
     post:
       tags: [AuthSession]
       operationId: createAuthSession
+      x-implementation-status: IMPLEMENTED
       summary: 使用预置模拟身份建立本地会话
       description: |
         仅限本地模拟环境；不提供注册、JWT、SSO 或真实组织同步。成功时创建绑定该 Session 的高熵
@@ -78,6 +82,7 @@ paths:
     get:
       tags: [AuthSession]
       operationId: getCurrentAuthSession
+      x-implementation-status: IMPLEMENTED
       summary: 查询当前本地会话
       description: |
         返回当前 Session 绑定的 CSRF Token，供页面刷新后恢复内存状态；同一 Session 内只返回而不轮换。
@@ -89,6 +94,7 @@ paths:
     delete:
       tags: [AuthSession]
       operationId: deleteCurrentAuthSession
+      x-implementation-status: IMPLEMENTED
       summary: 退出当前本地会话
       description: |
         成功时原子失效当前 Session 与其 CSRF Token。缺失、未知、已退出或过期 Session 返回
@@ -105,6 +111,7 @@ paths:
     post:
       tags: [KnowledgeDocument]
       operationId: createKnowledgeDocument
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 上传不可变原始知识文件并创建草稿版本
       description: 仅接受 Markdown、TXT、文本型 PDF；原始字节上限依次为 5 MB、5 MB、20 MB，持久化前校验。成功时同时创建 ParseTask。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -138,6 +145,7 @@ paths:
     get:
       tags: [KnowledgeDocument]
       operationId: listKnowledgeDocuments
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询有权查看的知识文档
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -156,6 +164,7 @@ paths:
     get:
       tags: [KnowledgeDocument]
       operationId: getKnowledgeDocument
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询知识文档
       responses:
         '200': { $ref: '#/components/responses/KnowledgeDocumentOk' }
@@ -167,6 +176,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: createKnowledgeVersion
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 为已发布文档上传新原始文件并创建新草稿版本
       description: 不原地修改已发布版本；成功时创建新 ParseTask。文件限制与首次上传一致。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -192,6 +202,7 @@ paths:
     get:
       tags: [KnowledgeVersion]
       operationId: listKnowledgeVersions
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询知识版本
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -211,6 +222,7 @@ paths:
     get:
       tags: [KnowledgeVersion]
       operationId: getKnowledgeVersion
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询不可变知识版本
       responses:
         '200': { $ref: '#/components/responses/KnowledgeVersionOk' }
@@ -222,6 +234,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: getKnowledgeVersionParsePreview
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询知识版本的解析预览摘要
       description: |
         `KNOWLEDGE_EDITOR` 仅可读取本人创建或提交且在本人产品线范围内的版本；
@@ -240,6 +253,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: listKnowledgeVersionParsedBlocks
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 按解析顺序分页查询规范化文本块
       description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，不支持任意排序，不在单个响应中返回整个文件。
       parameters:
@@ -258,6 +272,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: listKnowledgeVersionChunkPreviews
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 按切片顺序分页查询结构化 Chunk 预览
       description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，文本块与 Chunk 独立分页，不支持任意排序。
       parameters:
@@ -275,6 +290,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: createKnowledgeDraftRevision
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 创建新的草稿修订并使旧 Chunk/索引失效
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters:
@@ -298,6 +314,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: submitKnowledgeVersionForReview
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 提交知识版本审核
       description: |
         `parseResultHash` 必须匹配当前 `SUCCEEDED` 解析结果，否则返回 `409 ILLEGAL_STATE_TRANSITION`。
@@ -309,6 +326,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: returnKnowledgeVersionToDraft
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 将审核中版本退回草稿
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
@@ -318,6 +336,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: approveKnowledgeVersion
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 由不同身份的审核人批准知识版本
       description: |
         提交人不得批准本人提交的版本；ADMIN 不获得绕过能力。`parseResultHash` 必须匹配当前解析结果；
@@ -339,6 +358,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: publishKnowledgeVersion
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 创建双索引发布任务
       description: 仅 APPROVED 可执行；FTS 与向量索引均成功后才原子发布并废弃旧版，半索引版本不可检索。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -356,6 +376,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: deprecateKnowledgeVersion
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 废弃知识版本
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
@@ -366,6 +387,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: listParseTasks
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询解析任务
       description: 任务由上传或草稿修订创建；历史失败任务不可变，不提供任意状态修改。
       parameters:
@@ -386,6 +408,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: getParseTask
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询不可变解析任务
       responses:
         '200': { $ref: '#/components/responses/ParseTaskOk' }
@@ -396,6 +419,7 @@ paths:
     get:
       tags: [IndexTask]
       operationId: listIndexTasks
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询双索引任务
       description: 任务由发布命令创建；最大尝试次数为 3，历史失败任务不可变。
       parameters:
@@ -416,6 +440,7 @@ paths:
     get:
       tags: [IndexTask]
       operationId: getIndexTask
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询不可变双索引任务
       responses:
         '200': { $ref: '#/components/responses/IndexTaskOk' }
@@ -427,6 +452,7 @@ paths:
     get:
       tags: [Evidence]
       operationId: getEvidence
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 重新授权后读取受控依据
       description: 不提供可枚举列表；每次按当前身份和产品线范围重新授权。不存在与无权限统一返回安全 404。
       responses:
@@ -444,6 +470,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: createPrecheckSession
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 创建 Session 与 Run 1
       description: |
         `sourceSystem + hostRequestId` 是业务幂等键。规范化上下文相同则返回原 Session/Run（200），
@@ -484,6 +511,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: listPrecheckSessions
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询本人有权读取的 Session
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -502,6 +530,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: getPrecheckSession
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 读取或恢复本人 Session
       description: 每次重新校验身份和产品线权限；终态只读，ADMIN 不得接管他人 Session。
       responses:
@@ -514,6 +543,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: listPrecheckRuns
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询 Session 的不可变 Run
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -529,6 +559,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: createPrecheckRun
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 使用完整 Context 快照创建下一 Run
       description: 产品线、产品或组件变化要求新建 Session；第 4 次 Run 返回 RUN_LIMIT_REACHED。Run 完成、信息完整或达到上限均不终止 Session。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -552,6 +583,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: getPrecheckRun
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询不可变 Run 及完整结果
       responses:
         '200': { $ref: '#/components/responses/PrecheckRunOk' }
@@ -562,6 +594,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: confirmPrecheckSelfService
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 人工确认采纳建议并结束预诊
       description: 显式将 Session 终止为 SELF_SERVICE_CONFIRMED；建议本身不构成最终根因或正式方案。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -581,6 +614,7 @@ paths:
     post:
       tags: [Feedback]
       operationId: createFeedback
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 独立记录预诊反馈
       description: 不终止 Session，失败不影响模拟继续提交。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -605,6 +639,7 @@ paths:
     get:
       tags: [Feedback]
       operationId: getFeedback
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询本人反馈
       responses:
         '200': { $ref: '#/components/responses/FeedbackOk' }
@@ -615,6 +650,7 @@ paths:
     post:
       tags: [SubmissionContinuation]
       operationId: createSubmissionContinuation
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 人工确认模拟继续提交并终止 Session
       description: 只记录本地模拟确认与审计，不创建 SLA、工单草稿、ticketId 或提交回执。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -638,6 +674,7 @@ paths:
     get:
       tags: [SubmissionContinuation]
       operationId: getSubmissionContinuation
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询模拟继续提交确认
       responses:
         '200': { $ref: '#/components/responses/SubmissionContinuationOk' }
@@ -649,6 +686,7 @@ paths:
     post:
       tags: [EvaluationRun]
       operationId: createEvaluationRun
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 异步运行固定模拟评估集
       description: 小样本工程评估，不代表生产效果；运行状态不可任意修改。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -670,6 +708,7 @@ paths:
     get:
       tags: [EvaluationRun]
       operationId: listEvaluationRuns
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询评估运行
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -688,6 +727,7 @@ paths:
     get:
       tags: [EvaluationRun]
       operationId: getEvaluationRun
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询评估运行及聚合结果
       responses:
         '200': { $ref: '#/components/responses/EvaluationRunOk' }
@@ -698,6 +738,7 @@ paths:
     get:
       tags: [Metrics]
       operationId: getMetrics
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询权限过滤后的聚合指标
       description: 不返回问题、附件、反馈或知识正文，不能用于自动判责。
       parameters:
@@ -719,6 +760,7 @@ paths:
     get:
       tags: [AuditEvent]
       operationId: listAuditEvents
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询结构化审计事件
       description: 仅结构化元数据和稳定引用 ID，不复制业务正文。
       parameters:
@@ -739,6 +781,7 @@ paths:
     get:
       tags: [AuditEvent]
       operationId: getAuditEvent
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询单个结构化审计事件
       responses:
         '200': { $ref: '#/components/responses/AuditEventOk' }
@@ -749,6 +792,7 @@ paths:
     get:
       tags: [CompletenessPolicy]
       operationId: listCompletenessPolicies
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询完整度策略版本
       description: 只读；不提供运行时编辑或发布接口。
       parameters:
@@ -768,6 +812,7 @@ paths:
     get:
       tags: [CompletenessPolicy]
       operationId: getCompletenessPolicy
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询完整度策略版本
       responses:
         '200': { $ref: '#/components/responses/CompletenessPolicyOk' }
@@ -778,6 +823,7 @@ paths:
     post:
       tags: [AdminReset]
       operationId: createAdminReset
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 二次确认后异步重置本地模拟数据
       description: 仅明确标识的本地环境可用；不是备份、恢复、灾备或生产删除能力。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -799,6 +845,7 @@ paths:
     get:
       tags: [AdminReset]
       operationId: listAdminResets
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 分页查询本地重置任务
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -817,6 +864,7 @@ paths:
     get:
       tags: [AdminReset]
       operationId: getAdminReset
+      x-implementation-status: NOT_IMPLEMENTED
       summary: 查询本地重置任务
       responses:
         '200': { $ref: '#/components/responses/AdminResetOk' }
