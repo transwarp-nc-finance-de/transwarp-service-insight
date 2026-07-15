@@ -7,7 +7,6 @@ public record EvaluationCase(
     String datasetVersion,
     List<String> languageTags,
     List<String> scenarioTags,
-    PrecheckInput precheckInput,
     List<EvaluationTurn> turns,
     String executionIdentityCode,
     List<String> allowedProductLineCodes,
@@ -54,7 +53,7 @@ public record EvaluationCase(
   public record AttachmentMetadata(
       String attachmentId, String fileName, String mediaType, long sizeBytes) {}
 
-  public record EvaluationTurn(int runSequence, String descriptionPlainText) {}
+  public record EvaluationTurn(int runSequence, PrecheckInput contextSnapshot) {}
 
   public enum RetrievalMode {
     HYBRID,

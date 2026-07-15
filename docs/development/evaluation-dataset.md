@@ -38,7 +38,7 @@ cd backend
 
 该命令是 CI 后端 job 的独立门禁，失败后不得通过跳过、禁用、忽略测试或空断言绕过。常规 `spotless:check test` 仍会再次执行该校验并完成全量回归。
 
-校验会以 JSON Schema 实际验证两份资产，并验证样例数、稳定唯一 ID、完整 PrecheckContext、版本和模拟标记、身份/产品线/Evidence 引用、不可变引用绑定与摘录哈希、期望与禁止 Evidence 互斥、多轮上限、必需覆盖、权限拒绝目标、FTS_ONLY/UNAVAILABLE、安全内容、覆盖矩阵、排序、禁用测试和 checksum。它验证固定资产本身，不代表真实检索效果或生产 SLA。
+校验会以 JSON Schema 实际验证两份资产，并验证样例数、稳定唯一 ID、每轮完整 PrecheckContext 快照、版本和模拟标记、身份/产品线/Evidence 引用、不可变引用绑定与摘录哈希、期望与禁止 Evidence 互斥、多轮上限、必需覆盖、权限拒绝目标、FTS_ONLY/UNAVAILABLE、安全内容、覆盖矩阵、排序和 checksum。CI 另行拒绝禁用、忽略、跳过或恒真断言式的 evaluation 检查。它验证固定资产本身，不代表真实检索效果或生产 SLA。
 
 ## Checksum 规则
 

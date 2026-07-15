@@ -17,22 +17,21 @@
     "turn": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["runSequence", "descriptionPlainText"],
+      "required": ["runSequence", "contextSnapshot"],
       "properties": {
         "runSequence": {"type": "integer", "minimum": 1, "maximum": 3},
-        "descriptionPlainText": {"type": "string", "minLength": 6, "pattern": "^模拟数据："}
+        "contextSnapshot": {"$ref": "#/$defs/precheckInput"}
       }
     },
     "case": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["caseId", "datasetVersion", "languageTags", "scenarioTags", "precheckInput", "turns", "executionIdentityCode", "allowedProductLineCodes", "expectedEvidenceIds", "forbiddenEvidenceIds", "expectedRetrievalMode", "expectedDegradation", "expectedMissingFieldCodes", "mockData"],
+      "required": ["caseId", "datasetVersion", "languageTags", "scenarioTags", "turns", "executionIdentityCode", "allowedProductLineCodes", "expectedEvidenceIds", "forbiddenEvidenceIds", "expectedRetrievalMode", "expectedDegradation", "expectedMissingFieldCodes", "mockData"],
       "properties": {
         "caseId": {"type": "string", "pattern": "^mock-eval-v1-[0-9]{3}$"},
         "datasetVersion": {"const": "mock-eval-v1"},
         "languageTags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["LANG_ZH", "LANG_EN", "LANG_MIXED"]}},
         "scenarioTags": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
-        "precheckInput": {"$ref": "#/$defs/precheckInput"},
         "turns": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/turn"}},
         "executionIdentityCode": {"type": "string", "minLength": 1},
         "allowedProductLineCodes": {"$ref": "#/$defs/nonEmptyUniqueStrings"},

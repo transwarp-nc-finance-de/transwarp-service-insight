@@ -22,7 +22,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
@@ -75,14 +74,6 @@ class EvaluationDatasetValidationTest {
             item -> {
               assertThat(item.datasetVersion()).isEqualTo(VERSION);
               assertThat(item.mockData()).isTrue();
-              assertThat(item.precheckInput().sourceSystem()).isEqualTo("MOCK_AIOPS");
-              assertThat(item.precheckInput().hostRequestId()).startsWith("mock-host-request-");
-              assertThat(item.precheckInput().formSchemaVersion())
-                  .isEqualTo("mock-precheck-form-v1");
-              assertThat(item.allowedProductLineCodes())
-                  .contains(item.precheckInput().productLineCode());
-              assertThat(item.precheckInput().title()).startsWith("模拟数据：");
-              assertThat(item.precheckInput().impactScope()).startsWith("模拟数据：");
               assertThat(item.turns()).isNotEmpty().hasSizeLessThanOrEqualTo(3);
               assertThat(item.turns().stream().map(EvaluationCase.EvaluationTurn::runSequence))
                   .containsExactlyElementsOf(
@@ -90,11 +81,34 @@ class EvaluationDatasetValidationTest {
                           .boxed()
                           .toList());
               assertThat(item.turns())
-                  .allSatisfy(turn -> assertThat(turn.descriptionPlainText()).startsWith("模拟数据："));
-              assertThat(item.precheckInput().descriptionPlainText())
-                  .isEqualTo(item.turns().getFirst().descriptionPlainText());
+                  .allSatisfy(
+                      turn -> {
+                        var snapshot = turn.contextSnapshot();
+                        assertThat(snapshot.sourceSystem()).isEqualTo("MOCK_AIOPS");
+                        assertThat(snapshot.hostRequestId()).startsWith("mock-host-request-");
+                        assertThat(snapshot.formSchemaVersion()).isEqualTo("mock-precheck-form-v1");
+                        assertThat(item.allowedProductLineCodes())
+                            .contains(snapshot.productLineCode());
+                        assertThat(snapshot.title()).startsWith("模拟数据：");
+                        assertThat(snapshot.descriptionPlainText()).startsWith("模拟数据：");
+                        assertThat(snapshot.impactScope()).startsWith("模拟数据：");
+                      });
+              var snapshots =
+                  item.turns().stream()
+                      .map(EvaluationCase.EvaluationTurn::contextSnapshot)
+                      .toList();
+              assertThat(snapshots.stream().map(EvaluationCase.PrecheckInput::hostRequestId))
+                  .containsOnly(snapshots.getFirst().hostRequestId());
+              for (var index = 1; index < snapshots.size(); index++) {
+                assertThat(snapshots.get(index).descriptionPlainText())
+                    .startsWith(snapshots.get(index - 1).descriptionPlainText() + "；");
+                assertThat(snapshots.get(index).additionalInformation()).hasSize(index);
+              }
             });
-    assertThat(dataset.cases().stream().map(item -> item.precheckInput().hostRequestId()).toList())
+    assertThat(
+            dataset.cases().stream()
+                .map(item -> item.turns().getFirst().contextSnapshot().hostRequestId())
+                .toList())
         .doesNotHaveDuplicates();
   }
 
@@ -267,20 +281,6 @@ class EvaluationDatasetValidationTest {
         .isSorted();
     assertThat(manifest.evidenceFixtures().stream().map(item -> item.evidenceId()).toList())
         .isSorted();
-  }
-
-  @Test
-  void validationGateContainsNoDisabledEvaluationTests() {
-    var evaluationTestClasses =
-        List.of(EvaluationDatasetValidationTest.class, EvaluationSetCatalogTest.class);
-
-    assertThat(evaluationTestClasses)
-        .noneMatch(testClass -> testClass.isAnnotationPresent(Disabled.class));
-    assertThat(
-            evaluationTestClasses.stream()
-                .flatMap(testClass -> java.util.Arrays.stream(testClass.getDeclaredMethods()))
-                .filter(method -> method.isAnnotationPresent(Test.class)))
-        .noneMatch(method -> method.isAnnotationPresent(Disabled.class));
   }
 
   private static Map<String, List<String>> groupByTags(
