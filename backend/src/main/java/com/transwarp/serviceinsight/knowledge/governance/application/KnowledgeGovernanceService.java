@@ -68,6 +68,7 @@ public class KnowledgeGovernanceService {
       KnowledgeRevisionRequest request) {
     var identity = authorize(sessionCookie, csrfToken, Role.KNOWLEDGE_EDITOR);
     validateIdempotencyKey(idempotencyKey);
+    repository.lockIdempotency("REVISION", idempotencyKey);
     var state = visibleEditorVersion(versionId, identity);
     var requestHash =
         requestHash(
@@ -117,6 +118,7 @@ public class KnowledgeGovernanceService {
       ReviewSubmissionRequest request) {
     var identity = authorize(sessionCookie, csrfToken, Role.KNOWLEDGE_EDITOR);
     validateIdempotencyKey(idempotencyKey);
+    repository.lockIdempotency("SUBMIT", idempotencyKey);
     var state = visibleEditorVersion(versionId, identity);
     var requestHash =
         requestHash(
@@ -154,6 +156,7 @@ public class KnowledgeGovernanceService {
       RequiredCommandReasonRequest request) {
     var identity = authorize(sessionCookie, csrfToken, Role.KNOWLEDGE_REVIEWER);
     validateIdempotencyKey(idempotencyKey);
+    repository.lockIdempotency("RETURN", idempotencyKey);
     var state = visibleReviewerVersion(versionId, identity);
     var requestHash = requestHash("RETURN", versionId, identity.userCode(), request.reason());
     var replay = replayCommand("RETURN", idempotencyKey, requestHash);
@@ -185,6 +188,7 @@ public class KnowledgeGovernanceService {
       KnowledgeApprovalRequest request) {
     var identity = authorize(sessionCookie, csrfToken, Role.KNOWLEDGE_REVIEWER);
     validateIdempotencyKey(idempotencyKey);
+    repository.lockIdempotency("APPROVE", idempotencyKey);
     var state = visibleReviewerVersion(versionId, identity);
     var requestHash =
         requestHash(

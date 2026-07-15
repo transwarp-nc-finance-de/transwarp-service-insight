@@ -105,6 +105,8 @@ public final class KnowledgeIngestionModels {
 
   public record ParsePreview(
       UUID versionId,
+      String versionStatus,
+      String submittedBy,
       UUID parseTaskId,
       String parseStatus,
       String parserVersion,

@@ -39,6 +39,8 @@ describe('knowledge ingestion vertical flow', () => {
   it('submits the current parse result and explicitly acknowledges warnings before approval', async () => {
     const warned = {
       ...summary(),
+      versionStatus: 'IN_REVIEW',
+      submittedBy: 'mock-knowledge-editor',
       warnings: [{ code: 'CONTENT_LOSS_SUSPECTED', message: '模拟数据：可能存在内容丢失' }],
     }
     const fetchMock = vi
@@ -49,25 +51,36 @@ describe('knowledge ingestion vertical flow', () => {
       .mockResolvedValueOnce(ok(page('block')))
       .mockResolvedValueOnce(ok(page('chunk')))
       .mockResolvedValueOnce(ok(commandResult('IN_REVIEW')))
+      .mockResolvedValueOnce(ok(warned))
+      .mockResolvedValueOnce(ok(page('review block')))
+      .mockResolvedValueOnce(ok(page('review chunk')))
       .mockResolvedValueOnce(ok(commandResult('APPROVED')))
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-current' } })
-    await uploadFile(wrapper)
-    expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('[data-test="submit-review"]').trigger('click')
+    const editor = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-editor' } })
+    await uploadFile(editor)
+    expect(editor.get('[data-test="approve"]').attributes('disabled')).toBeDefined()
+    await editor.get('[data-test="submit-review"]').trigger('click')
     await flushPromises()
     expect(fetchMock.mock.calls[5][0]).toContain('/review-submissions')
     expect(JSON.parse(fetchMock.mock.calls[5][1].body)).toEqual({
       parseResultHash: 'sha256:result',
     })
-    await wrapper.get('[data-test="warning-CONTENT_LOSS_SUSPECTED"]').setValue(true)
-    await wrapper.get('[data-test="approve"]').trigger('click')
+    editor.unmount()
+
+    const reviewer = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-reviewer' } })
+    await reviewer.get('[data-test="review-version-id"]').setValue(created().version.versionId)
+    await reviewer.get('[data-test="load-review-version"]').trigger('click')
     await flushPromises()
-    expect(JSON.parse(fetchMock.mock.calls[6][1].body).acknowledgedWarningCodes).toEqual([
+    expect(fetchMock.mock.calls[6][0]).toContain('/parse-preview')
+    await reviewer.get('[data-test="warning-CONTENT_LOSS_SUSPECTED"]').setValue(true)
+    await reviewer.get('[data-test="approve"]').trigger('click')
+    await flushPromises()
+    expect(fetchMock.mock.calls[9][1].headers['X-CSRF-Token']).toBe('csrf-reviewer')
+    expect(JSON.parse(fetchMock.mock.calls[9][1].body).acknowledgedWarningCodes).toEqual([
       'CONTENT_LOSS_SUSPECTED',
     ])
-    expect(wrapper.text()).toContain('APPROVED')
+    expect(reviewer.text()).toContain('APPROVED')
   })
 
   it('returns an in-review version then creates a new immutable draft revision', async () => {
@@ -130,6 +143,8 @@ function created() {
 
 function summary() {
   return {
+    versionStatus: 'DRAFT',
+    submittedBy: null,
     parseStatus: 'SUCCEEDED',
     parserVersion: 'text-structure-v1',
     parseResultHash: 'sha256:result',

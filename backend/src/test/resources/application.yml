@@ -4,7 +4,7 @@ spring:
     username: sa
     password: ''
   flyway:
-    locations: classpath:db/migration
+    locations: classpath:db/migration,classpath:db/vendor/h2
 
 app:
   identity:

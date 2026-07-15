@@ -8,6 +8,8 @@ interface ParseWarning {
 }
 
 interface ParseSummary {
+  versionStatus: 'DRAFT' | 'IN_REVIEW' | 'APPROVED'
+  submittedBy?: string | null
   parserVersion: string
   parseResultHash: string
   warnings: ParseWarning[]
@@ -35,6 +37,7 @@ const acknowledgedWarningCodes = ref<string[]>([])
 const cleanedText = ref('')
 const warningNote = ref('')
 const returnReason = ref('')
+const reviewVersionId = ref('')
 const governanceLoading = ref(false)
 
 function selectFile(event: Event) {
@@ -83,6 +86,10 @@ async function poll(taskId: string, versionId: string): Promise<void> {
     return poll(taskId, versionId)
   }
   if (task.value?.status !== 'SUCCEEDED') return
+  await loadPreview(versionId)
+}
+
+async function loadPreview(versionId: string) {
   const [preview, blockPage, chunkPage] = await Promise.all([
     request(`/api/v2/knowledge-versions/${versionId}/parse-preview`),
     request(`/api/v2/knowledge-versions/${versionId}/parse-preview/blocks`),
@@ -93,6 +100,25 @@ async function poll(taskId: string, versionId: string): Promise<void> {
   chunks.value = chunkPage.items
   cleanedText.value = blocks.value.map((block) => String(block.text || '')).join('\n\n')
   acknowledgedWarningCodes.value = []
+}
+
+async function loadReviewVersion() {
+  const versionId = reviewVersionId.value.trim()
+  if (!versionId) return
+  governanceLoading.value = true
+  error.value = ''
+  try {
+    await loadPreview(versionId)
+    version.value = {
+      versionId,
+      status: summary.value?.versionStatus ?? 'IN_REVIEW',
+      submittedBy: summary.value?.submittedBy,
+    }
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '待审核版本暂时不可用'
+  } finally {
+    governanceLoading.value = false
+  }
 }
 
 async function submitReview() {
@@ -232,6 +258,20 @@ async function request(path: string, init: Parameters<typeof fetch>[1] = {}) {
         <p v-if="error" class="error">{{ error }}</p>
         <p v-if="task" class="notice">任务状态：{{ task.status }}</p>
       </form>
+      <section class="card">
+        <h2>加载待审核版本（模拟数据）</h2>
+        <label>
+          Version ID
+          <input data-test="review-version-id" v-model="reviewVersionId" />
+        </label>
+        <button
+          data-test="load-review-version"
+          :disabled="governanceLoading || !reviewVersionId.trim()"
+          @click="loadReviewVersion"
+        >
+          加载审核预览
+        </button>
+      </section>
       <section class="card result">
         <h2>解析结果（模拟数据）</h2>
         <template v-if="summary">

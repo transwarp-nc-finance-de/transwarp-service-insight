@@ -38,6 +38,19 @@ public class JdbcKnowledgeGovernanceRepository implements KnowledgeGovernanceRep
   }
 
   @Override
+  public void lockIdempotency(String commandType, String idempotencyKey) {
+    jdbc.update(
+        "INSERT INTO knowledge_governance_idempotency_lock(command_type, idempotency_key) VALUES (?, ?) ON CONFLICT DO NOTHING",
+        commandType,
+        idempotencyKey);
+    jdbc.queryForObject(
+        "SELECT command_type FROM knowledge_governance_idempotency_lock WHERE command_type = ? AND idempotency_key = ? FOR UPDATE",
+        String.class,
+        commandType,
+        idempotencyKey);
+  }
+
+  @Override
   public Optional<IdempotencyRecord> findIdempotency(String commandType, String idempotencyKey) {
     return jdbc
         .query(

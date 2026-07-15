@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface KnowledgeGovernanceRepository {
+  void lockIdempotency(String commandType, String idempotencyKey);
+
   Optional<IdempotencyRecord> findIdempotency(String commandType, String idempotencyKey);
 
   Optional<VersionState> lockVersion(UUID versionId);

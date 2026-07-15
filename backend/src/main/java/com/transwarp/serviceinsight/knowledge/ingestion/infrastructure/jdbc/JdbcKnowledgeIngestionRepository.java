@@ -159,7 +159,8 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
     var previews =
         jdbc.query(
             """
-            SELECT r.*, t.status FROM knowledge_revision_parse_result r
+            SELECT r.*, t.status, v.status AS version_status, v.submitted_by
+            FROM knowledge_revision_parse_result r
             JOIN parse_task t ON t.task_id = r.task_id
             JOIN knowledge_version_v2 v ON v.version_id = r.version_id
             JOIN knowledge_document d ON d.document_id = v.document_id
@@ -170,6 +171,8 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
             (resultSet, rowNumber) ->
                 new ParsePreview(
                     resultSet.getObject("version_id", UUID.class),
+                    resultSet.getString("version_status"),
+                    resultSet.getString("submitted_by"),
                     resultSet.getObject("task_id", UUID.class),
                     resultSet.getString("status"),
                     resultSet.getString("parser_version"),

@@ -1,6 +1,7 @@
 package com.transwarp.serviceinsight.knowledge.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,6 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -20,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
@@ -262,6 +268,73 @@ class KnowledgeGovernanceControllerTest {
       jdbc.update(
           "DELETE FROM local_identity_role WHERE user_code = 'mock-knowledge-editor' AND role_code = 'KNOWLEDGE_REVIEWER'");
     }
+  }
+
+  @Test
+  void serializesTheSameCommandIdempotencyKeyAcrossDifferentVersions() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var first = uploadAndAwait(editor, "governance-race-upload-001", "# 模拟数据\n\n第一份资料");
+    var second = uploadAndAwait(editor, "governance-race-upload-002", "# 模拟数据\n\n第二份资料");
+    var ready = new CountDownLatch(2);
+    var start = new CountDownLatch(1);
+    var executor = Executors.newFixedThreadPool(2);
+    try {
+      var firstRequest =
+          executor.submit(
+              () -> concurrentSubmit(editor, first, "submit-race-shared-key", ready, start));
+      var secondRequest =
+          executor.submit(
+              () -> concurrentSubmit(editor, second, "submit-race-shared-key", ready, start));
+      assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+      start.countDown();
+
+      assertThat(List.of(firstRequest.get(), secondRequest.get()))
+          .containsExactlyInAnyOrder(200, 409);
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void databaseRejectsMutationOfDraftRevisionsAndReviewHistory() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var uploaded = uploadAndAwait(editor, "governance-immutable-001", "# 模拟数据\n\n不可变记录");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "submit-immutable-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "UPDATE knowledge_draft_revision SET title = 'changed' WHERE version_id = ?",
+                    uploaded.versionId()))
+        .isInstanceOf(DataAccessException.class);
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "DELETE FROM knowledge_review_history WHERE version_id = ?",
+                    uploaded.versionId()))
+        .isInstanceOf(DataAccessException.class);
+  }
+
+  private int concurrentSubmit(
+      MvcResult editor, Uploaded uploaded, String key, CountDownLatch ready, CountDownLatch start)
+      throws Exception {
+    ready.countDown();
+    if (!start.await(5, TimeUnit.SECONDS)) throw new AssertionError("Concurrent start timed out");
+    return command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            key,
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andReturn()
+        .getResponse()
+        .getStatus();
   }
 
   private org.springframework.test.web.servlet.ResultActions command(

@@ -1204,9 +1204,11 @@ components:
     ParsePreview:
       type: object
       additionalProperties: false
-      required: [versionId, parseTaskId, parseStatus, parserVersion, parseResultHash, parsedBlockCount, chunkCount, warnings, chunkingRule, mockData]
+      required: [versionId, versionStatus, submittedBy, parseTaskId, parseStatus, parserVersion, parseResultHash, parsedBlockCount, chunkCount, warnings, chunkingRule, mockData]
       properties:
         versionId: { type: string, format: uuid }
+        versionStatus: { type: string, enum: [DRAFT, IN_REVIEW, APPROVED] }
+        submittedBy: { type: string, nullable: true, maxLength: 100 }
         parseTaskId: { type: string, format: uuid }
         parseStatus: { type: string, enum: [SUCCEEDED], description: 有警告时仍为 SUCCEEDED }
         parserVersion: { type: string, minLength: 1, maxLength: 64 }
