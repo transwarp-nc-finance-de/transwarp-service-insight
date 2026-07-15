@@ -70,10 +70,16 @@ public class KnowledgeParseProcessor {
     var input = repository.claimPendingTask(taskId, clock.instant());
     if (input.isEmpty()) return;
     try {
-      var bytes = storage.read(input.get().storageKey());
+      var bytes =
+          input.get().cleanedText() == null
+              ? storage.read(input.get().storageKey())
+              : input.get().cleanedText().getBytes(java.nio.charset.StandardCharsets.UTF_8);
       repository.completeTask(
           input.get(),
-          parser.parse(bytes, input.get().mediaType(), input.get().taskId()),
+          parser.parse(
+              bytes,
+              input.get().cleanedText() == null ? input.get().mediaType() : "text/markdown",
+              input.get().taskId()),
           clock.instant());
     } catch (ParseFailure failure) {
       handleFailure(input.get(), failure.code(), failure.getMessage(), failure.retryable());

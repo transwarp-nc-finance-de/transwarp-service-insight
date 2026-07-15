@@ -23,7 +23,7 @@ info:
   x-implementation-status: PARTIALLY_IMPLEMENTED
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
   x-approval-status: APPROVED_FOR_IMPLEMENTATION
-  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION_AND_KNOWLEDGE_INGESTION
+  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION_KNOWLEDGE_INGESTION_AND_REVIEW
   x-approved-on: '2026-07-15'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令
@@ -292,7 +292,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: createKnowledgeDraftRevision
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 创建新的草稿修订并使旧 Chunk/索引失效
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters:
@@ -316,7 +316,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: submitKnowledgeVersionForReview
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 提交知识版本审核
       description: |
         `parseResultHash` 必须匹配当前 `SUCCEEDED` 解析结果，否则返回 `409 ILLEGAL_STATE_TRANSITION`。
@@ -328,7 +328,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: returnKnowledgeVersionToDraft
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 将审核中版本退回草稿
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
@@ -338,7 +338,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: approveKnowledgeVersion
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 由不同身份的审核人批准知识版本
       description: |
         提交人不得批准本人提交的版本；ADMIN 不获得绕过能力。`parseResultHash` 必须匹配当前解析结果；

@@ -4,6 +4,7 @@ import com.transwarp.serviceinsight.identity.api.V2ApiError;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
 import com.transwarp.serviceinsight.identity.application.UnauthenticatedException;
+import com.transwarp.serviceinsight.knowledge.governance.api.KnowledgeGovernanceController;
 import com.transwarp.serviceinsight.knowledge.ingestion.application.KnowledgeApiException;
 import java.time.Instant;
 import java.util.List;
@@ -24,7 +25,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
     assignableTypes = {
       KnowledgeIngestionController.class,
       ParseTaskController.class,
-      ParsePreviewController.class
+      ParsePreviewController.class,
+      KnowledgeGovernanceController.class
     })
 public class KnowledgeIngestionExceptionHandler {
   private static final Logger LOGGER =

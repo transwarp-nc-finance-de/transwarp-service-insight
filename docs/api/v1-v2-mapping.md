@@ -10,7 +10,7 @@ Source of truth for: 已实现 v1 与部分实现 v2 DRAFT 契约之间的字段
 
 Approval: 2026-07-14，用户以 API、产品、安全负责人身份明确批准进入实施
 
-> **DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION**：本文用于一期本地模拟闭环的契约实施边界。一期实施状态为 `READY_FOR_IMPLEMENTATION`；[`openapi.yaml`](openapi.yaml) 定义的 v1 Mock 继续作为兼容契约。[`openapi-v2.yaml`](openapi-v2.yaml) 已获准进入实施。当前实现 AuthSession，以及 `POST /api/v2/knowledge-documents`、`GET /api/v2/parse-tasks/{taskId}` 和三个 parse-preview 读取端点。其余 v2 operation 均为 `NOT_IMPLEMENTED`，当前切片不代表一期完成，也不接真实身份、生产数据库或外部系统。所有示例语义均为 `模拟数据`。
+> **DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION**：本文用于一期本地模拟闭环的契约实施边界。一期实施状态为 `READY_FOR_IMPLEMENTATION`；[`openapi.yaml`](openapi.yaml) 定义的 v1 Mock 继续作为兼容契约。[`openapi-v2.yaml`](openapi-v2.yaml) 已获准进入实施。当前实现 AuthSession、知识上传与解析预览，以及草稿修订、送审、退回和批准。其余 v2 operation 均为 `NOT_IMPLEMENTED`，当前切片不代表一期完成，也不接真实身份、生产数据库或外部系统。所有示例语义均为 `模拟数据`。
 
 ## 1. 兼容结论
 

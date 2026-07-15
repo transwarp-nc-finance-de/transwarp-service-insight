@@ -79,25 +79,34 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
         value.createdBy(),
         Timestamp.from(value.createdAt()));
     jdbc.update(
-        "INSERT INTO knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data) VALUES (?, ?, 1, 'DRAFT', ?, NULL, NULL, ?, ?, ?, TRUE)",
+        "INSERT INTO knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data, current_draft_revision_id) VALUES (?, ?, 1, 'DRAFT', ?, NULL, NULL, ?, ?, ?, TRUE, ?)",
         value.versionId(),
         value.documentId(),
         value.createdBy(),
         value.fileId(),
         Timestamp.from(value.createdAt()),
-        Timestamp.from(value.createdAt()));
+        Timestamp.from(value.createdAt()),
+        null);
     jdbc.update(
-        "INSERT INTO knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, created_at) VALUES (?, ?, 1, ?, ?, ?)",
+        "INSERT INTO knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, product_line_display_name, created_at, cleaned_text, cleaned_text_hash, parse_warning_notes, created_by, mock_data) VALUES (?, ?, 1, ?, ?, ?, ?, NULL, ?, '[]', ?, TRUE)",
         value.revisionId(),
         value.versionId(),
         value.title(),
         value.productLine().code(),
-        Timestamp.from(value.createdAt()));
+        value.productLine().displayName(),
+        Timestamp.from(value.createdAt()),
+        value.contentHash(),
+        value.createdBy());
     jdbc.update(
-        "INSERT INTO parse_task(task_id, resource_id, status, attempt, max_attempts, created_at) VALUES (?, ?, 'PENDING', 0, 3, ?)",
+        "UPDATE knowledge_version_v2 SET current_draft_revision_id = ? WHERE version_id = ?",
+        value.revisionId(),
+        value.versionId());
+    jdbc.update(
+        "INSERT INTO parse_task(task_id, resource_id, status, attempt, max_attempts, created_at, draft_revision_id) VALUES (?, ?, 'PENDING', 0, 3, ?, ?)",
         value.taskId(),
         value.versionId(),
-        Timestamp.from(value.createdAt()));
+        Timestamp.from(value.createdAt()),
+        value.revisionId());
     jdbc.update(
         "INSERT INTO knowledge_ingestion_idempotency(idempotency_key, request_hash, document_id, version_id, task_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         value.idempotencyKey(),
@@ -136,7 +145,7 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
             SELECT t.* FROM parse_task t
             JOIN knowledge_version_v2 v ON v.version_id = t.resource_id
             JOIN knowledge_document d ON d.document_id = v.document_id
-            WHERE v.version_id = ? AND d.product_line_code IN (%s)
+            WHERE v.version_id = ? AND t.draft_revision_id = v.current_draft_revision_id AND d.product_line_code IN (%s)
               AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'DEPRECATED')))
             """
                 .formatted(placeholders(identity.productLineCodes().size())),
@@ -150,11 +159,11 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
     var previews =
         jdbc.query(
             """
-            SELECT r.*, t.status FROM knowledge_parse_result r
+            SELECT r.*, t.status FROM knowledge_revision_parse_result r
             JOIN parse_task t ON t.task_id = r.task_id
             JOIN knowledge_version_v2 v ON v.version_id = r.version_id
             JOIN knowledge_document d ON d.document_id = v.document_id
-            WHERE r.version_id = ? AND d.product_line_code IN (%s)
+            WHERE r.version_id = ? AND r.revision_id = v.current_draft_revision_id AND d.product_line_code IN (%s)
               AND ((? AND v.created_by = ?) OR (? AND v.status IN ('IN_REVIEW', 'APPROVED', 'PUBLISHED', 'DEPRECATED')))
             """
                 .formatted(placeholders(identity.productLineCodes().size())),
@@ -197,12 +206,12 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
   public ParsedBlockPage findBlocks(UUID versionId, int page, int size) {
     var total =
         jdbc.queryForObject(
-            "SELECT COUNT(*) FROM knowledge_parsed_block WHERE version_id = ?",
+            "SELECT COUNT(*) FROM knowledge_revision_parsed_block b JOIN knowledge_version_v2 v ON v.current_draft_revision_id = b.revision_id WHERE v.version_id = ?",
             Long.class,
             versionId);
     var items =
         jdbc.query(
-            "SELECT * FROM knowledge_parsed_block WHERE version_id = ? ORDER BY sequence ASC LIMIT ? OFFSET ?",
+            "SELECT b.* FROM knowledge_revision_parsed_block b JOIN knowledge_version_v2 v ON v.current_draft_revision_id = b.revision_id WHERE v.version_id = ? ORDER BY b.sequence ASC LIMIT ? OFFSET ?",
             (resultSet, rowNumber) ->
                 new ParsedBlock(
                     resultSet.getObject("block_id", UUID.class),
@@ -220,10 +229,12 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
   public ChunkPage findChunks(UUID versionId, int page, int size) {
     var total =
         jdbc.queryForObject(
-            "SELECT COUNT(*) FROM knowledge_chunk WHERE version_id = ?", Long.class, versionId);
+            "SELECT COUNT(*) FROM knowledge_revision_chunk c JOIN knowledge_version_v2 v ON v.current_draft_revision_id = c.revision_id WHERE v.version_id = ?",
+            Long.class,
+            versionId);
     var items =
         jdbc.query(
-            "SELECT * FROM knowledge_chunk WHERE version_id = ? ORDER BY sequence ASC LIMIT ? OFFSET ?",
+            "SELECT c.* FROM knowledge_revision_chunk c JOIN knowledge_version_v2 v ON v.current_draft_revision_id = c.revision_id WHERE v.version_id = ? ORDER BY c.sequence ASC LIMIT ? OFFSET ?",
             (resultSet, rowNumber) ->
                 new Chunk(
                     resultSet.getObject("chunk_id", UUID.class),
@@ -252,18 +263,21 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
     return jdbc
         .query(
             """
-            SELECT t.task_id, t.resource_id, t.attempt, t.max_attempts, f.storage_key, f.media_type
+            SELECT t.task_id, t.resource_id, t.draft_revision_id, t.attempt, t.max_attempts, f.storage_key, f.media_type, r.cleaned_text
             FROM parse_task t
             JOIN knowledge_version_v2 v ON v.version_id = t.resource_id
             JOIN knowledge_original_file f ON f.file_id = v.original_file_id
+            JOIN knowledge_draft_revision r ON r.revision_id = t.draft_revision_id
             WHERE t.task_id = ?
             """,
             (resultSet, rowNumber) ->
                 new TaskInput(
                     resultSet.getObject("task_id", UUID.class),
                     resultSet.getObject("resource_id", UUID.class),
+                    resultSet.getObject("draft_revision_id", UUID.class),
                     resultSet.getString("storage_key"),
                     resultSet.getString("media_type"),
+                    resultSet.getString("cleaned_text"),
                     resultSet.getInt("attempt"),
                     resultSet.getInt("max_attempts")),
             taskId)
@@ -275,9 +289,10 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
   @Transactional
   public void completeTask(TaskInput input, ParsedDocument document, Instant completedAt) {
     jdbc.update(
-        "INSERT INTO knowledge_parse_result(version_id, task_id, parser_version, parse_result_hash, parsed_block_count, chunk_count, chunking_rule_version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO knowledge_revision_parse_result(version_id, task_id, revision_id, parser_version, parse_result_hash, parsed_block_count, chunk_count, chunking_rule_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         input.versionId(),
         input.taskId(),
+        input.revisionId(),
         document.parserVersion(),
         document.parseResultHash(),
         document.blocks().size(),
@@ -285,9 +300,10 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
         document.chunkingRuleVersion());
     for (var block : document.blocks()) {
       jdbc.update(
-          "INSERT INTO knowledge_parsed_block(block_id, version_id, sequence, structure_path, text_content, content_hash) VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO knowledge_revision_parsed_block(block_id, task_id, revision_id, sequence, structure_path, text_content, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
           block.blockId(),
-          input.versionId(),
+          input.taskId(),
+          input.revisionId(),
           block.sequence(),
           block.structurePath(),
           block.text(),
@@ -295,9 +311,10 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
     }
     for (var chunk : document.chunks()) {
       jdbc.update(
-          "INSERT INTO knowledge_chunk(chunk_id, version_id, sequence, structure_path, text_content, token_count, content_hash, chunking_rule_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO knowledge_revision_chunk(chunk_id, task_id, revision_id, sequence, structure_path, text_content, token_count, content_hash, chunking_rule_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
           chunk.chunkId(),
-          input.versionId(),
+          input.taskId(),
+          input.revisionId(),
           chunk.sequence(),
           chunk.structurePath(),
           chunk.text(),
@@ -307,9 +324,10 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
     }
     for (var warning : document.warnings()) {
       jdbc.update(
-          "INSERT INTO knowledge_parse_warning(warning_id, version_id, warning_code, message, structure_path, occurrence_count) VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO knowledge_revision_parse_warning(warning_id, task_id, revision_id, warning_code, message, structure_path, occurrence_count) VALUES (?, ?, ?, ?, ?, ?, ?)",
           UUID.randomUUID(),
-          input.versionId(),
+          input.taskId(),
+          input.revisionId(),
           warning.code(),
           warning.message(),
           warning.structurePath(),
@@ -443,7 +461,7 @@ public class JdbcKnowledgeIngestionRepository implements KnowledgeIngestionRepos
 
   private java.util.List<ParseWarning> warnings(UUID versionId) {
     return jdbc.query(
-        "SELECT * FROM knowledge_parse_warning WHERE version_id = ? ORDER BY warning_code, structure_path LIMIT 100",
+        "SELECT w.* FROM knowledge_revision_parse_warning w JOIN knowledge_version_v2 v ON v.current_draft_revision_id = w.revision_id WHERE v.version_id = ? ORDER BY w.warning_code, w.structure_path LIMIT 100",
         (resultSet, rowNumber) ->
             new ParseWarning(
                 resultSet.getString("warning_code"),
