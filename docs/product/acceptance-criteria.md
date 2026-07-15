@@ -11,13 +11,13 @@
 - 置信度必须由版本化确定性规则计算并展示理由：无证据、权限过滤后无证据、关键信息缺失或 Embedding 降级不得高于 `LOW`；单一证据、检索路径不一致或仍需补充信息不得高于 `MEDIUM`；`HIGH` 必须同时满足完整性通过、证据充分、FTS 与向量结果相互印证且无降级。
 - 反馈失败、预诊失败和用户未采纳均不阻断 AIOps 原流程人工提交。
 - OpenAPI、Java DTO、TypeScript 类型和行为测试一致；后端、前端、Compose 与浏览器冒烟通过后方可交付。
-- 不接真实 AIOps、数据库、RAG、LLM、多 Agent、真实数据或真实 SLA 提交。
+- 仅接本地 Compose PostgreSQL 保存模拟身份、目录与 AuthSession；不接真实 AIOps、企业共享/生产数据库、RAG、LLM、多 Agent、真实数据或真实 SLA 提交。
 
 ## 一期范围重定义后的目标验收门禁
 
 以下为 `CONFIRMED` 的目标标准，不代表当前实现已经满足：固定评估集使用不少于 30 条 `模拟数据` 样例；权限泄漏率必须为 0%，引用错误率必须为 0%，降级场景通过率必须为 100%，Recall@5 必须不低于 80%。评估结果必须注明“小样本工程评估，不代表生产效果”。
 
-契约门禁已完成：`/api/v2` OpenAPI 的方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射已于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`，本节目标不得被表述为已实现接口。
+契约门禁已完成：`/api/v2` OpenAPI 的方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射已于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前只实现 AuthSession 基础切片，v1 Mock 保持兼容，其余目标不得被表述为已实现接口。
 
 混合检索必须在两路过滤后各取前 20 条，使用版本化 RRF（`k=60`）融合并稳定返回前 5 条；相同输入、索引与规则版本必须产生相同顺序。
 

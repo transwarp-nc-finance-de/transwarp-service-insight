@@ -2,7 +2,7 @@
 
 Status: CONFIRMED
 Owner: 产品负责人
-Last reviewed: 2026-07-14
+Last reviewed: 2026-07-15
 Source of truth for: 一期本地完整纵向闭环的产品需求
 
 ## 目的
@@ -17,7 +17,7 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 本文仅定义产品能力和边界，不包含后端代码、接口协议、数据库设计、真实 API 地址、真实 RAG 接入、真实大模型接入或真实 AIOps 实现。涉及 AIOps 的内容仅为后续对接的产品接口要求，不代表当前已经完成真实系统接入。
 
-当前状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`。纯前端 Demo 已归档；技术 MVP 已实现 Vue、Spring Boot Mock API、页面内模拟多轮追问和本地 Compose。本文确认的本地知识治理、PostgreSQL/pgvector、RBAC、持久化反馈/审计与评估仍未实现；真实知识、真实身份和外部集成都在一期范围外。
+当前状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`。技术 MVP 保持 v1 Mock 完全兼容，并已实现 v2 AuthSession、本地 PostgreSQL、四个模拟身份及角色/产品线矩阵；其余 v2、本地知识治理、pgvector、持久化预诊/反馈/审计与评估仍未实现。真实知识、真实身份和外部集成都在一期范围外。
 
 ## 正文
 
@@ -279,9 +279,9 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 ### 13. 已确认状态与待确认事项
 
-(1) `CONFIRMED`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射已获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`，但当前实现仍为 `v1 Mock`。
+(1) `CONFIRMED`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射已获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前只实现 AuthSession 基础切片，v1 Mock 保持兼容，其余 v2 未实现。
 
-(2) `CONFIRMED`：`PrecheckContext` 可选字段约束、稳定枚举和附件元数据 Schema 已随 API v2 DRAFT 获人工批准；具体本地目录种子值清单仍为 `OPEN QUESTION`，真实 AIOps 字段映射不属于一期。
+(2) `CONFIRMED`：`PrecheckContext` 可选字段约束、稳定枚举和附件元数据 Schema 已随 API v2 DRAFT 获人工批准；`local-identity-v1` 与 `local-catalog-v1` 稳定种子值已确认并实现，真实 AIOps 字段映射不属于一期。
 
 (3) `EXTERNAL QUESTION`：默认 Embedding 模型及依赖许可证兼容性、本机资源实测和固定评估集表现；未通过前不得下载或启用模型制品。
 

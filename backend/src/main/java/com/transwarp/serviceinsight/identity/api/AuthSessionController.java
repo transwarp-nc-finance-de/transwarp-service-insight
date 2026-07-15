@@ -33,13 +33,16 @@ public class AuthSessionController {
       @Valid @RequestBody CreateAuthSessionRequest request,
       @CookieValue(name = SESSION_COOKIE, required = false) String previousSessionCookie) {
     var session = authSessions.create(request.userCode(), previousSessionCookie);
-    return withSessionHeaders(session, HttpStatus.CREATED);
+    return responseHeaders(session, HttpStatus.CREATED)
+        .header(HttpHeaders.SET_COOKIE, sessionCookie(session).toString())
+        .body(AuthSessionResponse.from(session));
   }
 
   @GetMapping("/current")
   ResponseEntity<AuthSessionResponse> current(
       @CookieValue(name = SESSION_COOKIE, required = false) String sessionCookie) {
-    return withSessionHeaders(authSessions.current(sessionCookie), HttpStatus.OK);
+    var session = authSessions.current(sessionCookie);
+    return responseHeaders(session, HttpStatus.OK).body(AuthSessionResponse.from(session));
   }
 
   @DeleteMapping("/current")
@@ -59,18 +62,17 @@ public class AuthSessionController {
         .build();
   }
 
-  private ResponseEntity<AuthSessionResponse> withSessionHeaders(
-      AuthSession session, HttpStatus status) {
-    var cookie =
-        ResponseCookie.from(SESSION_COOKIE, session.sessionId().toString())
-            .httpOnly(true)
-            .sameSite("Lax")
-            .path("/")
-            .build();
+  private ResponseEntity.BodyBuilder responseHeaders(AuthSession session, HttpStatus status) {
     return ResponseEntity.status(status)
-        .header(HttpHeaders.SET_COOKIE, cookie.toString())
         .header(CSRF_HEADER, session.csrfToken())
-        .header(HttpHeaders.CACHE_CONTROL, "no-store")
-        .body(AuthSessionResponse.from(session));
+        .header(HttpHeaders.CACHE_CONTROL, "no-store");
+  }
+
+  private ResponseCookie sessionCookie(AuthSession session) {
+    return ResponseCookie.from(SESSION_COOKIE, session.sessionId().toString())
+        .httpOnly(true)
+        .sameSite("Lax")
+        .path("/")
+        .build();
   }
 }

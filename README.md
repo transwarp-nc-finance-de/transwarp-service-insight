@@ -306,7 +306,7 @@ docker compose down --remove-orphans
 docker compose up -d --build --wait
 ```
 
-回滚会替换当前本地运行版本；不得在含未提交修改的工作区执行，也不得将 detached HEAD 上的修改直接推送。恢复开发时切回原主题分支。M2 没有数据库和持久化迁移，不提供生产数据回滚能力。
+回滚会替换当前本地运行版本；不得在含未提交修改的工作区执行，也不得将 detached HEAD 上的修改直接推送。恢复开发时切回原主题分支。本地 PostgreSQL 使用 Flyway 迁移并默认保留 `postgres-data` 卷，但不提供生产数据迁移或回滚能力。
 
 ## 11. 仓库结构
 

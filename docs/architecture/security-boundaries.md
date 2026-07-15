@@ -2,12 +2,12 @@
 
 Status: ACTIVE  
 Owner: 安全负责人  
-Last reviewed: 2026-07-12  
+Last reviewed: 2026-07-15
 Source of truth for: 当前安全硬边界与未来接入门禁
 
 ## 当前边界
 
-当前仅允许模拟、公开或已脱敏输入。服务不接真实身份系统、知识库、数据库、模型、AIOps、ITSM 或生产环境；模拟主体 `mock-user` 和策略 `mock-policy-v1` 不代表真实鉴权。进程内审计不得记录标题、描述、追问、反馈正文、Token、密钥或附件正文。
+当前仅允许模拟、公开或已脱敏输入。服务只接本地 Compose PostgreSQL 保存版本化模拟身份、模拟目录与 AuthSession，不接真实身份系统、知识库、企业共享/生产数据库、模型、AIOps、ITSM 或生产环境；四个 `local-identity-v1` 模拟主体与策略 `mock-policy-v1` 不代表真实鉴权。审计和日志不得记录标题、描述、追问、反馈正文、Token、密钥或附件正文。
 
 所有输出必须包含依据来源、置信度、人工介入建议和待补充信息，并标识 `模拟数据`。输出不得成为最终根因、最终方案或正式复盘结论；失败、低置信度和反馈失败不得阻断人工继续提交。
 
@@ -29,7 +29,7 @@ Source of truth for: 当前安全硬边界与未来接入门禁
 
 ## 一期已确认本地身份边界
 
-一期只允许预置 `模拟数据` 用户通过本地 Mock 登录/切换建立服务端 Session/Cookie。后端执行 RBAC，前端隐藏按钮不构成授权控制；不实现注册、密码找回、真实组织同步、JWT 或正式 SSO。`IdentityContextPort` 隔离本地身份与未来宿主身份。
+一期只允许预置 `模拟数据` 用户通过本地 Mock 登录/切换建立服务端 Session/Cookie。该 AuthSession 基础切片已实现；后端提供角色与产品线范围的 `IdentityContext`，后续受保护业务路径仍必须各自执行授权，前端隐藏按钮不构成授权控制。不实现注册、密码找回、真实组织同步、JWT 或正式 SSO。`IdentityContextPort` 隔离本地身份与未来宿主身份。
 
 一期 RBAC 固定为 `PRECHECK_USER`、`KNOWLEDGE_EDITOR`、`KNOWLEDGE_REVIEWER`、`ADMIN`。管理员权限不构成业务职责绕过：不得批准自己提交的知识版本，也不得替用户确认继续提交。
 

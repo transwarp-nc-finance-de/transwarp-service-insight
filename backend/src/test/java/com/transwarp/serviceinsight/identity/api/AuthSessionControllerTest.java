@@ -76,6 +76,7 @@ class AuthSessionControllerTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Cache-Control", "no-store"))
         .andExpect(header().string("X-CSRF-Token", csrfToken))
+        .andExpect(header().doesNotExist("Set-Cookie"))
         .andExpect(jsonPath("$.userCode").value("mock-knowledge-editor"))
         .andExpect(jsonPath("$.roles[0]").value("KNOWLEDGE_EDITOR"))
         .andExpect(jsonPath("$.productLineCodes", hasSize(2)))

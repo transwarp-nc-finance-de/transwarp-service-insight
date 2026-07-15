@@ -2,7 +2,7 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
-当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现仍为 `v1 Mock`。批准进入实施不代表 API v2 或一期目标能力已经实现。
+当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession/PostgreSQL 基础切片，其余 v2 与一期目标能力仍未实现。
 
 首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
 
