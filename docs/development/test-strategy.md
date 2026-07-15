@@ -12,6 +12,8 @@
 
 当前阶段测试包括：后端单元与 API 行为测试、Spotless 格式检查、前端组件行为测试、ESLint、Prettier、生产构建、版本锁定的 OpenAPI 校验、三服务镜像构建及 Compose 冒烟。API 测试验证 v1 健康/预诊/追问/反馈、v2 AuthSession，以及知识上传、幂等、权限、ParseTask 与预览；领域测试覆盖结构优先切片、稳定哈希、PDF 文本层和重试上限；组件测试覆盖模拟登录/切换/退出与上传到预览纵向流程；Compose 使用真实本地 PostgreSQL 和文件 volume 验证重启恢复。
 
+Issue #16 的 `mock-eval-v1` 固定模拟评估集由独立 CI 门禁校验样例、身份、产品线、Evidence 引用、权限拒绝目标、覆盖矩阵、三轮上限、安全内容、稳定排序和 checksum；维护与升级命令见[固定模拟评估集维护指南](evaluation-dataset.md)。该门禁只证明数据资产一致，不声称 EvaluationRun、真实检索或生产效果已实现。
+
 ## 一期实施测试 seam
 
 测试只验证公共行为和复杂、确定性的领域规则。不得测试私有方法、内部调用次数、Mapper 的机械调用关系、Spring Bean 是否被调用、Vue `ref` 内部状态或 Repository 实现细节。

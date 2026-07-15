@@ -1,0 +1,27 @@
+{
+  "datasetVersion": "mock-eval-v1",
+  "mockData": true,
+  "dimensions": {
+    "language": {
+      "LANG_ZH": ["mock-eval-v1-001","mock-eval-v1-004","mock-eval-v1-007","mock-eval-v1-010","mock-eval-v1-013","mock-eval-v1-016","mock-eval-v1-019","mock-eval-v1-022","mock-eval-v1-025","mock-eval-v1-028"],
+      "LANG_EN": ["mock-eval-v1-002","mock-eval-v1-005","mock-eval-v1-008","mock-eval-v1-011","mock-eval-v1-014","mock-eval-v1-017","mock-eval-v1-020","mock-eval-v1-023","mock-eval-v1-026","mock-eval-v1-029"],
+      "LANG_MIXED": ["mock-eval-v1-003","mock-eval-v1-006","mock-eval-v1-009","mock-eval-v1-012","mock-eval-v1-015","mock-eval-v1-018","mock-eval-v1-021","mock-eval-v1-024","mock-eval-v1-027","mock-eval-v1-030"]
+    },
+    "scenario": {
+      "EXACT_TERM": ["mock-eval-v1-001","mock-eval-v1-002","mock-eval-v1-003","mock-eval-v1-025","mock-eval-v1-029"],
+      "SEMANTIC_REWRITE": ["mock-eval-v1-004","mock-eval-v1-005","mock-eval-v1-006","mock-eval-v1-026","mock-eval-v1-030"],
+      "INSUFFICIENT_EVIDENCE": ["mock-eval-v1-007","mock-eval-v1-008","mock-eval-v1-009","mock-eval-v1-028"],
+      "PERMISSION_ISOLATION": ["mock-eval-v1-010","mock-eval-v1-011","mock-eval-v1-012","mock-eval-v1-026"],
+      "EMBEDDING_DEGRADATION": ["mock-eval-v1-013","mock-eval-v1-014","mock-eval-v1-015","mock-eval-v1-027"],
+      "FTS_ONLY": ["mock-eval-v1-013","mock-eval-v1-014","mock-eval-v1-027"],
+      "UNAVAILABLE": ["mock-eval-v1-015"],
+      "MULTI_RUN": ["mock-eval-v1-016","mock-eval-v1-017","mock-eval-v1-018","mock-eval-v1-028","mock-eval-v1-030"],
+      "CITATION_VERIFICATION": ["mock-eval-v1-019","mock-eval-v1-020","mock-eval-v1-021","mock-eval-v1-025","mock-eval-v1-027"],
+      "CROSS_LANGUAGE": ["mock-eval-v1-022","mock-eval-v1-023","mock-eval-v1-024","mock-eval-v1-029"]
+    },
+    "degradation": {
+      "FTS_ONLY": ["mock-eval-v1-013","mock-eval-v1-014","mock-eval-v1-027"],
+      "UNAVAILABLE": ["mock-eval-v1-015"]
+    }
+  }
+}

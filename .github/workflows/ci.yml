@@ -13,6 +13,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21", cache: maven }
+      - name: Validate fixed mock evaluation dataset
+        run: ./mvnw -Dtest=EvaluationDatasetValidationTest test
+      - name: Reject disabled or empty evaluation checks
+        shell: bash
+        run: |
+          if git grep -n -E '@(Disabled|Ignore)|Assumptions\.|assertThat\(true\)|assertTrue\(true\)' -- src/test/java/com/transwarp/serviceinsight/evaluation; then
+            echo "Evaluation validation must not be skipped, disabled, ignored, or use empty assertions."
+            exit 1
+          fi
       - run: ./mvnw spotless:check test
       - run: ./mvnw package -DskipTests
   frontend:

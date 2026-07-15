@@ -1,0 +1,1506 @@
+{
+  "datasetVersion": "mock-eval-v1",
+  "owner": "Service Insight Maintainers",
+  "mockData": true,
+  "cases": [
+    {
+      "caseId": "mock-eval-v1-001",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "EXACT_TERM"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-001",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "INSTALLATION_CONFIGURATION",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-001",
+            "descriptionPlainText": "模拟数据：检索精确错误码 TDH-40401",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000010"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-002",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "EXACT_TERM"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-002",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "INSTALLATION_CONFIGURATION",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-002",
+            "descriptionPlainText": "模拟数据：find hive.exec.dynamic.partition configuration",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000008"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-003",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "EXACT_TERM"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-003",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "INSTALLATION_CONFIGURATION",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-003",
+            "descriptionPlainText": "模拟数据：Kafka ISR shrink error KAFKA-1002",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000004"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-004",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "SEMANTIC_REWRITE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-004",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "PERFORMANCE_DEGRADATION",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-004",
+            "descriptionPlainText": "模拟数据：集群查询突然变慢，换一种说法查性能资料",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000013"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-005",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "SEMANTIC_REWRITE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-005",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "PERFORMANCE_DEGRADATION",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-005",
+            "descriptionPlainText": "模拟数据：broker throughput dropped unexpectedly",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-006",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "SEMANTIC_REWRITE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-006",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "PERFORMANCE_DEGRADATION",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-006",
+            "descriptionPlainText": "模拟数据：Inceptor query latency 变高",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000012"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-007",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-007",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-007",
+            "descriptionPlainText": "模拟数据：服务有问题但没有错误信息",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "NONE",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [
+        "ERROR_MESSAGE",
+        "REPRODUCTION_STEPS"
+      ],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-008",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-008",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-008",
+            "descriptionPlainText": "模拟数据：something failed without logs",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "NONE",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [
+        "ERROR_MESSAGE",
+        "IMPACT_SCOPE"
+      ],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-009",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-009",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-009",
+            "descriptionPlainText": "模拟数据：query failed 但未提供 version",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "NONE",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [
+        "VERSION"
+      ],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-010",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "PERMISSION_ISOLATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-010",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-010",
+            "descriptionPlainText": "模拟数据：TDH 身份检索同名调优资料",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000013"
+      ],
+      "forbiddenEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-011",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "PERMISSION_ISOLATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-011",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-011",
+            "descriptionPlainText": "模拟数据：STREAMING identity searches shared performance wording",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "forbiddenEvidenceIds": [
+        "10000000-0000-4000-8000-000000000013"
+      ],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-012",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "PERMISSION_ISOLATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-012",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-012",
+            "descriptionPlainText": "模拟数据：verify product line ACL 隔离",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000009"
+      ],
+      "forbiddenEvidenceIds": [
+        "10000000-0000-4000-8000-000000000002"
+      ],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-013",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "EMBEDDING_DEGRADATION",
+        "FTS_ONLY"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-013",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-013",
+            "descriptionPlainText": "模拟数据：向量能力超时后用全文检索错误码",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000011"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "FTS_ONLY",
+      "expectedDegradation": "FTS_ONLY",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-014",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "EMBEDDING_DEGRADATION",
+        "FTS_ONLY"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-014",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-014",
+            "descriptionPlainText": "模拟数据：embedding timeout falls back to full text search",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000003"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "FTS_ONLY",
+      "expectedDegradation": "FTS_ONLY",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-015",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "EMBEDDING_DEGRADATION",
+        "UNAVAILABLE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-015",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-015",
+            "descriptionPlainText": "模拟数据：Embedding 与 FTS 均 unavailable",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "NONE",
+      "expectedDegradation": "UNAVAILABLE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-016",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "MULTI_RUN"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-016",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-016",
+            "descriptionPlainText": "模拟数据：查询失败",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 2,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-016",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-016",
+            "descriptionPlainText": "模拟数据：查询失败；补充错误码 TDH-40401",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：补充错误码 TDH-40401"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000010"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-017",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "MULTI_RUN"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-017",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-017",
+            "descriptionPlainText": "模拟数据：streaming is slow",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 2,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-017",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-017",
+            "descriptionPlainText": "模拟数据：streaming is slow；adds broker throughput symptom",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：adds broker throughput symptom"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-018",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "MULTI_RUN"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-018",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-018",
+            "descriptionPlainText": "模拟数据：query error",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 2,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-018",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-018",
+            "descriptionPlainText": "模拟数据：query error；补充 Inceptor module",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：补充 Inceptor module"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 3,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-018",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-018",
+            "descriptionPlainText": "模拟数据：query error；补充 Inceptor module；补充 latency impact scope",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：补充 Inceptor module"
+              },
+              {
+                "fieldCode": "FOLLOW_UP_3",
+                "displayName": "第 3 轮补充（模拟数据）",
+                "value": "模拟数据：补充 latency impact scope"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000012"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-019",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "CITATION_VERIFICATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-019",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-019",
+            "descriptionPlainText": "模拟数据：核验引用必须匹配不可变 Evidence",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000007"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-020",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "CITATION_VERIFICATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-020",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-020",
+            "descriptionPlainText": "模拟数据：verify citation points to immutable evidence",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000001"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-021",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "CITATION_VERIFICATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-021",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-021",
+            "descriptionPlainText": "模拟数据：Evidence ID 与 citation 一致性 check",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000007"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-022",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "CROSS_LANGUAGE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-022",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-022",
+            "descriptionPlainText": "模拟数据：中文问题检索英文 TDH 运维资料",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-cross-product-reviewer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000009"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-023",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "CROSS_LANGUAGE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-023",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-023",
+            "descriptionPlainText": "模拟数据：English query retrieves Chinese STREAMING guide",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-cross-product-reviewer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000006"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-024",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "CROSS_LANGUAGE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-024",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-024",
+            "descriptionPlainText": "模拟数据：中英 mixed query 检索 English guide",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-cross-product-reviewer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000009"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-025",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "EXACT_TERM",
+        "CITATION_VERIFICATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-025",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-025",
+            "descriptionPlainText": "模拟数据：精确版本键 hive.exec.dynamic.partition 并核验引用",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000008"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-026",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "SEMANTIC_REWRITE",
+        "PERMISSION_ISOLATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-026",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-026",
+            "descriptionPlainText": "模拟数据：paraphrased performance query respects ACL",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "forbiddenEvidenceIds": [
+        "10000000-0000-4000-8000-000000000013"
+      ],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-027",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "EMBEDDING_DEGRADATION",
+        "FTS_ONLY",
+        "CITATION_VERIFICATION"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-027",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "DATA_CORRECTNESS",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-027",
+            "descriptionPlainText": "模拟数据：FTS fallback 仍需 citation 校验",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000011"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "FTS_ONLY",
+      "expectedDegradation": "FTS_ONLY",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-028",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_ZH"
+      ],
+      "scenarioTags": [
+        "MULTI_RUN",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-028",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-028",
+            "descriptionPlainText": "模拟数据：首轮只说服务异常",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 2,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-028",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "FUNCTIONAL_FAILURE",
+            "productLineCode": "TDH",
+            "productCode": "INCEPTOR",
+            "componentCode": "SQL",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-028",
+            "descriptionPlainText": "模拟数据：首轮只说服务异常；第二轮仍未提供错误日志",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：第二轮仍未提供错误日志"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-tdh-engineer",
+      "allowedProductLineCodes": [
+        "TDH"
+      ],
+      "expectedEvidenceIds": [],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "NONE",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [
+        "ERROR_MESSAGE"
+      ],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-029",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_EN"
+      ],
+      "scenarioTags": [
+        "EXACT_TERM",
+        "CROSS_LANGUAGE"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-029",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "INSTALLATION_CONFIGURATION",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-029",
+            "descriptionPlainText": "模拟数据：exact ISR key retrieves Chinese guide",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-cross-product-reviewer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000006"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    },
+    {
+      "caseId": "mock-eval-v1-030",
+      "datasetVersion": "mock-eval-v1",
+      "languageTags": [
+        "LANG_MIXED"
+      ],
+      "scenarioTags": [
+        "SEMANTIC_REWRITE",
+        "MULTI_RUN"
+      ],
+      "turns": [
+        {
+          "runSequence": 1,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-030",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "PERFORMANCE_DEGRADATION",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-030",
+            "descriptionPlainText": "模拟数据：broker 变慢",
+            "additionalInformation": [],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        },
+        {
+          "runSequence": 2,
+          "contextSnapshot": {
+            "sourceSystem": "MOCK_AIOPS",
+            "hostRequestId": "mock-host-request-030",
+            "formSchemaVersion": "mock-precheck-form-v1",
+            "issueType": "PERFORMANCE_DEGRADATION",
+            "productLineCode": "STREAMING",
+            "productCode": "KAFKA",
+            "componentCode": "BROKER",
+            "version": "mock-v1",
+            "severity": "P2",
+            "serviceType": "TECHNICAL_SUPPORT",
+            "title": "模拟数据：固定评估案例 mock-eval-v1-030",
+            "descriptionPlainText": "模拟数据：broker 变慢；补充 throughput dropped unexpectedly",
+            "additionalInformation": [
+              {
+                "fieldCode": "FOLLOW_UP_2",
+                "displayName": "第 2 轮补充（模拟数据）",
+                "value": "模拟数据：补充 throughput dropped unexpectedly"
+              }
+            ],
+            "impactScope": "模拟数据：单个模拟任务",
+            "attachments": []
+          }
+        }
+      ],
+      "executionIdentityCode": "mock-streaming-engineer",
+      "allowedProductLineCodes": [
+        "STREAMING"
+      ],
+      "expectedEvidenceIds": [
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "forbiddenEvidenceIds": [],
+      "expectedRetrievalMode": "HYBRID",
+      "expectedDegradation": "NONE",
+      "expectedMissingFieldCodes": [],
+      "mockData": true
+    }
+  ]
+}
