@@ -25,15 +25,31 @@
     },
     "evidence": {
       "type": "object", "additionalProperties": false,
-      "required": ["evidenceId", "productLineCode", "language", "title", "excerpt", "mockData"],
+      "required": ["evidenceId", "productLineCode", "language", "document", "versionId", "chunkId", "excerpt", "contentHash", "mockData"],
       "properties": {
-        "evidenceId": {"type": "string", "pattern": "^mock-ev-"},
+        "evidenceId": {"$ref": "#/$defs/mockUuid"},
         "productLineCode": {"enum": ["TDH", "STREAMING"]},
         "language": {"enum": ["ZH", "EN", "MIXED"]},
-        "title": {"type": "string", "pattern": "^模拟数据："},
+        "document": {"$ref": "#/$defs/document"},
+        "versionId": {"$ref": "#/$defs/mockUuid"},
+        "chunkId": {"$ref": "#/$defs/mockUuid"},
         "excerpt": {"type": "string", "pattern": "^模拟数据："},
+        "contentHash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
         "mockData": {"const": true}
       }
+    },
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["documentId", "title"],
+      "properties": {
+        "documentId": {"$ref": "#/$defs/mockUuid"},
+        "title": {"type": "string", "pattern": "^模拟数据："}
+      }
+    },
+    "mockUuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[1-4]0000000-0000-4000-8000-[0-9]{12}$"
     }
   }
 }

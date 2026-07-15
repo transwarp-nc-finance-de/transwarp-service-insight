@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.transwarp.serviceinsight.evaluation.infrastructure.ClasspathEvaluationSetCatalog;
 import org.junit.jupiter.api.Test;
 
 class EvaluationSetCatalogTest {

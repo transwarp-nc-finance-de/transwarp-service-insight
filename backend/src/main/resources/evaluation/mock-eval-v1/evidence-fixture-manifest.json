@@ -3,24 +3,234 @@
   "datasetVersion": "mock-eval-v1",
   "mockData": true,
   "executionIdentities": [
-    {"identityCode":"mock-cross-product-reviewer","roles":["REVIEWER"],"productLineCodes":["STREAMING","TDH"],"mockData":true},
-    {"identityCode":"mock-streaming-engineer","roles":["SLA_ENGINEER"],"productLineCodes":["STREAMING"],"mockData":true},
-    {"identityCode":"mock-tdh-engineer","roles":["SLA_ENGINEER"],"productLineCodes":["TDH"],"mockData":true}
+    {
+      "identityCode": "mock-cross-product-reviewer",
+      "roles": [
+        "REVIEWER"
+      ],
+      "productLineCodes": [
+        "STREAMING",
+        "TDH"
+      ],
+      "mockData": true
+    },
+    {
+      "identityCode": "mock-streaming-engineer",
+      "roles": [
+        "SLA_ENGINEER"
+      ],
+      "productLineCodes": [
+        "STREAMING"
+      ],
+      "mockData": true
+    },
+    {
+      "identityCode": "mock-tdh-engineer",
+      "roles": [
+        "SLA_ENGINEER"
+      ],
+      "productLineCodes": [
+        "TDH"
+      ],
+      "mockData": true
+    }
   ],
   "evidenceFixtures": [
-    {"evidenceId":"mock-ev-stream-citation","productLineCode":"STREAMING","language":"EN","title":"模拟数据：STREAMING immutable citation guide","excerpt":"模拟数据：引用必须绑定稳定 Evidence ID。","mockData":true},
-    {"evidenceId":"mock-ev-stream-en-guide","productLineCode":"STREAMING","language":"EN","title":"模拟数据：STREAMING English operations guide","excerpt":"模拟数据：Use the authorized STREAMING operations procedure.","mockData":true},
-    {"evidenceId":"mock-ev-stream-fts-ops","productLineCode":"STREAMING","language":"EN","title":"模拟数据：STREAMING full-text fallback","excerpt":"模拟数据：When embedding is unavailable, use authorized full-text evidence.","mockData":true},
-    {"evidenceId":"mock-ev-stream-isr","productLineCode":"STREAMING","language":"MIXED","title":"模拟数据：Kafka ISR shrink KAFKA-1002","excerpt":"模拟数据：KAFKA-1002 表示模拟 ISR 收缩事件。","mockData":true},
-    {"evidenceId":"mock-ev-stream-throughput","productLineCode":"STREAMING","language":"EN","title":"模拟数据：Broker throughput troubleshooting","excerpt":"模拟数据：Check the mock broker throughput indicators.","mockData":true},
-    {"evidenceId":"mock-ev-stream-zh-guide","productLineCode":"STREAMING","language":"ZH","title":"模拟数据：STREAMING 中文运维指南","excerpt":"模拟数据：用于英文问题检索中文资料的固定证据。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-citation-hash","productLineCode":"TDH","language":"ZH","title":"模拟数据：TDH 不可变引用核验","excerpt":"模拟数据：引用须保持稳定 Evidence ID 与内容摘要。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-dynamic-partition","productLineCode":"TDH","language":"MIXED","title":"模拟数据：hive.exec.dynamic.partition 配置","excerpt":"模拟数据：固定配置键用于精确词检索。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-en-guide","productLineCode":"TDH","language":"EN","title":"模拟数据：TDH English operations guide","excerpt":"模拟数据：Use the authorized TDH procedure for cross-language retrieval.","mockData":true},
-    {"evidenceId":"mock-ev-tdh-error-40401","productLineCode":"TDH","language":"ZH","title":"模拟数据：TDH-40401 错误处理","excerpt":"模拟数据：TDH-40401 是固定模拟错误码。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-fts-ops","productLineCode":"TDH","language":"ZH","title":"模拟数据：TDH 全文检索降级","excerpt":"模拟数据：向量能力不可用时仅使用授权全文证据。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-inceptor-latency","productLineCode":"TDH","language":"MIXED","title":"模拟数据：Inceptor query latency","excerpt":"模拟数据：固定的 Inceptor 延迟排查资料。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-query-performance","productLineCode":"TDH","language":"ZH","title":"模拟数据：TDH 查询性能排查","excerpt":"模拟数据：用于语义改写后的查询性能检索。","mockData":true},
-    {"evidenceId":"mock-ev-tdh-zh-guide","productLineCode":"TDH","language":"ZH","title":"模拟数据：TDH 中文运维指南","excerpt":"模拟数据：用于跨语言检索的中文固定证据。","mockData":true}
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000001",
+      "productLineCode": "STREAMING",
+      "language": "EN",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000001",
+        "title": "模拟数据：STREAMING immutable citation guide"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000001",
+      "chunkId": "40000000-0000-4000-8000-000000000001",
+      "excerpt": "模拟数据：引用必须绑定稳定 Evidence ID。",
+      "contentHash": "sha256:0e7a73896e54686abb1c8cb0deda6287a8a62db9bc1049ae39e3794fde8cebb9",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000002",
+      "productLineCode": "STREAMING",
+      "language": "EN",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000002",
+        "title": "模拟数据：STREAMING English operations guide"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000002",
+      "chunkId": "40000000-0000-4000-8000-000000000002",
+      "excerpt": "模拟数据：Use the authorized STREAMING operations procedure.",
+      "contentHash": "sha256:48780cf3a00595b6f3a30bfcf5ba23e6f06652330e30e438b27d032c187eca67",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000003",
+      "productLineCode": "STREAMING",
+      "language": "EN",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000003",
+        "title": "模拟数据：STREAMING full-text fallback"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000003",
+      "chunkId": "40000000-0000-4000-8000-000000000003",
+      "excerpt": "模拟数据：When embedding is unavailable, use authorized full-text evidence.",
+      "contentHash": "sha256:7dc9bbc045d7fc5324eff924b07b9c4a6bdbcc1fd367f49ef0b4ffc040d7d9cc",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000004",
+      "productLineCode": "STREAMING",
+      "language": "MIXED",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000004",
+        "title": "模拟数据：Kafka ISR shrink KAFKA-1002"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000004",
+      "chunkId": "40000000-0000-4000-8000-000000000004",
+      "excerpt": "模拟数据：KAFKA-1002 表示模拟 ISR 收缩事件。",
+      "contentHash": "sha256:8ff4ed7eeb6915518a2d46543af14a8d30620bb67f98a22f84c3fcaf9c176171",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000005",
+      "productLineCode": "STREAMING",
+      "language": "EN",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000005",
+        "title": "模拟数据：Broker throughput troubleshooting"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000005",
+      "chunkId": "40000000-0000-4000-8000-000000000005",
+      "excerpt": "模拟数据：Check the mock broker throughput indicators.",
+      "contentHash": "sha256:c6f65f0ebda84a30ad5543b773cb85d231aad4c54a7460d610a4c929c5f3d04e",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000006",
+      "productLineCode": "STREAMING",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000006",
+        "title": "模拟数据：STREAMING 中文运维指南"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000006",
+      "chunkId": "40000000-0000-4000-8000-000000000006",
+      "excerpt": "模拟数据：用于英文问题检索中文资料的固定证据。",
+      "contentHash": "sha256:9437516025da4f6f17cbf8bd5df69c535e4355318a18f9c3507f07e59cd32c85",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000007",
+      "productLineCode": "TDH",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000007",
+        "title": "模拟数据：TDH 不可变引用核验"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000007",
+      "chunkId": "40000000-0000-4000-8000-000000000007",
+      "excerpt": "模拟数据：引用须保持稳定 Evidence ID 与内容摘要。",
+      "contentHash": "sha256:ea937bdef37f2a3b8ee2b58d0e4a661789d833d9ec83e96706d15c5e7c978792",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000008",
+      "productLineCode": "TDH",
+      "language": "MIXED",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000008",
+        "title": "模拟数据：hive.exec.dynamic.partition 配置"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000008",
+      "chunkId": "40000000-0000-4000-8000-000000000008",
+      "excerpt": "模拟数据：固定配置键用于精确词检索。",
+      "contentHash": "sha256:9f410dffb5b3b54d03d1ca6311be55b700b623c7aa4134c08967c38e66370c34",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000009",
+      "productLineCode": "TDH",
+      "language": "EN",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000009",
+        "title": "模拟数据：TDH English operations guide"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000009",
+      "chunkId": "40000000-0000-4000-8000-000000000009",
+      "excerpt": "模拟数据：Use the authorized TDH procedure for cross-language retrieval.",
+      "contentHash": "sha256:e70caeea6db52d465cc47bf2c9407436eb2aec84d183b1411e792b0afe4c6542",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000010",
+      "productLineCode": "TDH",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000010",
+        "title": "模拟数据：TDH-40401 错误处理"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000010",
+      "chunkId": "40000000-0000-4000-8000-000000000010",
+      "excerpt": "模拟数据：TDH-40401 是固定模拟错误码。",
+      "contentHash": "sha256:92d0b5b21e21cec7069d6bd618087a18cbdb3f4e1ceb859d4c901cf1889b6f1e",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000011",
+      "productLineCode": "TDH",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000011",
+        "title": "模拟数据：TDH 全文检索降级"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000011",
+      "chunkId": "40000000-0000-4000-8000-000000000011",
+      "excerpt": "模拟数据：向量能力不可用时仅使用授权全文证据。",
+      "contentHash": "sha256:832858e7a6782da750a489ef1905118ba35794c9f8909581b758abbfa35789b8",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000012",
+      "productLineCode": "TDH",
+      "language": "MIXED",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000012",
+        "title": "模拟数据：Inceptor query latency"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000012",
+      "chunkId": "40000000-0000-4000-8000-000000000012",
+      "excerpt": "模拟数据：固定的 Inceptor 延迟排查资料。",
+      "contentHash": "sha256:3dc02efbf613a2df822843396620ca25d490794d3424062ce44d9dffb02bd911",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000013",
+      "productLineCode": "TDH",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000013",
+        "title": "模拟数据：TDH 查询性能排查"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000013",
+      "chunkId": "40000000-0000-4000-8000-000000000013",
+      "excerpt": "模拟数据：用于语义改写后的查询性能检索。",
+      "contentHash": "sha256:39421d4b9a66971256180de0d2c8d68ac07a796d855a9e5c2a696f7fac976d5e",
+      "mockData": true
+    },
+    {
+      "evidenceId": "10000000-0000-4000-8000-000000000014",
+      "productLineCode": "TDH",
+      "language": "ZH",
+      "document": {
+        "documentId": "20000000-0000-4000-8000-000000000014",
+        "title": "模拟数据：TDH 中文运维指南"
+      },
+      "versionId": "30000000-0000-4000-8000-000000000014",
+      "chunkId": "40000000-0000-4000-8000-000000000014",
+      "excerpt": "模拟数据：用于跨语言检索的中文固定证据。",
+      "contentHash": "sha256:7cd8486111c17823c9ce8bb0cd7154dba50e2b8d5a26357ebb10401be1d2c14b",
+      "mockData": true
+    }
   ]
 }

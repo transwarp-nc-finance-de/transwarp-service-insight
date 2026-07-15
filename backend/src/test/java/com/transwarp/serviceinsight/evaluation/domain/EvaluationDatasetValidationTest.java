@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
+import com.transwarp.serviceinsight.evaluation.infrastructure.ClasspathEvaluationSetCatalog;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -18,6 +22,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
@@ -70,6 +75,14 @@ class EvaluationDatasetValidationTest {
             item -> {
               assertThat(item.datasetVersion()).isEqualTo(VERSION);
               assertThat(item.mockData()).isTrue();
+              assertThat(item.precheckInput().sourceSystem()).isEqualTo("MOCK_AIOPS");
+              assertThat(item.precheckInput().hostRequestId()).startsWith("mock-host-request-");
+              assertThat(item.precheckInput().formSchemaVersion())
+                  .isEqualTo("mock-precheck-form-v1");
+              assertThat(item.allowedProductLineCodes())
+                  .contains(item.precheckInput().productLineCode());
+              assertThat(item.precheckInput().title()).startsWith("模拟数据：");
+              assertThat(item.precheckInput().impactScope()).startsWith("模拟数据：");
               assertThat(item.turns()).isNotEmpty().hasSizeLessThanOrEqualTo(3);
               assertThat(item.turns().stream().map(EvaluationCase.EvaluationTurn::runSequence))
                   .containsExactlyElementsOf(
@@ -78,7 +91,11 @@ class EvaluationDatasetValidationTest {
                           .toList());
               assertThat(item.turns())
                   .allSatisfy(turn -> assertThat(turn.descriptionPlainText()).startsWith("模拟数据："));
+              assertThat(item.precheckInput().descriptionPlainText())
+                  .isEqualTo(item.turns().getFirst().descriptionPlainText());
             });
+    assertThat(dataset.cases().stream().map(item -> item.precheckInput().hostRequestId()).toList())
+        .doesNotHaveDuplicates();
   }
 
   @Test
@@ -95,7 +112,7 @@ class EvaluationDatasetValidationTest {
     assertThat(languageTags).containsAll(REQUIRED_LANGUAGE_TAGS);
     assertThat(scenarioTags).containsAll(REQUIRED_SCENARIO_TAGS);
     assertThat(dataset.cases().stream().map(EvaluationCase::expectedDegradation))
-        .contains("FTS_ONLY", "UNAVAILABLE");
+        .contains(EvaluationCase.Degradation.FTS_ONLY, EvaluationCase.Degradation.UNAVAILABLE);
     assertThat(dataset.cases().stream().filter(item -> item.scenarioTags().contains("MULTI_RUN")))
         .allMatch(item -> item.turns().size() > 1);
   }
@@ -124,8 +141,9 @@ class EvaluationDatasetValidationTest {
         .allSatisfy(
             fixture -> {
               assertThat(fixture.mockData()).isTrue();
-              assertThat(fixture.title()).startsWith("模拟数据：");
+              assertThat(fixture.document().title()).startsWith("模拟数据：");
               assertThat(fixture.excerpt()).startsWith("模拟数据：");
+              assertThat(fixture.contentHash()).isEqualTo(sha256(fixture.excerpt()));
             });
 
     assertThat(dataset.cases())
@@ -190,10 +208,10 @@ class EvaluationDatasetValidationTest {
     actual.put(
         "degradation",
         dataset.cases().stream()
-            .filter(item -> !"NONE".equals(item.expectedDegradation()))
+            .filter(item -> item.expectedDegradation() != EvaluationCase.Degradation.NONE)
             .collect(
                 Collectors.groupingBy(
-                    EvaluationCase::expectedDegradation,
+                    item -> item.expectedDegradation().name(),
                     TreeMap::new,
                     Collectors.mapping(EvaluationCase::caseId, Collectors.toList()))));
 
@@ -204,18 +222,22 @@ class EvaluationDatasetValidationTest {
   }
 
   @Test
-  void schemasDeclareStrictVersionedBoundaries() throws Exception {
-    var datasetSchema = readTree("dataset.schema.json");
-    var manifestSchema = readTree("evidence-fixture-manifest.schema.json");
+  void assetsConformToSchemasAndInvalidEnumsAreRejected() throws Exception {
+    var registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
+    var datasetSchema = registry.getSchema(readText("dataset.schema.json"), InputFormat.JSON);
+    var manifestSchema =
+        registry.getSchema(readText("evidence-fixture-manifest.schema.json"), InputFormat.JSON);
 
-    assertThat(datasetSchema.path("additionalProperties").asBoolean()).isFalse();
-    assertThat(datasetSchema.at("/properties/datasetVersion/const").asText()).isEqualTo(VERSION);
-    assertThat(datasetSchema.at("/properties/cases/minItems").asInt()).isEqualTo(30);
-    assertThat(datasetSchema.at("/$defs/case/additionalProperties").asBoolean()).isFalse();
-    assertThat(datasetSchema.at("/$defs/case/properties/turns/maxItems").asInt()).isEqualTo(3);
-    assertThat(manifestSchema.path("additionalProperties").asBoolean()).isFalse();
-    assertThat(manifestSchema.at("/properties/datasetVersion/const").asText()).isEqualTo(VERSION);
-    assertThat(manifestSchema.at("/$defs/evidence/additionalProperties").asBoolean()).isFalse();
+    assertThat(datasetSchema.validate(readText("dataset.json"), InputFormat.JSON)).isEmpty();
+    assertThat(
+            manifestSchema.validate(readText("evidence-fixture-manifest.json"), InputFormat.JSON))
+        .isEmpty();
+
+    var invalidDataset = datasetTree.deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) invalidDataset.at("/cases/0"))
+        .put("expectedDegradation", "BROKEN");
+    assertThat(datasetSchema.validate(MAPPER.writeValueAsString(invalidDataset), InputFormat.JSON))
+        .isNotEmpty();
   }
 
   @Test
@@ -235,18 +257,30 @@ class EvaluationDatasetValidationTest {
   @Test
   void canonicalSerializationAndChecksumAreStable() throws Exception {
     var canonicalBytes = MAPPER.writeValueAsBytes(canonicalize(datasetTree));
-    var secondSerialization = MAPPER.writeValueAsBytes(canonicalize(readTree("dataset.json")));
     var actualChecksum =
         "sha256:"
             + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonicalBytes));
     var expectedChecksum = readText("dataset.sha256").trim();
 
-    assertThat(secondSerialization).containsExactly(canonicalBytes);
     assertThat(actualChecksum).isEqualTo(expectedChecksum);
     assertThat(manifest.executionIdentities().stream().map(item -> item.identityCode()).toList())
         .isSorted();
     assertThat(manifest.evidenceFixtures().stream().map(item -> item.evidenceId()).toList())
         .isSorted();
+  }
+
+  @Test
+  void validationGateContainsNoDisabledEvaluationTests() {
+    var evaluationTestClasses =
+        List.of(EvaluationDatasetValidationTest.class, EvaluationSetCatalogTest.class);
+
+    assertThat(evaluationTestClasses)
+        .noneMatch(testClass -> testClass.isAnnotationPresent(Disabled.class));
+    assertThat(
+            evaluationTestClasses.stream()
+                .flatMap(testClass -> java.util.Arrays.stream(testClass.getDeclaredMethods()))
+                .filter(method -> method.isAnnotationPresent(Test.class)))
+        .noneMatch(method -> method.isAnnotationPresent(Disabled.class));
   }
 
   private static Map<String, List<String>> groupByTags(
@@ -260,7 +294,7 @@ class EvaluationDatasetValidationTest {
                     .forEach(
                         tag ->
                             result
-                                .computeIfAbsent(tag, ignored -> new ArrayList<>())
+                                .computeIfAbsent(tag, tagKey -> new ArrayList<>())
                                 .add(item.caseId())));
     return result;
   }
@@ -279,6 +313,18 @@ class EvaluationDatasetValidationTest {
       return array;
     }
     return node;
+  }
+
+  private static String sha256(String value) {
+    try {
+      return "sha256:"
+          + HexFormat.of()
+              .formatHex(
+                  MessageDigest.getInstance("SHA-256")
+                      .digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException exception) {
+      throw new IllegalStateException("SHA-256 is unavailable", exception);
+    }
   }
 
   private static JsonNode readTree(String fileName) throws Exception {

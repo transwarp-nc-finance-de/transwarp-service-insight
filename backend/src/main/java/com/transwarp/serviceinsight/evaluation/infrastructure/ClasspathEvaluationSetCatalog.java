@@ -1,6 +1,8 @@
-package com.transwarp.serviceinsight.evaluation.domain;
+package com.transwarp.serviceinsight.evaluation.infrastructure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.transwarp.serviceinsight.evaluation.domain.EvaluationSet;
+import com.transwarp.serviceinsight.evaluation.domain.EvidenceFixtureManifest;
 import java.io.IOException;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;

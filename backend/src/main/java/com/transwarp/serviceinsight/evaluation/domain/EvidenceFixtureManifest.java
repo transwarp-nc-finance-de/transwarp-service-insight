@@ -25,7 +25,12 @@ public record EvidenceFixtureManifest(
       String evidenceId,
       String productLineCode,
       String language,
-      String title,
+      DocumentFixture document,
+      String versionId,
+      String chunkId,
       String excerpt,
+      String contentHash,
       boolean mockData) {}
+
+  public record DocumentFixture(String documentId, String title) {}
 }
