@@ -92,7 +92,15 @@ describe('knowledge ingestion vertical flow', () => {
       .mockResolvedValueOnce(ok(page('block')))
       .mockResolvedValueOnce(ok(page('chunk')))
       .mockResolvedValueOnce(ok(commandResult('IN_REVIEW')))
+      .mockResolvedValueOnce(
+        ok({ ...summary(), versionStatus: 'IN_REVIEW', submittedBy: 'mock-knowledge-editor' }),
+      )
+      .mockResolvedValueOnce(ok(page('review block')))
+      .mockResolvedValueOnce(ok(page('review chunk')))
       .mockResolvedValueOnce(ok(commandResult('DRAFT')))
+      .mockResolvedValueOnce(ok(summary()))
+      .mockResolvedValueOnce(ok(page('returned block')))
+      .mockResolvedValueOnce(ok(page('returned chunk')))
       .mockResolvedValueOnce(
         ok({
           revision: { revisionNumber: 2, cleanedTextHash: 'sha256:new' },
@@ -105,21 +113,37 @@ describe('knowledge ingestion vertical flow', () => {
       .mockResolvedValueOnce(ok(page('new chunk')))
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-current' } })
-    await uploadFile(wrapper)
-    await wrapper.get('[data-test="submit-review"]').trigger('click')
+    const editor = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-editor' } })
+    await uploadFile(editor)
+    await editor.get('[data-test="submit-review"]').trigger('click')
     await flushPromises()
-    await wrapper.get('[data-test="return-reason"]').setValue('模拟数据：请补充说明')
-    await wrapper.get('[data-test="return-draft"]').trigger('click')
+    editor.unmount()
+
+    const reviewer = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-reviewer' } })
+    await reviewer.get('[data-test="review-version-id"]').setValue(created().version.versionId)
+    await reviewer.get('[data-test="load-review-version"]').trigger('click')
     await flushPromises()
-    await wrapper.get('[data-test="cleaned-text"]').setValue('# 模拟数据\n\n修订正文')
-    await wrapper.get('[data-test="revise"]').trigger('click')
+    await reviewer.get('[data-test="return-reason"]').setValue('模拟数据：请补充说明')
+    await reviewer.get('[data-test="return-draft"]').trigger('click')
+    await flushPromises()
+    expect(fetchMock.mock.calls[9][1].headers['X-CSRF-Token']).toBe('csrf-reviewer')
+    reviewer.unmount()
+
+    const revisingEditor = mount(KnowledgeIngestionPage, { props: { csrfToken: 'csrf-editor' } })
+    await revisingEditor
+      .get('[data-test="review-version-id"]')
+      .setValue(created().version.versionId)
+    await revisingEditor.get('[data-test="load-review-version"]').trigger('click')
+    await flushPromises()
+    await revisingEditor.get('[data-test="title"]').setValue('Revised mock guide')
+    await revisingEditor.get('[data-test="cleaned-text"]').setValue('# 模拟数据\n\n修订正文')
+    await revisingEditor.get('[data-test="revise"]').trigger('click')
     await flushPromises()
 
-    expect(fetchMock.mock.calls[7][0]).toContain('/revisions')
-    expect(fetchMock.mock.calls[7][1].body).toBeInstanceOf(FormData)
-    expect(wrapper.text()).toContain('sha256:new-result')
-    expect(wrapper.text()).toContain('new block mock data')
+    expect(fetchMock.mock.calls[13][0]).toContain('/revisions')
+    expect(fetchMock.mock.calls[13][1].body).toBeInstanceOf(FormData)
+    expect(revisingEditor.text()).toContain('sha256:new-result')
+    expect(revisingEditor.text()).toContain('new block mock data')
   })
 })
 
