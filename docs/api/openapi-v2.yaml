@@ -5,9 +5,10 @@ info:
   description: |
     **DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION**。本文件定义一期本地模拟闭环的候选契约，
     已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施；该批准不代表
-    整个 API v2 或一期目标已经实现。当前仅实现本地 AuthSession 基础切片：
+    整个 API v2 或一期目标已经实现。当前实现本地 AuthSession 与知识上传解析预览切片：
     `POST /api/v2/auth-sessions`、`GET /api/v2/auth-sessions/current` 和
-    `DELETE /api/v2/auth-sessions/current`；其余 v2 operation 均为 NOT_IMPLEMENTED。
+    `DELETE /api/v2/auth-sessions/current`，以及知识文件上传、单个 ParseTask 查询和三个
+    parse-preview 读取 operation；其余 v2 operation 均为 NOT_IMPLEMENTED。
     所有业务示例均为 `模拟数据`；只允许模拟、公开或脱敏数据。
 
     一期实施状态为 READY_FOR_IMPLEMENTATION；v1 Mock 仍为兼容契约。当前 v2 切片不接真实身份、
@@ -21,7 +22,7 @@ info:
   x-implementation-status: PARTIALLY_IMPLEMENTED
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
   x-approval-status: APPROVED_FOR_IMPLEMENTATION
-  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION
+  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION_AND_KNOWLEDGE_INGESTION
   x-approved-on: '2026-07-14'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令
@@ -111,7 +112,7 @@ paths:
     post:
       tags: [KnowledgeDocument]
       operationId: createKnowledgeDocument
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 上传不可变原始知识文件并创建草稿版本
       description: 仅接受 Markdown、TXT、文本型 PDF；原始字节上限依次为 5 MB、5 MB、20 MB，持久化前校验。成功时同时创建 ParseTask。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -234,7 +235,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: getKnowledgeVersionParsePreview
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询知识版本的解析预览摘要
       description: |
         `KNOWLEDGE_EDITOR` 仅可读取本人创建或提交且在本人产品线范围内的版本；
@@ -253,7 +254,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: listKnowledgeVersionParsedBlocks
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 按解析顺序分页查询规范化文本块
       description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，不支持任意排序，不在单个响应中返回整个文件。
       parameters:
@@ -272,7 +273,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: listKnowledgeVersionChunkPreviews
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 按切片顺序分页查询结构化 Chunk 预览
       description: 与预览摘要执行相同的角色、产品线和对象可见性校验；固定按 `sequence ASC` 返回，文本块与 Chunk 独立分页，不支持任意排序。
       parameters:
@@ -408,7 +409,7 @@ paths:
     get:
       tags: [ParseTask]
       operationId: getParseTask
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询不可变解析任务
       responses:
         '200': { $ref: '#/components/responses/ParseTaskOk' }

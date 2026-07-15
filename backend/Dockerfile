@@ -12,6 +12,8 @@ RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 app
+RUN mkdir -p /var/lib/service-insight/knowledge \
+    && chown -R app:app /var/lib/service-insight
 COPY --from=build /workspace/target/service-insight-backend-*.jar app.jar
 USER app
 EXPOSE 8080

@@ -2,16 +2,16 @@
 
 Status: ACTIVE  
 Owner: 技术负责人  
-Last reviewed: 2026-07-12  
+Last reviewed: 2026-07-15
 Source of truth for: 模块职责、依赖方向与替换边界
 
 ## Precheck
 
 负责会话、运行轮次、状态、下一步动作和人工继续提交硬边界。API 只依赖应用用例；领域模型不得依赖 Spring MVC DTO；应用层通过 Port 调用能力。
 
-## Knowledge 骨架
+## Knowledge
 
-当前只实现模拟 `KnowledgeDocument`、`KnowledgeVersion`、生命周期状态、应用用例和内存 Repository Adapter。只有完成 `DRAFT → IN_REVIEW → APPROVED → PUBLISHED` 的版本才标记为可检索；没有导入 API、真实文档、解析、索引或外部存储。
+当前已实现模拟 `KnowledgeDocument`、`KnowledgeVersion`、`KnowledgeDraftRevision`、`ParseTask`、解析结果与 `KnowledgeChunk` 的 PostgreSQL 持久化，以及不可变 Compose volume 原始文件 Adapter；API 只交付首次上传、单任务查询和解析预览。审核、发布、索引、检索和真实/外部知识源仍未实现；只有未来完成 `DRAFT → IN_REVIEW → APPROVED → PUBLISHED` 且索引成功的版本才可检索。
 
 ## 未来模块（DRAFT）
 

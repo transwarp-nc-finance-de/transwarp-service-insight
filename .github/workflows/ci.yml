@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '21', cache: maven }
+        with: { distribution: temurin, java-version: "21", cache: maven }
       - run: ./mvnw spotless:check test
       - run: ./mvnw package -DskipTests
   frontend:
@@ -21,7 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '24', cache: npm, cache-dependency-path: frontend/package-lock.json }
+        with:
+          {
+            node-version: "24",
+            cache: npm,
+            cache-dependency-path: frontend/package-lock.json,
+          }
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
@@ -47,7 +52,7 @@ jobs:
           curl --fail --silent -H 'Content-Type: application/json' -d '{"message":"模拟数据：补充脱敏日志"}' "http://localhost:5173/api/v1/precheck-sessions/$session_id/runs" | jq -e '.runSequence == 2 and .references[0].mockData == true and (.allowedActions | index("CONTINUE_SUBMISSION")) != null'
           curl --fail --silent "http://localhost:5173/api/v1/precheck-sessions/$session_id" | jq -e '.runs | length == 2'
           curl --fail --silent -H 'Content-Type: application/json' -d "{\"precheckId\":\"$precheck_id\",\"adoptionStatus\":\"PARTIALLY_ADOPTED\",\"feedbackReason\":\"模拟数据\",\"continuedSubmission\":false}" http://localhost:5173/api/v1/precheck/feedback | jq -e '.recorded == true and .mockData == true and .continuedSubmission == false'
-      - name: Verify local identity persistence and PostgreSQL seed constraints
+      - name: Verify identity, knowledge ingestion and restart persistence
         run: |
           headers="$(mktemp)"
           cookies="$(mktemp)"
@@ -57,15 +62,49 @@ jobs:
           test -n "$csrf"
           grep -i '^Cache-Control: no-store' "$headers"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "2"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "3"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
+          knowledge="$(curl --fail --silent -b "$cookies" -H "X-CSRF-Token: $csrf" -H 'Idempotency-Key: compose-knowledge-001' -F 'metadata={"title":"Compose 知识验收（模拟数据）","productLine":{"code":"TDH","displayName":"TDH（模拟数据）"},"sourceType":"MOCK","mockData":true};type=application/json' -F 'file=@docs/development/changelog.md;type=text/markdown;filename=compose-knowledge.md' http://localhost:5173/api/v2/knowledge-documents)"
+          echo "$knowledge" | jq -e '.document.mockData == true and .version.status == "DRAFT" and .parseTask.maxAttempts == 3'
+          document_id="$(echo "$knowledge" | jq -r .document.documentId)"
+          version_id="$(echo "$knowledge" | jq -r .version.versionId)"
+          task_id="$(echo "$knowledge" | jq -r .parseTask.taskId)"
+          task_status=""
+          for attempt in $(seq 1 40); do
+            task="$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/parse-tasks/$task_id")"
+            task_status="$(echo "$task" | jq -r .status)"
+            if test "$task_status" = "SUCCEEDED"; then break; fi
+            test "$task_status" != "FAILED"
+            sleep 0.25
+          done
+          test "$task_status" = "SUCCEEDED"
+          summary="$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview")"
+          blocks="$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/blocks?page=1&size=20")"
+          chunks="$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/chunks?page=1&size=20")"
+          echo "$summary" | jq -e '.parseStatus == "SUCCEEDED" and .chunkingRule.strategy == "STRUCTURE_FIRST" and .chunkingRule.maxTokens == 400 and .chunkingRule.overlapTokens == 50 and .mockData == true'
+          echo "$blocks" | jq -e '.items | length > 0' >/dev/null
+          echo "$chunks" | jq -e '(.items | length > 0) and all(.items[]; .tokenCount <= 400 and .chunkingRuleVersion == "structure-400-overlap-50-v1")' >/dev/null
+          auth_session_id="$(echo "$auth" | jq -r .sessionId)"
+          db_snapshot_before="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select (select count(*) from auth_session where session_id='$auth_session_id' and invalidated_at is null) || ',' || (select count(*) from knowledge_document where document_id='$document_id') || ',' || (select count(*) from knowledge_version_v2 where version_id='$version_id') || ',' || (select count(*) from parse_task where task_id='$task_id' and status='SUCCEEDED') || ',' || (select count(*) from knowledge_parse_result where version_id='$version_id') || ',' || (select count(*) from knowledge_parsed_block where version_id='$version_id') || ',' || (select count(*) from knowledge_chunk where version_id='$version_id')")"
+          file_row="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select f.storage_key || '|' || f.content_hash from knowledge_original_file f join knowledge_version_v2 v on v.original_file_id=f.file_id where v.version_id='$version_id'")"
+          storage_key="${file_row%%|*}"
+          database_file_hash="${file_row#*|}"
+          file_hash_before="$(docker compose exec -T backend sha256sum "/var/lib/service-insight/knowledge/$storage_key" | awk '{print $1}')"
+          test "sha256:$file_hash_before" = "$database_file_hash"
           docker compose restart backend
           docker compose up -d --wait backend
           restored="$(curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current)"
           echo "$restored" | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
+          curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/parse-tasks/$task_id" | jq -e '.status == "SUCCEEDED"'
+          test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview" | jq -r .parseResultHash)" = "$(echo "$summary" | jq -r .parseResultHash)"
+          test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/blocks?page=1&size=20" | jq -r .page.totalItems)" = "$(echo "$blocks" | jq -r .page.totalItems)"
+          test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/chunks?page=1&size=20" | jq -r .page.totalItems)" = "$(echo "$chunks" | jq -r .page.totalItems)"
+          db_snapshot_after="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select (select count(*) from auth_session where session_id='$auth_session_id' and invalidated_at is null) || ',' || (select count(*) from knowledge_document where document_id='$document_id') || ',' || (select count(*) from knowledge_version_v2 where version_id='$version_id') || ',' || (select count(*) from parse_task where task_id='$task_id' and status='SUCCEEDED') || ',' || (select count(*) from knowledge_parse_result where version_id='$version_id') || ',' || (select count(*) from knowledge_parsed_block where version_id='$version_id') || ',' || (select count(*) from knowledge_chunk where version_id='$version_id')")"
+          test "$db_snapshot_after" = "$db_snapshot_before"
+          test "$(docker compose exec -T backend sha256sum "/var/lib/service-insight/knowledge/$storage_key" | awk '{print $1}')" = "$file_hash_before"
           docker compose restart postgres
           docker compose up -d --wait postgres
           docker compose restart backend
@@ -73,8 +112,9 @@ jobs:
           curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "2"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from flyway_schema_history where success')" = "3"
           curl --fail --silent -o /dev/null -b "$cookies" -H "X-CSRF-Token: $csrf" -X DELETE http://localhost:5173/api/v2/auth-sessions/current
+          rm -f "$headers" "$cookies"
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend

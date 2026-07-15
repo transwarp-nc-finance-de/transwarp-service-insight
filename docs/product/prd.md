@@ -17,7 +17,7 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 本文仅定义产品能力和边界，不包含后端代码、接口协议、数据库设计、真实 API 地址、真实 RAG 接入、真实大模型接入或真实 AIOps 实现。涉及 AIOps 的内容仅为后续对接的产品接口要求，不代表当前已经完成真实系统接入。
 
-当前状态：需求范围为 `CONFIRMED`；API v2 为 `APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`。技术 MVP 保持 v1 Mock 完全兼容，并已实现 v2 AuthSession、本地 PostgreSQL、四个模拟身份及角色/产品线矩阵；其余 v2、本地知识治理、pgvector、持久化预诊/反馈/审计与评估仍未实现。真实知识、真实身份和外部集成都在一期范围外。
+当前状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`。技术 MVP 保持 v1 Mock 完全兼容，并已实现 v2 AuthSession、本地 PostgreSQL、四个模拟身份及角色/产品线矩阵，以及知识首次上传、异步解析和预览切片；审核发布、pgvector、持久化预诊/反馈/审计与评估仍未实现。真实知识、真实身份和外部集成都在一期范围外。
 
 ## 正文
 

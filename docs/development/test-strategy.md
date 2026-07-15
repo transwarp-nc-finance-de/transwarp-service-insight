@@ -10,7 +10,7 @@
 
 ## 正文
 
-当前阶段测试包括：后端单元与 API 行为测试、Spotless 格式检查、前端组件行为测试、ESLint、Prettier、生产构建、版本锁定的 OpenAPI 校验、三服务镜像构建及 Compose 冒烟。API 测试验证 v1 健康/预诊/追问/反馈和 v2 AuthSession 的认证、CSRF、错误分类与生命周期；组件测试覆盖模拟登录/切换/退出、多轮顺序、失败保留、反馈以及人工继续提交硬边界；Compose 使用真实本地 PostgreSQL 验证迁移、种子和会话重启恢复。
+当前阶段测试包括：后端单元与 API 行为测试、Spotless 格式检查、前端组件行为测试、ESLint、Prettier、生产构建、版本锁定的 OpenAPI 校验、三服务镜像构建及 Compose 冒烟。API 测试验证 v1 健康/预诊/追问/反馈、v2 AuthSession，以及知识上传、幂等、权限、ParseTask 与预览；领域测试覆盖结构优先切片、稳定哈希、PDF 文本层和重试上限；组件测试覆盖模拟登录/切换/退出与上传到预览纵向流程；Compose 使用真实本地 PostgreSQL 和文件 volume 验证重启恢复。
 
 ## 一期实施测试 seam
 
