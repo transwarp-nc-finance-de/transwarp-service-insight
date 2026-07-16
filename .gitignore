@@ -20,6 +20,8 @@ target/
 coverage/
 .vite/
 *.class
+*.py[cod]
+__pycache__/
 *.tsbuildinfo
 
 # Env
