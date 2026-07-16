@@ -5,6 +5,22 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Assert-NativeSuccess {
+  param([string]$Operation)
+  if ($LASTEXITCODE -ne 0) {
+    throw "$Operation failed with exit code $LASTEXITCODE"
+  }
+}
+
+function Write-Utf8NoBom {
+  param([string]$Path, [string]$Content)
+  [System.IO.File]::WriteAllText(
+    $Path,
+    $Content,
+    [System.Text.UTF8Encoding]::new($false)
+  )
+}
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 $artifactRoot = [System.IO.Path]::GetFullPath($ArtifactRoot)
 $repoPrefix = $repoRoot.TrimEnd("\") + "\"
@@ -48,7 +64,9 @@ $preflight = [ordered]@{
   dockerMemoryLimitBytes = 4294967296
   mockData = $true
 }
-$preflight | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $resultsDir "preflight.json")
+Write-Utf8NoBom `
+  -Path (Join-Path $resultsDir "preflight.json") `
+  -Content ($preflight | ConvertTo-Json -Depth 6)
 
 $provenance = [ordered]@{
   modelId = "intfloat/multilingual-e5-base"
@@ -74,7 +92,9 @@ $provenance = [ordered]@{
     OPENBLAS_NUM_THREADS = "1"
   }
 }
-$provenance | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $resultsDir "provenance.json")
+Write-Utf8NoBom `
+  -Path (Join-Path $resultsDir "provenance.json") `
+  -Content ($provenance | ConvertTo-Json -Depth 6)
 
 $common = @(
   "run", "--rm",
@@ -94,12 +114,14 @@ $common = @(
   --allowlist /opt/qualification/allowlist.json `
   --model-dir /model `
   --manifest /evidence/model.manifest
+Assert-NativeSuccess "model verification"
 
 foreach ($run in 1..5) {
   & docker @common smoke `
     --model-dir /model `
     --output "/output/cold-start-$run.json" `
     --provenance /output/provenance.json
+  Assert-NativeSuccess "cold start $run"
 }
 
 & docker @common qualify `
@@ -107,18 +129,21 @@ foreach ($run in 1..5) {
   --dataset-dir /dataset `
   --output /output/qualification.json `
   --provenance /output/provenance.json
+Assert-NativeSuccess "qualification"
 
 & docker @common latency `
   --model-dir /model `
   --dataset-dir /dataset `
   --output /output/query-latency.json `
   --provenance /output/provenance.json
+Assert-NativeSuccess "query latency benchmark"
 
 & docker @common batch `
   --model-dir /model `
   --dataset-dir /dataset `
   --output /output/batch-index.json `
   --provenance /output/provenance.json
+Assert-NativeSuccess "batch benchmark"
 
 $resultFiles = Get-ChildItem -LiteralPath $resultsDir -File |
   Where-Object Name -ne "results.sha256" |
