@@ -7,7 +7,11 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 $artifactRoot = [System.IO.Path]::GetFullPath($ArtifactRoot)
-if ($artifactRoot.StartsWith($repoRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+$repoPrefix = $repoRoot.TrimEnd("\") + "\"
+if (
+  $artifactRoot.Equals($repoRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
+  $artifactRoot.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+) {
   throw "Artifact Root must be outside the Git worktree: $artifactRoot"
 }
 
