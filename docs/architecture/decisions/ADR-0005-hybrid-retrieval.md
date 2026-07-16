@@ -2,16 +2,16 @@
 
 Status: ACCEPTED
 Owner: 架构负责人
-Last reviewed: 2026-07-14
+Last reviewed: 2026-07-16
 Source of truth for: 一期关键词与向量双路检索选择
 
 ## 决策
 
 一期使用 PostgreSQL 全文检索与 pgvector 组成混合检索。两路召回都必须在身份权限、`PUBLISHED` 当前版本和产品适用范围过滤之后执行，再通过固定、可审计的规则融合；不采用单一全文检索或单一向量检索。
 
-向量由固定版本、CPU 可运行且可离线使用的公开本地 Embedding 模型生成，不调用外部模型接口。模型不可用时降级到全文检索；默认模型与资源上限已经确认，许可证兼容性、本机实测及固定评估集仍为启用门禁。
+向量由固定版本、CPU 可运行且可离线使用的公开本地 Embedding 模型生成，不调用外部模型接口。模型不可用时降级到全文检索；默认模型、资源上限、内部非商用使用边界和许可证剩余风险已经人工确认，最终依赖锁/SBOM/NOTICE、本机实测及固定评估集仍为启用门禁。
 
-默认模型选用 `intfloat/multilingual-e5-base` revision `d13f1b27baf31030b7fd040960d60d909913633f`，固定 768 维、512 Token 上限和 `query:`/`passage:` 前缀。只使用必要的 Safetensors 与 tokenizer，不执行远程自定义代码。该选择仍以许可证复核、本地资源门槛和固定评估集通过为启用条件。
+默认模型选用 `intfloat/multilingual-e5-base` revision `d13f1b27baf31030b7fd040960d60d909913633f`，固定 768 维、512 Token 上限和 `query:`/`passage:` 前缀。只使用必要的 Safetensors 与 tokenizer，不执行远程自定义代码。后续独立 Ticket 已获一次受控取件授权，但该选择仍以完整供应链证据、本地资源门槛和固定评估集通过为启用条件。
 
 一期不使用 Reranker 或 Query Rewrite。全文检索与向量检索在过滤后各召回前 20 条，以 Reciprocal Rank Fusion（RRF）及固定 `k=60` 融合，最终返回前 5 条。同分时依次按知识版本 ID、Chunk ID 稳定排序。参数和规则版本进入审计，并可通过固定评估集受控调整，但不提供运行时调参界面。
 

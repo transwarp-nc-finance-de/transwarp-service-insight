@@ -2,7 +2,7 @@
 
 Status: DRAFT  
 Owner: 后端负责人  
-Last reviewed: 2026-07-15
+Last reviewed: 2026-07-16
 Source of truth for: 领域概念及未来持久化语义
 
 - `PrecheckSession`：一次预诊会话及当前状态；当前仅有内存中的页面会话语义。
@@ -12,7 +12,7 @@ Source of truth for: 领域概念及未来持久化语义
 - `AdditionalInformationItem`：问题类型专属补充条目，包含稳定字段编码、显示名和纯文本值。未知编码可随 Run 快照保留，但不参与完整度判断，也不能影响权限或策略。
 - `PrecheckIdempotency`：以 `sourceSystem + hostRequestId` 唯一关联规范化上下文哈希与首个 Session/Run。相同哈希返回既有结果，不同哈希产生冲突审计，不覆盖原记录。
 - `Evidence`：一期目标中绑定不可变 KnowledgeVersion 与 Chunk，包含文档标题、版本 ID、Chunk ID、受控摘录和内容哈希；不等同于最终结论，也不保存本地文件路径。
-- `KnowledgeDocument` / `KnowledgeVersion`：已实现只接受模拟数据的 PostgreSQL 持久化切片；版本携带权限范围与生命周期，当前只创建 `DRAFT`，审核发布尚未实现，因而不存在可检索版本或真实索引。
+- `KnowledgeDocument` / `KnowledgeVersion`：已实现只接受模拟数据的 PostgreSQL 持久化切片；版本携带权限范围与生命周期，并已实现不可变草稿修订、送审、退回和批准。发布与索引尚未实现，因而不存在可检索版本或真实索引。
 - `ParseTask`：已实现的文件解析任务，通过版本 ID 关联 `KnowledgeVersion`，独立记录 `PENDING`、`RUNNING`、`SUCCEEDED`、`FAILED`、attempt、错误分类和下次重试时间；不承载人工审核结论。瞬时错误指数退避且总尝试次数最多 3 次，确定性错误不自动重试，backend 启动时恢复未完成任务。
 - `KnowledgeVersion` 发布语义：发布后内容不可变；修改创建新版本。新版本发布时原子废弃旧版本，同一 `KnowledgeDocument` 最多一个版本满足可检索条件，历史版本及其引用标识继续保留。
 - `KnowledgeDraftRevision`：知识版本在 `DRAFT` 阶段的不可变修订，记录元数据、适用范围、清洗文本、解析警告说明及来源文件哈希。任一修订都会使旧 Chunk/索引失效；审核中修改先退回 `DRAFT`。
@@ -35,9 +35,9 @@ Source of truth for: 领域概念及未来持久化语义
 
 当前 API 为每次初始预诊返回相互独立的 `precheckId` 与 `sessionId`，并返回 `confidenceReason`、策略版本、Mock 规则版本以及明确的模型/索引不适用标识。当前无持久化，`PrecheckRun` 尚不对应数据库记录。
 
-一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 仅实现 AuthSession、知识首次上传、ParseTask 与解析预览；原始文件保存在 Compose volume，不存为数据库大字段。其余内容仍是目标持久化语义。
+一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识首次上传、ParseTask、解析预览，以及知识修订与不可变审核历史；原始文件保存在 Compose volume，不存为数据库大字段。其余内容仍是目标持久化语义。
 
-未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表已启用持久化。
+未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表全部目标持久化已经启用。
 
 当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
 
