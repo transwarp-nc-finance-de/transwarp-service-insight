@@ -6,8 +6,9 @@ import AuthSessionPanel from './features/identity/components/AuthSessionPanel.vu
   <header>
     <div><span class="brand">TRANSWARP</span><strong>Service Insight</strong></div>
     <nav>
-      <RouterLink to="/sandbox">Sandbox</RouterLink><RouterLink to="/embed">Embed</RouterLink
-      ><RouterLink to="/knowledge">Knowledge</RouterLink>
+      <RouterLink to="/sandbox">Sandbox v1</RouterLink
+      ><RouterLink to="/precheck-v2">Precheck v2</RouterLink
+      ><RouterLink to="/embed">Embed</RouterLink><RouterLink to="/knowledge">Knowledge</RouterLink>
     </nav>
     <AuthSessionPanel />
   </header>

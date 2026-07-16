@@ -2,7 +2,7 @@
 
 `Transwarp Service Insight` 当前聚焦外挂在 AIOps SLA 流程中的智能预诊能力。AIOps 是正式表单、枚举、校验和最终提交的宿主；本仓库提供独立预诊后端、嵌入式面板以及本地 Mock AIOps Sandbox。
 
-能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion 首次上传与解析预览切片 `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；审核发布、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
+能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion 首次上传与解析预览切片 `IMPLEMENTED`；持久化预诊 Session/Run、三轮补充、恢复和显式自助结束 `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；知识发布、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
 > 当前全部业务内容均为 `模拟数据`。系统仅使用本地 Compose PostgreSQL 保存模拟身份、模拟目录和 AuthSession，不接入真实客户数据、ITSM、AIOps、RAG、LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
 
@@ -133,6 +133,8 @@ curl --fail --silent http://127.0.0.1:5173/api/v1/health
 页面顶部提供四个预置本地身份。选择身份后登录，确认页面显示 `模拟数据`、唯一角色及授权产品线；切换身份会轮换 Session 与 CSRF Token，退出会同时使二者失效。该能力不是 SSO 或生产鉴权。
 
 使用 `mock-knowledge-editor` 登录后可访问 `/knowledge`，上传标注为模拟数据的 Markdown、TXT 或文本型 PDF，查看 ParseTask、解析摘要、Block 和 Chunk。扫描 PDF/OCR、真实知识源、审核发布和检索均不在该页面范围内。
+
+使用 `mock-precheck-tdh` 登录后可访问 `/precheck-v2`，创建持久化 Session 与 Run 1、补充完整 Context 形成最多三轮 Run、刷新恢复本人活动 Session、跳过建议继续人工提交，以及显式确认自助结束。当前检索明确为 `UNAVAILABLE`，不调用 FTS、pgvector、local-embedding 或真实 Evidence。
 
 ### 5.3 `模拟数据` 预诊验收
 
