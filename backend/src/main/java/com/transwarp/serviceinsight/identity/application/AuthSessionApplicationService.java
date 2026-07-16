@@ -61,6 +61,14 @@ public class AuthSessionApplicationService {
     }
   }
 
+  public AuthSession requireWriteSession(String sessionCookie, String csrfToken) {
+    var session = current(sessionCookie);
+    if (!csrfMatches(session.csrfToken(), csrfToken)) {
+      throw new CsrfValidationFailedException();
+    }
+    return session;
+  }
+
   private String generateCsrfToken() {
     var bytes = new byte[CSRF_TOKEN_BYTES];
     secureRandom.nextBytes(bytes);

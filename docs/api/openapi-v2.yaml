@@ -18,12 +18,12 @@ info:
     且不得阻断人工继续提交。SLA 提交及内容始终由人工确认。
   x-api-status: DRAFT
   x-owner: API 负责人
-  x-last-reviewed: '2026-07-15'
+  x-last-reviewed: '2026-07-16'
   x-source-of-truth-for: DRAFT API v2 HTTP 契约及 operation 级实施状态
   x-implementation-status: PARTIALLY_IMPLEMENTED
   x-phase-implementation-readiness: READY_FOR_IMPLEMENTATION
   x-approval-status: APPROVED_FOR_IMPLEMENTATION
-  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_SESSION_KNOWLEDGE_INGESTION_AND_REVIEW
+  x-current-implementation: V1_MOCK_PLUS_V2_AUTH_KNOWLEDGE_AND_PERSISTENT_PRECHECK
   x-approved-on: '2026-07-15'
   x-approved-by-roles: [API 负责人, 产品负责人, 安全负责人]
   x-approval-source: 用户当前明确指令
@@ -472,7 +472,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: createPrecheckSession
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 创建 Session 与 Run 1
       description: |
         `sourceSystem + hostRequestId` 是业务幂等键。规范化上下文相同则返回原 Session/Run（200），
@@ -513,7 +513,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: listPrecheckSessions
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询本人有权读取的 Session
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -532,7 +532,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: getPrecheckSession
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 读取或恢复本人 Session
       description: 每次重新校验身份和产品线权限；终态只读，ADMIN 不得接管他人 Session。
       responses:
@@ -545,7 +545,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: listPrecheckRuns
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询 Session 的不可变 Run
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -561,7 +561,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: createPrecheckRun
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 使用完整 Context 快照创建下一 Run
       description: 产品线、产品或组件变化要求新建 Session；第 4 次 Run 返回 RUN_LIMIT_REACHED。Run 完成、信息完整或达到上限均不终止 Session。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -585,7 +585,7 @@ paths:
     get:
       tags: [PrecheckSession]
       operationId: getPrecheckRun
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询不可变 Run 及完整结果
       responses:
         '200': { $ref: '#/components/responses/PrecheckRunOk' }
@@ -596,7 +596,7 @@ paths:
     post:
       tags: [PrecheckSession]
       operationId: confirmPrecheckSelfService
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 人工确认采纳建议并结束预诊
       description: 显式将 Session 终止为 SELF_SERVICE_CONFIRMED；建议本身不构成最终根因或正式方案。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -819,7 +819,7 @@ paths:
     get:
       tags: [CompletenessPolicy]
       operationId: listCompletenessPolicies
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询完整度策略版本
       description: 只读；不提供运行时编辑或发布接口。
       parameters:
@@ -839,7 +839,7 @@ paths:
     get:
       tags: [CompletenessPolicy]
       operationId: getCompletenessPolicy
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询完整度策略版本
       responses:
         '200': { $ref: '#/components/responses/CompletenessPolicyOk' }

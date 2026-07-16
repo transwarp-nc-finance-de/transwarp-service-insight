@@ -21,6 +21,6 @@ AIOps（未来真实宿主） / Mock AIOps Sandbox
 
 前端单工程提供 `/sandbox`、`/embed` 与最小 `/knowledge` 模拟上传预览页。Sandbox 不是正式 SLA 入口；Embed 不复制宿主表单；反馈与继续提交相互独立，`CONTINUE_SUBMISSION` 始终允许。
 
-本地 v2 已实现 AuthSession、知识首次上传、单任务查询、三个 parse-preview 读取端点，以及不可变草稿修订、送审、退回和批准命令。Cookie Session、知识元数据、修订、任务、解析结果与不可变审核历史持久化在本地 PostgreSQL；原始文件保存于 Compose volume；CSRF Token 仅通过响应头进入页面内存。`docs/api/openapi-v2.yaml` 仍是整体 DRAFT / PARTIALLY_IMPLEMENTED，只有 operation 级 `IMPLEMENTED` 条目可视为运行时存在；v1 无认证 Mock 行为保持不变。
+本地 v2 已实现 AuthSession、知识首次上传、单任务查询、三个 parse-preview 读取端点、不可变草稿审核命令，以及持久化预诊 Session/Run 与完整度策略只读端点。预诊以 `sourceSystem + hostRequestId` 串行化业务幂等，Run 保存完整 Context、策略版本和结果快照并由数据库拒绝修改或删除；已使用的完整度策略版本同样由数据库拒绝原地修改或删除，确保版本引用可追溯。每个 Session 最多三次 Run，完整、完成或达到上限均不自动终止，只有负责人明确确认自助结束才进入终态。当前检索能力明确为 `UNAVAILABLE`，不声明 FTS、Embedding、Evidence 或混合检索已实现。Cookie Session、业务状态和不可变历史持久化在本地 PostgreSQL；原始知识文件保存于 Compose volume；CSRF Token 仅通过响应头进入页面内存。`docs/api/openapi-v2.yaml` 仍是整体 DRAFT / PARTIALLY_IMPLEMENTED，只有 operation 级 `IMPLEMENTED` 条目可视为运行时存在；v1 无认证 Mock 行为保持不变。
 
 尚未接入真实 AIOps、SSO、企业共享或生产数据库、真实业务数据、真实知识源、知识发布与索引、RAG、LLM、多 Agent、生产部署或真实 SLA 提交。

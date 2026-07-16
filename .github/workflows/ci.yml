@@ -71,10 +71,41 @@ jobs:
           test -n "$csrf"
           grep -i '^Cache-Control: no-store' "$headers"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
+          precheck_headers="$(mktemp)"
+          precheck_cookies="$(mktemp)"
+          precheck_auth="$(curl --fail --silent -D "$precheck_headers" -c "$precheck_cookies" -H 'Content-Type: application/json' -d '{"userCode":"mock-precheck-tdh","mockData":true}' http://localhost:5173/api/v2/auth-sessions)"
+          echo "$precheck_auth" | jq -e '.userCode == "mock-precheck-tdh" and .roles == ["PRECHECK_USER"] and .mockData == true'
+          precheck_csrf="$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$precheck_headers")"
+          precheck_payload='{"context":{"sourceSystem":"SANDBOX","hostRequestId":"compose-precheck-001","formSchemaVersion":"compose-v2","issueType":{"code":"FUNCTIONAL_FAILURE","displayName":"功能故障（模拟数据）"},"productLine":{"code":"TDH","displayName":"TDH（模拟数据）"},"product":{"code":"INCEPTOR","displayName":"Inceptor（模拟数据）"},"component":{"code":"SQL_ENGINE","displayName":"SQL 引擎（模拟数据）"},"version":"9.1.0-mock","severity":{"code":"S2","displayName":"S2（模拟数据）"},"serviceType":{"code":"CONSULTATION","displayName":"咨询（模拟数据）"},"title":"模拟数据：Compose 并发预诊","descriptionPlainText":"模拟数据：执行脱敏 SQL 时返回错误码 MOCK-1001。","additionalInformation":[],"impactScope":"模拟数据：单个测试任务","attachments":[]}}'
+          precheck_first="$(mktemp)"
+          precheck_second="$(mktemp)"
+          first_status="$(mktemp)"
+          second_status="$(mktemp)"
+          curl --silent -o "$precheck_first" -w '%{http_code}' -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Content-Type: application/json' -d "$precheck_payload" http://localhost:5173/api/v2/precheck-sessions > "$first_status" &
+          first_pid=$!
+          curl --silent -o "$precheck_second" -w '%{http_code}' -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Content-Type: application/json' -d "$precheck_payload" http://localhost:5173/api/v2/precheck-sessions > "$second_status" &
+          second_pid=$!
+          wait "$first_pid"
+          wait "$second_pid"
+          test "$(sort "$first_status" "$second_status" | tr '\n' ',')" = "200,201,"
+          precheck_session_id="$(jq -r .sessionId "$precheck_first")"
+          test "$precheck_session_id" = "$(jq -r .sessionId "$precheck_second")"
+          jq -e '.status == "ACTIVE" and .runCount == 1 and .latestRun.sequence == 1 and .latestRun.result.confidence == "LOW" and .latestRun.result.retrieval.mode == "UNAVAILABLE" and .latestRun.result.evidence == [] and (.latestRun.result.allowedActions | index("CONTINUE_SUBMISSION")) != null and .latestRun.result.mockData == true' "$precheck_first"
+          run_two_payload="$(echo "$precheck_payload" | jq '.context.title = "模拟数据：Compose 第二轮"')"
+          run_two="$(curl --fail --silent -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Idempotency-Key: compose-precheck-run-002' -H 'Content-Type: application/json' -d "$run_two_payload" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs")"
+          echo "$run_two" | jq -e '.sequence == 2 and (.result.allowedActions | index("CONTINUE_SUBMISSION")) != null'
+          run_three_payload="$(echo "$precheck_payload" | jq '.context.title = "模拟数据：Compose 第三轮"')"
+          run_three="$(curl --fail --silent -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Idempotency-Key: compose-precheck-run-003' -H 'Content-Type: application/json' -d "$run_three_payload" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs")"
+          echo "$run_three" | jq -e '.sequence == 3 and (.result.allowedActions | index("CONTINUE_SUBMISSION")) != null'
+          run_limit="$(mktemp)"
+          test "$(curl --silent -o "$run_limit" -w '%{http_code}' -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Idempotency-Key: compose-precheck-run-004' -H 'Content-Type: application/json' -d "$run_three_payload" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs")" = "409"
+          jq -e '.code == "RUN_LIMIT_REACHED" and (.safeDetails.allowedActions | index("CONTINUE_SUBMISSION")) != null' "$run_limit"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from precheck_session_v2 where session_id='$precheck_session_id'")" = "1"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from precheck_run_v2 where session_id='$precheck_session_id'")" = "3"
           knowledge="$(curl --fail --silent -b "$cookies" -H "X-CSRF-Token: $csrf" -H 'Idempotency-Key: compose-knowledge-001' -F 'metadata={"title":"Compose 知识验收（模拟数据）","productLine":{"code":"TDH","displayName":"TDH（模拟数据）"},"sourceType":"MOCK","mockData":true};type=application/json' -F 'file=@docs/development/changelog.md;type=text/markdown;filename=compose-knowledge.md' http://localhost:5173/api/v2/knowledge-documents)"
           echo "$knowledge" | jq -e '.document.mockData == true and .version.status == "DRAFT" and .parseTask.maxAttempts == 3'
           document_id="$(echo "$knowledge" | jq -r .document.documentId)"
@@ -107,6 +138,8 @@ jobs:
           restored="$(curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current)"
           echo "$restored" | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
+          curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id" | jq -e '.status == "ACTIVE" and .runCount == 3 and .latestRun.sequence == 3'
+          curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs?sortDirection=ASC" | jq -e '.items as $items | ($items | length) == 3 and $items[0].sequence == 1 and $items[2].sequence == 3'
           curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/parse-tasks/$task_id" | jq -e '.status == "SUCCEEDED"'
           test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview" | jq -r .parseResultHash)" = "$(echo "$summary" | jq -r .parseResultHash)"
           test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/blocks?page=1&size=20" | jq -r .page.totalItems)" = "$(echo "$blocks" | jq -r .page.totalItems)"
@@ -121,9 +154,10 @@ jobs:
           curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9"
+          curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id" | jq -e '.status == "ACTIVE" and .runCount == 3 and .latestRun.sequence == 3'
           curl --fail --silent -o /dev/null -b "$cookies" -H "X-CSRF-Token: $csrf" -X DELETE http://localhost:5173/api/v2/auth-sessions/current
-          rm -f "$headers" "$cookies"
+          rm -f "$headers" "$cookies" "$precheck_headers" "$precheck_cookies" "$precheck_first" "$precheck_second" "$first_status" "$second_status" "$run_limit"
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend
