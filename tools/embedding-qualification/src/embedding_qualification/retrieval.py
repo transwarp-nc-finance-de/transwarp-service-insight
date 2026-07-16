@@ -14,6 +14,8 @@ class Evidence:
     version_id: str
     chunk_id: str
     text: str
+    document_id: str = ""
+    content_hash: str = ""
 
 
 @dataclass(frozen=True)

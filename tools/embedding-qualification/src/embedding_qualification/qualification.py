@@ -23,6 +23,11 @@ class Embedder(Protocol):
     def embed(self, texts: list[str], prefix: str) -> list[list[float]]: ...
 
 
+class UnavailableEmbedder:
+    def embed(self, texts: list[str], prefix: str) -> list[list[float]]:
+        raise EmbeddingUnavailable("injected embedding failure adapter")
+
+
 def query_from_context(context: dict[str, Any]) -> str:
     additional = " ".join(
         str(item.get("value", "")) for item in context.get("additionalInformation", [])
@@ -47,20 +52,35 @@ def _fixture_to_evidence(fixture: dict[str, Any]) -> Evidence:
         version_id=fixture["versionId"],
         chunk_id=fixture["chunkId"],
         text=f"{fixture['document']['title']} {fixture['excerpt']}",
+        document_id=fixture["document"]["documentId"],
+        content_hash=fixture["contentHash"],
     )
 
 
-def _citation_valid(fixture: dict[str, Any]) -> bool:
+def _citation_valid(
+    citation: dict[str, str], fixture: dict[str, Any]
+) -> bool:
     expected = "sha256:" + hashlib.sha256(
         fixture["excerpt"].encode("utf-8")
     ).hexdigest()
-    return (
-        bool(fixture["evidenceId"])
-        and bool(fixture["document"]["documentId"])
-        and bool(fixture["versionId"])
-        and bool(fixture["chunkId"])
-        and fixture["contentHash"] == expected
-    )
+    expected_citation = {
+        "evidenceId": fixture["evidenceId"],
+        "documentId": fixture["document"]["documentId"],
+        "versionId": fixture["versionId"],
+        "chunkId": fixture["chunkId"],
+        "contentHash": expected,
+    }
+    return citation == expected_citation
+
+
+def _citation(evidence: Evidence) -> dict[str, str]:
+    return {
+        "evidenceId": evidence.evidence_id,
+        "documentId": evidence.document_id,
+        "versionId": evidence.version_id,
+        "chunkId": evidence.chunk_id,
+        "contentHash": evidence.content_hash,
+    }
 
 
 class QualificationRunner:
@@ -82,22 +102,28 @@ class QualificationRunner:
         case_outputs: list[dict[str, Any]] = []
         metric_inputs: list[CaseResult] = []
         for case in sorted(dataset["cases"], key=lambda item: item["caseId"]):
+            case_embedder: Embedder = (
+                UnavailableEmbedder()
+                if "EMBEDDING_DEGRADATION" in case["scenarioTags"]
+                else self._embedder
+            )
             authorized = filter_authorized_evidence(
                 evidence,
                 identities[case["executionIdentityCode"]],
                 set(case["allowedProductLineCodes"]),
             )
             turns = [
-                self._run_turn(case, turn, authorized)
+                self._run_turn(case, turn, authorized, case_embedder)
                 for turn in sorted(
                     case["turns"], key=lambda item: item["runSequence"]
                 )
             ]
             final = turns[-1]
             returned_ids = tuple(final["topEvidenceIds"])
+            citations = final["citations"]
             citation_valid = all(
-                _citation_valid(fixtures[evidence_id])
-                for evidence_id in returned_ids
+                _citation_valid(citation, fixtures[citation["evidenceId"]])
+                for citation in citations
             )
             degradation_passed = (
                 final["retrievalMode"] == case["expectedRetrievalMode"]
@@ -136,6 +162,7 @@ class QualificationRunner:
         case: dict[str, Any],
         turn: dict[str, Any],
         authorized: tuple[Evidence, ...],
+        embedder: Embedder,
     ) -> dict[str, Any]:
         started = time.perf_counter_ns()
         scenario_tags = set(case["scenarioTags"])
@@ -145,6 +172,7 @@ class QualificationRunner:
                 "retrievalMode": "NONE",
                 "degradation": "NONE",
                 "topEvidenceIds": [],
+                "citations": [],
                 "durationMs": (time.perf_counter_ns() - started) / 1_000_000,
             }
         query = query_from_context(turn["contextSnapshot"])
@@ -153,10 +181,8 @@ class QualificationRunner:
             [] if full_text_unavailable else lexical_rank(query, authorized)
         )
         try:
-            if "EMBEDDING_DEGRADATION" in scenario_tags:
-                raise EmbeddingUnavailable("injected embedding failure seam")
-            query_vector = self._embedder.embed([query], "query:")[0]
-            evidence_vectors = self._vectors_for(authorized)
+            query_vector = embedder.embed([query], "query:")[0]
+            evidence_vectors = self._vectors_for(authorized, embedder)
             vector_ids = cosine_rank(
                 query_vector, evidence_vectors, authorized
             )
@@ -173,6 +199,10 @@ class QualificationRunner:
                 "retrievalMode": "HYBRID",
                 "degradation": "NONE",
                 "topEvidenceIds": [item.evidence_id for item in fused],
+                "citations": [
+                    _citation(evidence_by_id[item.evidence_id])
+                    for item in fused
+                ],
                 "durationMs": (time.perf_counter_ns() - started) / 1_000_000,
             }
         except EmbeddingUnavailable:
@@ -187,17 +217,27 @@ class QualificationRunner:
                 "retrievalMode": mode,
                 "degradation": degradation,
                 "topEvidenceIds": lexical_ids[:5],
+                "citations": [
+                    _citation(
+                        next(
+                            item
+                            for item in authorized
+                            if item.evidence_id == evidence_id
+                        )
+                    )
+                    for evidence_id in lexical_ids[:5]
+                ],
                 "durationMs": (time.perf_counter_ns() - started) / 1_000_000,
             }
 
     def _vectors_for(
-        self, evidence: tuple[Evidence, ...]
+        self, evidence: tuple[Evidence, ...], embedder: Embedder
     ) -> dict[str, list[float]]:
         missing = [
             item for item in evidence if item.evidence_id not in self._evidence_vector_cache
         ]
         if missing:
-            vectors = self._embedder.embed(
+            vectors = embedder.embed(
                 [item.text for item in missing], "passage:"
             )
             for item, vector in zip(missing, vectors, strict=True):

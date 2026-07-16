@@ -7,7 +7,6 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from . import HARNESS_VERSION
 from .benchmark import (
     batch_benchmark,
     cgroup_memory,
@@ -23,6 +22,7 @@ from .manifest import (
     validate_artifact_directory,
 )
 from .model import LocalE5Embedder
+from .provenance import QualificationProvenance, intelligent_output_context
 from .qualification import QualificationRunner, query_from_context
 
 
@@ -36,6 +36,10 @@ def _write_json(path: Path, value: object) -> None:
         json.dumps(value, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def _load_provenance(path: Path) -> QualificationProvenance:
+    return QualificationProvenance.from_dict(_read_json(path))
 
 
 def command_fetch(args: argparse.Namespace) -> None:
@@ -75,31 +79,12 @@ def command_qualify(args: argparse.Namespace) -> None:
     evidence = _read_json(evidence_path)
     embedder = LocalE5Embedder(args.model_dir)
     result = QualificationRunner(embedder).run(dataset, evidence)
+    provenance = _load_provenance(args.provenance)
     result.update(
         {
             "evaluationRunId": str(uuid.uuid4()),
-            "modelId": args.model_id,
-            "revision": args.revision,
-            "modelManifestHash": args.model_manifest_hash,
-            "imageDigest": args.image_digest,
-            "dependencyLockHash": args.dependency_lock_hash,
-            "datasetChecksum": args.dataset_checksum,
-            "harnessVersion": HARNESS_VERSION,
-            "gitCommit": args.git_commit,
-            "mockDataStatement": (
-                "模拟数据：小样本工程评估，不代表生产效果。"
-            ),
-            "confidence": "HIGH",
-            "evidenceSources": [
-                str(dataset_path),
-                str(evidence_path),
-                "docs/development/embedding-model-qualification.md",
-            ],
-            "humanInterventionRecommendation": (
-                "由人工复核各项门禁证据后决定 Issue #19 的 "
-                "PASS/FAIL/BLOCKED；不得自动关闭门禁。"
-            ),
-            "missingInformation": [],
+            "provenance": provenance.to_dict(),
+            **intelligent_output_context(),
         }
     )
     _write_json(args.output, result)
@@ -117,19 +102,23 @@ def command_latency(args: argparse.Namespace) -> None:
         for case in sorted(dataset["cases"], key=lambda item: item["caseId"])
     ]
     embedder = LocalE5Embedder(args.model_dir)
+    provenance = _load_provenance(args.provenance)
     output = latency_benchmark(
         embedder,
         queries,
-        model_manifest_hash=args.model_manifest_hash,
+        model_manifest_hash=provenance.model_manifest_hash,
         warmups=args.warmups,
         iterations=args.iterations,
         rounds=args.rounds,
     )
     output["environment"] = environment_summary()
+    output["provenance"] = provenance.to_dict()
+    output.update(intelligent_output_context())
     _write_json(args.output, output)
 
 
 def command_smoke(args: argparse.Namespace) -> None:
+    provenance = _load_provenance(args.provenance)
     baseline = process_rss_bytes()
     load_started = time.perf_counter()
     embedder = LocalE5Embedder(args.model_dir)
@@ -151,11 +140,14 @@ def command_smoke(args: argparse.Namespace) -> None:
         "cpuOnly": True,
         "cgroup": cgroup_memory(),
         "environment": environment_summary(),
+        "provenance": provenance.to_dict(),
+        **intelligent_output_context(),
     }
     _write_json(args.output, output)
 
 
 def command_batch(args: argparse.Namespace) -> None:
+    provenance = _load_provenance(args.provenance)
     evidence = _read_json(
         args.dataset_dir / "evidence-fixture-manifest.json"
     )
@@ -173,6 +165,8 @@ def command_batch(args: argparse.Namespace) -> None:
     )
     output["environment"] = environment_summary()
     output["cgroup"] = cgroup_memory()
+    output["provenance"] = provenance.to_dict()
+    output.update(intelligent_output_context())
     _write_json(args.output, output)
 
 
@@ -195,13 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
     qualify.add_argument("--model-dir", type=Path, required=True)
     qualify.add_argument("--dataset-dir", type=Path, required=True)
     qualify.add_argument("--output", type=Path, required=True)
-    qualify.add_argument("--model-id", required=True)
-    qualify.add_argument("--revision", required=True)
-    qualify.add_argument("--model-manifest-hash", required=True)
-    qualify.add_argument("--image-digest", required=True)
-    qualify.add_argument("--dependency-lock-hash", required=True)
-    qualify.add_argument("--dataset-checksum", required=True)
-    qualify.add_argument("--git-commit", required=True)
+    qualify.add_argument("--provenance", type=Path, required=True)
     qualify.set_defaults(handler=command_qualify)
     latency = subparsers.add_parser("latency")
     latency.add_argument("--model-dir", type=Path, required=True)
@@ -210,16 +198,18 @@ def build_parser() -> argparse.ArgumentParser:
     latency.add_argument("--warmups", type=int, default=100)
     latency.add_argument("--iterations", type=int, default=1000)
     latency.add_argument("--rounds", type=int, default=3)
-    latency.add_argument("--model-manifest-hash", required=True)
+    latency.add_argument("--provenance", type=Path, required=True)
     latency.set_defaults(handler=command_latency)
     smoke = subparsers.add_parser("smoke")
     smoke.add_argument("--model-dir", type=Path, required=True)
     smoke.add_argument("--output", type=Path, required=True)
+    smoke.add_argument("--provenance", type=Path, required=True)
     smoke.set_defaults(handler=command_smoke)
     batch = subparsers.add_parser("batch")
     batch.add_argument("--model-dir", type=Path, required=True)
     batch.add_argument("--dataset-dir", type=Path, required=True)
     batch.add_argument("--output", type=Path, required=True)
+    batch.add_argument("--provenance", type=Path, required=True)
     batch.add_argument(
         "--counts", type=int, nargs="+", default=[100, 1000, 10000]
     )

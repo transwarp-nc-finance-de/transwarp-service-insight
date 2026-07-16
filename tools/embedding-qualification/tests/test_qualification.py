@@ -16,7 +16,11 @@ class RecordingEmbedder:
 
 
 class FailingEmbedder:
+    def __init__(self) -> None:
+        self.calls = 0
+
     def embed(self, texts: list[str], prefix: str) -> list[list[float]]:
+        self.calls += 1
         raise EmbeddingUnavailable("injected failure seam")
 
 
@@ -98,7 +102,7 @@ class QualificationRunnerTest(unittest.TestCase):
             "cases": [
                 {
                     "caseId": "case-fallback",
-                    "scenarioTags": ["EMBEDDING_DEGRADATION"],
+                    "scenarioTags": [],
                     "languageTags": ["LANG_EN"],
                     "turns": [
                         {
@@ -145,9 +149,11 @@ class QualificationRunnerTest(unittest.TestCase):
             ],
         }
 
-        output = QualificationRunner(FailingEmbedder()).run(dataset, manifest)
+        embedder = FailingEmbedder()
+        output = QualificationRunner(embedder).run(dataset, manifest)
 
         turn = output["caseResults"][0]["turns"][0]
+        self.assertEqual(embedder.calls, 1)
         self.assertEqual(turn["retrievalMode"], "FTS_ONLY")
         self.assertEqual(turn["degradation"], "FTS_ONLY")
 

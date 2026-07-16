@@ -43,3 +43,10 @@ python -m unittest discover -s tools/embedding-qualification/tests -v
 
 完整受控运行使用 `scripts/run-qualification.ps1`。脚本要求 Artifact Root 位于
 Git worktree 外，并把大文件、缓存和原始性能记录留在仓库外。
+
+## 回滚
+
+Harness 没有接入产品运行链路。回滚时删除
+`tools/embedding-qualification/` 与对应文档增量，并删除仓库外 Artifact Root；
+默认 Compose、API、Backend Port、数据库与产品镜像无需迁移或回滚。模型资格失败时
+不得把模型装入默认镜像，也不得修改 Issue #19 为 PASS。

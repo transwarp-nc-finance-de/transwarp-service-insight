@@ -61,6 +61,11 @@ def fetch_allowlisted_files(
                     f"expected {entry.declared_bytes}, got {actual_bytes}"
                 )
             digest = sha256_file(temporary)
+            if digest != entry.sha256:
+                raise ValueError(
+                    f"remote SHA-256 mismatch for {entry.relative_path}: "
+                    f"expected {entry.sha256}, got {digest}"
+                )
             os.replace(temporary, target)
             records.append(
                 {

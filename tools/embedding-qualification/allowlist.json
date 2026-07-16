@@ -5,27 +5,32 @@
     {
       "relativePath": "model.safetensors",
       "sourceUrl": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d13f1b27baf31030b7fd040960d60d909913633f/model.safetensors",
-      "declaredBytes": 1112201288
+      "declaredBytes": 1112201288,
+      "sha256": "a18a44fad1d0b46ded15928144138cff1135d5cc8233bdd90be5f18822de09a7"
     },
     {
       "relativePath": "tokenizer.json",
       "sourceUrl": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d13f1b27baf31030b7fd040960d60d909913633f/tokenizer.json",
-      "declaredBytes": 17082660
+      "declaredBytes": 17082660,
+      "sha256": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626"
     },
     {
       "relativePath": "config.json",
       "sourceUrl": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d13f1b27baf31030b7fd040960d60d909913633f/config.json",
-      "declaredBytes": 694
+      "declaredBytes": 694,
+      "sha256": "9dab198f24c8c0879e481cf7822005d5ecbceedbacb390ffafa594e28d31bac4"
     },
     {
       "relativePath": "tokenizer_config.json",
       "sourceUrl": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d13f1b27baf31030b7fd040960d60d909913633f/tokenizer_config.json",
-      "declaredBytes": 418
+      "declaredBytes": 418,
+      "sha256": "efb5c0d09722e5fe59a462cd2a9976ee216d55b037597d997cd3fe833216da15"
     },
     {
       "relativePath": "special_tokens_map.json",
       "sourceUrl": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d13f1b27baf31030b7fd040960d60d909913633f/special_tokens_map.json",
-      "declaredBytes": 280
+      "declaredBytes": 280,
+      "sha256": "06e405a36dfe4b9604f484f6a1e619af1a7f7d09e34a8555eb0b77b66318067f"
     }
   ]
 }

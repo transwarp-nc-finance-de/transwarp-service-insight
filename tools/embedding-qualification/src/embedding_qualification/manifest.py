@@ -13,6 +13,7 @@ class AllowlistEntry:
     relative_path: str
     source_url: str
     declared_bytes: int
+    sha256: str
 
     @classmethod
     def from_dict(cls, value: dict[str, object]) -> "AllowlistEntry":
@@ -29,7 +30,12 @@ class AllowlistEntry:
         declared_bytes = int(value["declaredBytes"])
         if declared_bytes < 0:
             raise ValueError(f"negative declared size: {path}")
-        return cls(path, str(value["sourceUrl"]), declared_bytes)
+        digest = str(value["sha256"]).lower()
+        if len(digest) != 64 or any(
+            character not in "0123456789abcdef" for character in digest
+        ):
+            raise ValueError(f"invalid SHA-256 for {path}")
+        return cls(path, str(value["sourceUrl"]), declared_bytes, digest)
 
 
 def load_allowlist(path: Path) -> tuple[AllowlistEntry, ...]:
@@ -74,6 +80,12 @@ def validate_artifact_directory(
             raise ValueError(
                 f"declared byte mismatch for {relative}: "
                 f"expected {entry.declared_bytes}, got {size}"
+            )
+        actual_sha256 = sha256_file(actual[relative])
+        if actual_sha256 != entry.sha256:
+            raise ValueError(
+                f"SHA-256 mismatch for {relative}: "
+                f"expected {entry.sha256}, got {actual_sha256}"
             )
 
 

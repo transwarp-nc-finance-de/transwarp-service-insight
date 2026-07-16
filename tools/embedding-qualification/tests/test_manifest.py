@@ -18,8 +18,18 @@ class ManifestTest(unittest.TestCase):
             (root / "z.json").write_bytes(b"z")
             (root / "a.json").write_bytes(b"alpha")
             entries = (
-                AllowlistEntry("z.json", "https://example.invalid/z", 1),
-                AllowlistEntry("a.json", "https://example.invalid/a", 5),
+                AllowlistEntry(
+                    "z.json",
+                    "https://example.invalid/z",
+                    1,
+                    hashlib.sha256(b"z").hexdigest(),
+                ),
+                AllowlistEntry(
+                    "a.json",
+                    "https://example.invalid/a",
+                    5,
+                    hashlib.sha256(b"alpha").hexdigest(),
+                ),
             )
 
             manifest = build_manifest(root, entries)
@@ -39,7 +49,10 @@ class ManifestTest(unittest.TestCase):
             (root / "unexpected.bin").write_bytes(b"x")
             entries = (
                 AllowlistEntry(
-                    "config.json", "https://example.invalid/config", 2
+                    "config.json",
+                    "https://example.invalid/config",
+                    2,
+                    hashlib.sha256(b"{}").hexdigest(),
                 ),
             )
 
@@ -53,6 +66,7 @@ class ManifestTest(unittest.TestCase):
                     "relativePath": "../model.safetensors",
                     "sourceUrl": "https://example.invalid/model",
                     "declaredBytes": 1,
+                    "sha256": hashlib.sha256(b"x").hexdigest(),
                 }
             ]
         }
