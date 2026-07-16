@@ -69,8 +69,10 @@ public final class KnowledgeIngestionModels {
   public record TaskInput(
       UUID taskId,
       UUID versionId,
+      UUID revisionId,
       String storageKey,
       String mediaType,
+      String cleanedText,
       int attempt,
       int maxAttempts) {}
 
@@ -103,6 +105,8 @@ public final class KnowledgeIngestionModels {
 
   public record ParsePreview(
       UUID versionId,
+      String versionStatus,
+      String submittedBy,
       UUID parseTaskId,
       String parseStatus,
       String parserVersion,

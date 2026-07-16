@@ -4,7 +4,7 @@ spring:
     username: ${DB_USER:service_insight}
     password: ${DB_PASSWORD:service_insight_local}
   flyway:
-    locations: classpath:db/migration
+    locations: classpath:db/migration,classpath:db/vendor/postgresql
 
 app:
   knowledge:

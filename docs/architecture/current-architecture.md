@@ -21,6 +21,6 @@ AIOps（未来真实宿主） / Mock AIOps Sandbox
 
 前端单工程提供 `/sandbox`、`/embed` 与最小 `/knowledge` 模拟上传预览页。Sandbox 不是正式 SLA 入口；Embed 不复制宿主表单；反馈与继续提交相互独立，`CONTINUE_SUBMISSION` 始终允许。
 
-本地 v2 已实现 AuthSession，以及知识首次上传、单任务查询和三个 parse-preview 读取端点。Cookie Session、知识元数据、任务和解析结果持久化在本地 PostgreSQL；原始文件保存于 Compose volume；CSRF Token 仅通过响应头进入页面内存。`docs/api/openapi-v2.yaml` 仍是整体 DRAFT / PARTIALLY_IMPLEMENTED，只有 operation 级 `IMPLEMENTED` 条目可视为运行时存在；v1 无认证 Mock 行为保持不变。
+本地 v2 已实现 AuthSession、知识首次上传、单任务查询、三个 parse-preview 读取端点，以及不可变草稿修订、送审、退回和批准命令。Cookie Session、知识元数据、修订、任务、解析结果与不可变审核历史持久化在本地 PostgreSQL；原始文件保存于 Compose volume；CSRF Token 仅通过响应头进入页面内存。`docs/api/openapi-v2.yaml` 仍是整体 DRAFT / PARTIALLY_IMPLEMENTED，只有 operation 级 `IMPLEMENTED` 条目可视为运行时存在；v1 无认证 Mock 行为保持不变。
 
-尚未接入真实 AIOps、SSO、企业共享或生产数据库、真实业务数据、真实知识源、审核发布、RAG、LLM、多 Agent、生产部署或真实 SLA 提交。
+尚未接入真实 AIOps、SSO、企业共享或生产数据库、真实业务数据、真实知识源、知识发布与索引、RAG、LLM、多 Agent、生产部署或真实 SLA 提交。
