@@ -2,7 +2,7 @@
 
 Status: ACCEPTED
 Owner: API 负责人
-Last reviewed: 2026-07-14
+Last reviewed: 2026-07-16
 Source of truth for: 一期重定义后的 HTTP API 兼容方向
 
 ## 决策
@@ -13,4 +13,4 @@ Source of truth for: 一期重定义后的 HTTP API 兼容方向
 
 当前 v1 将反馈与继续提交耦合，并且无法表达已冻结的 Context、权限和幂等语义；在 v1 内收紧必填字段会破坏已发布契约。该决定落实 ADR-0004 的版本化要求，但不代表 v2 已实现，也不修改当前 OpenAPI。具体 v2 路径与 Schema 已形成 DRAFT 契约并通过人工评审；v1 弃用周期仍未确定。
 
-v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态以及 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前只实现 AuthSession/PostgreSQL 基础切片，v1 Mock 保持兼容，不得将其余领域确认结论或已批准契约表述为已实现 API。
+v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态以及 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览，以及不可变草稿修订、送审、退回和批准，v1 Mock 保持兼容；发布、检索、评估等其余领域确认结论或已批准契约不得表述为已实现 API。
