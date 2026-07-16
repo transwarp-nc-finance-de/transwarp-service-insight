@@ -287,7 +287,7 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 (4) `OPEN QUESTION`：默认 Embedding 的完整 SHA-256 manifest、最终依赖锁/SBOM/NOTICE、镜像 digest、资源性能实测和 `mock-eval-v1` 资格结果尚未产生；证据齐备前不得打包、默认启用或将门禁标为 `PASS`。
 
-(5) `OPEN QUESTION`：不少于 30 条模拟评估样例的具体内容，以及非门禁聚合指标的基线和观察周期。
+(5) `CONFIRMED`：不少于 30 条模拟评估样例的具体内容已交付；非门禁聚合指标的基线和观察周期仍为后续观察项，不构成当前开发阻塞。
 
 (6) `EXTERNAL QUESTION`：真实数据、知识源、身份和 AIOps/ITSM 的授权、脱敏、保留、契约与安全责任；这些问题只影响二期或真实试点，不扩大一期范围。
 
