@@ -111,7 +111,7 @@ class LocalE5Embedder:
         if count > target:
             raise ValueError("unique chunk prefix exceeds target token bucket")
         if count < target:
-            best = f"{best} {' '.join(['mock'] * (target - count))}"
+            best = f"{best} {' '.join(['a'] * (target - count))}"
         actual = self.token_counts([best], prefix)[0]
         if actual != target:
             raise ValueError(
