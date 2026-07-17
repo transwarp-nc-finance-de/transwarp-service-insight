@@ -12,6 +12,6 @@
 10. `CONFIRMED`：保留当前 v1、通过 API v2 表达新语义，并冻结一期 v2 资源组；方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射的 DRAFT 已由用户以 API、产品、安全负责人身份于 2026-07-14 明确批准进入实施。需求范围为 `CONFIRMED`，API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览，以及不可变草稿修订、送审、退回和批准，发布、检索、评估等其余 v2 operation 仍未实现。
 11. `CONFIRMED`：`PrecheckContext` 领域语义、一期最小必填字段、可选字段约束、稳定本地枚举形状及附件元数据 Schema 已随 API v2 DRAFT 于 2026-07-14 获人工批准；`local-identity-v1` 与 `local-catalog-v1` 的稳定本地种子值已确认并在 AuthSession/PostgreSQL 基础切片中实现。
 12. `EXTERNAL QUESTION`：`PrecheckContext` 与真实 AIOps 表单、枚举及附件标识的映射待 AIOps、产品与 API 负责人确认；不影响一期 Sandbox 的本地模拟闭环。
-13. `OPEN QUESTION`：默认 Embedding 的小型配置文件 SHA-256、最终依赖锁/SBOM/NOTICE、4 GB 内存限制下的资源与 P95 实测、批量索引基线及 `mock-eval-v1` 真实资格结果尚未产生；上述证据由 [Issue #39](https://github.com/transwarp-nc-finance-de/transwarp-service-insight/issues/39) 跟踪。证据齐备前 Issue #19 保持 `BLOCKED`，本 Issue 不下载模型，也不得打包或默认启用模型制品。
+13. `CONFIRMED`：Issue #39 已产生固定 revision 的完整 SHA-256 manifest、依赖锁/SBOM/NOTICE、4 GiB 资源与三轮 P95、36 组批量基线及 `mock-eval-v1` 资格结果；工程门禁总体建议为 `PASS`，详见 [资格实测报告](../development/embedding-model-qualification-report.md)。该建议不自动把 Issue #19 标记为 PASS；Issue #19 仍等待人工复核原始 checksum、供应链材料和门禁表后确认 `PASS/FAIL/BLOCKED`。
 
-结论形成前不修改仓库 `LICENSE`，也不宣称项目对外开源。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项只授权后续独立 Ticket 受控取件，第 13 项证据齐备前不得将模型门禁标为 `PASS`，也不得在 Issue #19 中下载、打包或默认启用模型制品。v2 可按已批准契约继续实施。
+结论形成前不修改仓库 `LICENSE`，也不宣称项目对外开源。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项的一次受控取件授权已由 Issue #39 使用完毕，第 13 项的工程建议仍须人工确认后才能改变 Issue #19 状态。模型制品不得进入 Git、默认 Compose 或产品运行时。v2 可按已批准契约继续实施。
