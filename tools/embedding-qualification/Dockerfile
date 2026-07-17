@@ -16,7 +16,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /opt/qualification
 
 COPY requirements.lock .
-RUN python -m pip install --require-hashes -r requirements.lock
+RUN python -m pip install --require-hashes -r requirements.lock \
+    && rm -f /usr/local/bin/hf /usr/local/bin/huggingface-cli \
+    && test ! -e /usr/local/bin/hf \
+    && test ! -e /usr/local/bin/huggingface-cli \
+    && ! command -v git \
+    && ! command -v git-lfs \
+    && ! command -v curl
 
 COPY allowlist.json .
 COPY src ./src

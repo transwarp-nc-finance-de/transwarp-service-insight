@@ -86,3 +86,35 @@ class LocalE5Embedder:
             truncation=True,
         )
         return [len(ids) for ids in encoded["input_ids"]]
+
+    def fit_to_token_count(self, text: str, prefix: str, target: int) -> str:
+        if target < 8 or target > 512:
+            raise ValueError("target token count must be between 8 and 512")
+        words = text.split()
+        if not words:
+            raise ValueError("source text is required")
+
+        low = 1
+        high = len(words)
+        best = words[0]
+        while low <= high:
+            middle = (low + high) // 2
+            candidate = " ".join(words[:middle])
+            count = self.token_counts([candidate], prefix)[0]
+            if count <= target:
+                best = candidate
+                low = middle + 1
+            else:
+                high = middle - 1
+
+        count = self.token_counts([best], prefix)[0]
+        if count > target:
+            raise ValueError("unique chunk prefix exceeds target token bucket")
+        if count < target:
+            best = f"{best} {' '.join(['mock'] * (target - count))}"
+        actual = self.token_counts([best], prefix)[0]
+        if actual != target:
+            raise ValueError(
+                f"cannot construct exact token bucket: target={target}, actual={actual}"
+            )
+        return best

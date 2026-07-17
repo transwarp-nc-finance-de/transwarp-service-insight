@@ -22,6 +22,27 @@ def curl_version() -> str:
     return output.strip()
 
 
+def curl_fetch_command(
+    executable: str,
+    target: str,
+    source_url: str,
+) -> list[str]:
+    return [
+        executable,
+        "--disable",
+        "--fail",
+        "--location",
+        "--silent",
+        "--show-error",
+        "--proto",
+        "=https",
+        "--tlsv1.2",
+        "--output",
+        target,
+        source_url,
+    ]
+
+
 def fetch_allowlisted_files(
     model_dir: Path,
     entries: tuple[AllowlistEntry, ...],
@@ -39,19 +60,11 @@ def fetch_allowlisted_files(
             target = model_dir / entry.relative_path
             temporary = target.with_suffix(target.suffix + ".part")
             subprocess.run(
-                [
+                curl_fetch_command(
                     executable,
-                    "--fail",
-                    "--location",
-                    "--silent",
-                    "--show-error",
-                    "--proto",
-                    "=https",
-                    "--tlsv1.2",
-                    "--output",
                     str(temporary),
                     entry.source_url,
-                ],
+                ),
                 check=True,
             )
             actual_bytes = os.stat(temporary).st_size

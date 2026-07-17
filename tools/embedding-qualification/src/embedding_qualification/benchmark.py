@@ -64,6 +64,7 @@ def latency_benchmark(
         )
     return {
         "warmups": warmups,
+        "warmupScope": "BEFORE_ALL_ROUNDS",
         "iterationsPerRound": iterations,
         "concurrency": 1,
         "batchSize": 1,
@@ -141,12 +142,21 @@ def batch_benchmark(
     for count in counts:
         for token_bucket in token_buckets:
             sample = [
-                (
-                    f"{fixture_texts[index % len(fixture_texts)]} "
-                    f"{'mock ' * token_bucket}unique-{index}"
+                embedder.fit_to_token_count(
+                    (
+                        f"unique-{index} "
+                        f"{fixture_texts[index % len(fixture_texts)]}"
+                    ),
+                    "passage:",
+                    token_bucket,
                 )
                 for index in range(count)
             ]
+            sample_token_counts = embedder.token_counts(sample, "passage:")
+            if any(count != token_bucket for count in sample_token_counts):
+                raise RuntimeError(
+                    f"generated chunks do not match {token_bucket} token bucket"
+                )
             for batch_size in batch_sizes:
                 durations: list[float] = []
                 token_total = 0
@@ -175,6 +185,8 @@ def batch_benchmark(
                         "chunkCount": count,
                         "targetTokenBucket": token_bucket,
                         "batchSize": batch_size,
+                        "minTokenCount": min(sample_token_counts),
+                        "maxTokenCount": max(sample_token_counts),
                         "totalTokens": token_total,
                         "durationSeconds": elapsed,
                         "chunksPerSecond": count / elapsed,
