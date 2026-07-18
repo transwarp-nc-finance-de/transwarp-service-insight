@@ -10,27 +10,10 @@ from pathlib import Path
 from .manifest import AllowlistEntry, sha256_file
 
 
-def qualification_curl() -> str:
-    configured = os.environ.get("QUALIFICATION_CURL")
-    if not configured:
-        raise ValueError(
-            "QUALIFICATION_CURL must name a reviewed absolute executable path"
-        )
-    executable = Path(configured)
-    if not executable.is_absolute():
-        raise ValueError("QUALIFICATION_CURL must be an absolute path")
-    if not executable.is_file():
-        raise ValueError("QUALIFICATION_CURL executable does not exist")
-    return str(executable)
-
-
-def curl_version_command(executable: str) -> list[str]:
-    return [executable, "--disable", "--version"]
-
-
-def curl_version(executable: str) -> str:
+def curl_version() -> str:
+    executable = os.environ.get("QUALIFICATION_CURL", "curl")
     output = subprocess.run(
-        curl_version_command(executable),
+        [executable, "--version"],
         check=True,
         capture_output=True,
         text=True,
@@ -69,8 +52,8 @@ def fetch_allowlisted_files(
     model_dir.mkdir(parents=True, exist_ok=True)
     if any(model_dir.iterdir()):
         raise ValueError("model directory must be empty before controlled fetch")
-    executable = qualification_curl()
-    retrieval_version = curl_version(executable)
+    retrieval_version = curl_version()
+    executable = os.environ.get("QUALIFICATION_CURL", "curl")
     records: list[dict[str, object]] = []
     try:
         for entry in entries:
