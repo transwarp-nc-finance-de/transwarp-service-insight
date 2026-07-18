@@ -4,13 +4,13 @@ Status: ACTIVE
 
 Owner: 研发负责人
 
-Last reviewed: 2026-07-17
+Last reviewed: 2026-07-18
 
 Source of truth for: 当前技术 MVP 的用户可见实施增量
 
 ## 2026-07-17
 
-- Issue #39：新增可整体删除的隔离 Embedding 资格 Harness，完成固定 revision 五文件受控取件、实际 SHA-256 manifest、依赖锁/SBOM/NOTICE、`network=none` CPU 真实推理、4 GiB 资源与查询实测、36 组批量基线及 `mock-eval-v1` 四项资格指标；工程总体建议为 `PASS`，Decision Gate #19 仍等待人工确认，模型未进入 Git、默认 Compose 或产品运行时。
+- Issue #39：新增可整体删除的隔离 Embedding 资格 Harness，完成固定 revision 五文件受控取件、实际 SHA-256 manifest、依赖锁/SBOM/NOTICE、`network=none` CPU 真实推理、4 GiB 资源与查询实测、32/128/512 精确 Token 桶的 36 组批量基线及 `mock-eval-v1` 四项资格指标；工程总体建议为 `PASS`，Decision Gate #19 仍等待人工确认，模型未进入 Git、默认 Compose 或产品运行时。
 
 ## 2026-07-16
 

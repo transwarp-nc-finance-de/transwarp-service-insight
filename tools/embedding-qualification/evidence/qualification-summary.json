@@ -4,38 +4,40 @@
   "revision": "d13f1b27baf31030b7fd040960d60d909913633f",
   "modelManifestHash": "8f58395f4bf0f613fd15ebbf3d5467193ad6717715c4167c764e6e91aae1810e",
   "artifactBytes": 1129285340,
-  "imageDigest": "sha256:543b6f6db320a236e95f8cdd69fbdb33e1f1da2185f7903456ef5a73eaec8b87",
-  "dependencyLockHash": "sha256:031ef06bbf4c2803e686887db99a172c6c5e9cea644a57a73bf7faa63f39356f",
-  "sbomHash": "sha256:b6c497992f6d173b0de6ced1b25dec206c684f9d138ab5c5099d8780a44d5b17",
+  "imageDigest": "sha256:eeef52545a2646e03d7bbd719885672342bebae8c13c3afa4ff6264dae1121ce",
+  "dependencyLockHash": "sha256:c6c8f2d503fe88179dc3b78d996ec5a12f83a409c42da9102020310532e3feb1",
+  "sbomHash": "sha256:3bfe4c86bc20f82e8fea29944850997718378c03bf45ef9bc0ff41e26ed68de9",
   "datasetVersion": "mock-eval-v1",
   "datasetChecksum": "sha256:315f364835d88023c6225c62b6feff95cf2df1fd3fe26fb4fe92048e26aa9229",
-  "gitCommitMeasured": "ac3be49c7826a0cfb1660915ea99cfbe77c407ba",
+  "gitCommitMeasured": "875b1bd77e2361434f8ff48e5fc877bcddbf14c1",
   "coldStart": {
     "runs": 5,
-    "meanLoadSeconds": 4.326,
-    "meanFirstInferenceMs": 1297.832,
-    "maxFirstInferenceRssBytes": 1003073536,
-    "maxCgroupPeakBytes": 1151889408
+    "meanLoadSeconds": 4.156,
+    "meanFirstInferenceMs": 1231.114,
+    "maxFirstInferenceRssBytes": 1006338048,
+    "maxCgroupPeakBytes": 918323200
   },
   "queryLatency": {
     "warmups": 100,
+    "warmupScope": "BEFORE_ALL_ROUNDS",
     "iterationsPerRound": 1000,
     "rounds": [
-      {"round": 1, "p50Ms": 118.558, "p95Ms": 149.476, "p99Ms": 162.891, "maxMs": 187.195},
-      {"round": 2, "p50Ms": 118.901, "p95Ms": 149.305, "p99Ms": 161.214, "maxMs": 245.852},
-      {"round": 3, "p50Ms": 118.708, "p95Ms": 150.096, "p99Ms": 162.952, "maxMs": 186.274}
+      {"round": 1, "p50Ms": 125.651, "p95Ms": 159.685, "p99Ms": 182.550, "maxMs": 235.174},
+      {"round": 2, "p50Ms": 123.458, "p95Ms": 153.533, "p99Ms": 168.070, "maxMs": 202.687},
+      {"round": 3, "p50Ms": 127.489, "p95Ms": 162.682, "p99Ms": 183.343, "maxMs": 207.165}
     ]
   },
   "batchIndex": {
     "combinations": 36,
     "failureCount": 0,
-    "totalMeasuredSeconds": 70833.785,
-    "minChunksPerSecond": 1.022,
-    "maxChunksPerSecond": 6.080,
-    "minTokensPerSecond": 491.405,
-    "maxTokensPerSecond": 606.418,
-    "maxProcessRssBytes": 2072436736,
-    "cgroupPeakBytes": 2031345664,
+    "tokenBucketsVerified": [32, 128, 512],
+    "totalMeasuredSeconds": 63252.193,
+    "minChunksPerSecond": 0.879,
+    "maxChunksPerSecond": 19.081,
+    "minTokensPerSecond": 316.307,
+    "maxTokensPerSecond": 610.584,
+    "maxProcessRssBytes": 2843578368,
+    "cgroupPeakBytes": 2800455680,
     "cgroupLimitBytes": 4294967296
   },
   "qualification": {
@@ -46,7 +48,9 @@
     "degradationPassRate": 1.0,
     "recallAt5": 0.96
   },
-  "rawResultsManifestHash": "sha256:f788fc3515095a70a8900fbb87f36edc8d56986b6c3db3753f61a7aa7192a256",
+  "rawResultsManifestHash": "sha256:3347d2f4f6e581f06c909acad93c236aaf80682c05b15747d69bf37a34cd4caf",
+  "repositoryResultsManifestHash": "sha256:bb02d7236d3461ceb7b056638770f2598b2cffb21a5633b1c56864480989d0bf",
+  "resultsManifestNormalization": "仓库副本仅将原始 Windows CRLF 行尾规范化为 LF；逐结果 SHA-256、字节数、文件名和行顺序不变。",
   "overallRecommendation": "PASS",
   "decisionGate19Status": "AWAITING_HUMAN_CONFIRMATION",
   "confidence": "HIGH",
