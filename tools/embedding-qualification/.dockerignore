@@ -1,0 +1,8 @@
+tests/
+pyproject.toml
+requirements.in
+README.md
+THIRD_PARTY_NOTICE.md
+sbom.cdx.json
+__pycache__/
+*.pyc

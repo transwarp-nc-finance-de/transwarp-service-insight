@@ -1,0 +1,57 @@
+# Issue #39 Embedding Qualification Harness
+
+Status: ACTIVE
+
+Owner: Service Insight Maintainers
+
+Last reviewed: 2026-07-18
+
+Source of truth for: Issue #39 隔离模型取件、完整性校验、离线推理、资格评估与性能实测命令
+
+本目录不是产品代码，不暴露 HTTP，不接入 Backend Port，不修改默认
+`compose.yaml`，不实现 pgvector、IndexTask、知识发布或正式 Retrieval Adapter。
+整个目录可以在 Issue #39 完成后整体删除。
+
+所有输入均为 `模拟数据`。智能结论只提供依据、置信度、人工介入建议和待补充
+信息，不是最终根因、最终方案或正式复盘结论，也不会阻断人工继续提交。
+
+## 固定对象
+
+- 模型：`intfloat/multilingual-e5-base`
+- revision：`d13f1b27baf31030b7fd040960d60d909913633f`
+- 模型目录：仓库外 Artifact Root 下的 `model/`
+- allowlist：仅 `allowlist.json` 中 5 个文件
+- 基础镜像：Dockerfile 中固定的 Linux/amd64 manifest digest
+- 运行时：CPU-only、fast tokenizer、Safetensors、平均池化、L2 normalization、
+  `query:` / `passage:`、最大 512 Token、768 维
+
+## 安全边界
+
+- 本次受控取件显式设置 `QUALIFICATION_CURL` 为已审核的绝对可执行文件路径；
+  实际下载命令首参 `--disable` 禁用用户级 curl 配置。Harness 仍允许未设置时
+  回退 PATH，因此任何未来取件都必须先由人工复核工具路径与版本。
+- 运行镜像不包含 curl、Git、Git LFS、Hugging Face 下载 CLI 或 Token。
+  `huggingface-hub` 仅作为 AutoTokenizer/AutoModel 必需的传递运行库保留，
+  不提供 `hf` / `huggingface-cli` 可执行入口；离线变量和 `network=none`
+  阻断其远端能力。
+- 模型目录以只读方式挂载到容器绝对路径 `/model`。
+- 离线验证与资格运行使用 `--network none` 和全新空缓存目录。
+- `verify` 会拒绝缺失、额外、字节数不符、符号链接或 manifest 不匹配。
+- 若固定 allowlist 不能离线加载，立即停止；不得增加文件或切换 tokenizer。
+
+## 测试
+
+```powershell
+$env:PYTHONPATH = "tools/embedding-qualification/src"
+python -m unittest discover -s tools/embedding-qualification/tests -v
+```
+
+完整受控运行使用 `scripts/run-qualification.ps1`。脚本要求 Artifact Root 位于
+Git worktree 外，并把大文件、缓存和原始性能记录留在仓库外。
+
+## 回滚
+
+Harness 没有接入产品运行链路。回滚时删除
+`tools/embedding-qualification/` 与对应文档增量，并删除仓库外 Artifact Root；
+默认 Compose、API、Backend Port、数据库与产品镜像无需迁移或回滚。模型资格失败时
+不得把模型装入默认镜像，也不得修改 Issue #19 为 PASS。
