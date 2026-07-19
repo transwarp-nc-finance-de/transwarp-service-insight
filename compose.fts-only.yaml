@@ -1,0 +1,9 @@
+services:
+  local-embedding:
+    profiles: [embedding-disabled]
+  backend:
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+    environment:
+      LOCAL_EMBEDDING_URL: http://127.0.0.1:9

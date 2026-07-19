@@ -171,6 +171,11 @@ public class JdbcKnowledgeGovernanceRepository implements KnowledgeGovernanceRep
         value.approvedBy(),
         Timestamp.from(value.occurredAt()),
         value.versionId());
+    if ("DEPRECATE".equals(value.commandType())) {
+      jdbc.update(
+          "UPDATE knowledge_document SET current_published_version_id = NULL WHERE current_published_version_id = ?",
+          value.versionId());
+    }
     jdbc.update(
         "INSERT INTO knowledge_review_history(review_record_id, version_id, revision_id, action, actor_user_code, parse_result_hash, acknowledged_warning_codes, reason, occurred_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         UUID.randomUUID(),
@@ -324,6 +329,7 @@ public class JdbcKnowledgeGovernanceRepository implements KnowledgeGovernanceRep
       case "SUBMIT" -> "KNOWLEDGE_VERSION_REVIEW_SUBMITTED";
       case "RETURN" -> "KNOWLEDGE_VERSION_RETURNED_TO_DRAFT";
       case "APPROVE" -> "KNOWLEDGE_VERSION_APPROVED";
+      case "DEPRECATE" -> "KNOWLEDGE_VERSION_DEPRECATED";
       default -> throw new IllegalArgumentException("Unknown command type");
     };
   }

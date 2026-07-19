@@ -13,5 +13,6 @@
 11. `CONFIRMED`：`PrecheckContext` 领域语义、一期最小必填字段、可选字段约束、稳定本地枚举形状及附件元数据 Schema 已随 API v2 DRAFT 于 2026-07-14 获人工批准；`local-identity-v1` 与 `local-catalog-v1` 的稳定本地种子值已确认并在 AuthSession/PostgreSQL 基础切片中实现。
 12. `EXTERNAL QUESTION`：`PrecheckContext` 与真实 AIOps 表单、枚举及附件标识的映射待 AIOps、产品与 API 负责人确认；不影响一期 Sandbox 的本地模拟闭环。
 13. `CONFIRMED`：Issue #39 已产生固定 revision 的完整 SHA-256 manifest、依赖锁/SBOM/NOTICE、4 GiB 资源与三轮 P95、36 组批量基线及 `mock-eval-v1` 资格结果；工程门禁总体建议为 `PASS`，详见 [资格实测报告](../development/embedding-model-qualification-report.md)。用户于 2026-07-19 人工复核原始 checksum、供应链材料和门禁表后，将 Issue #19 最终确认为 `PASS` 并关闭；该结论允许 Issue #25 使用批准的固定制品实施后续闭环。
+14. `OPEN QUESTION`：根 `AGENTS.md` 要求 `docs/api/openapi.yaml` 作为全部已实现接口唯一契约，但 ADR-0006、CI 与既有 v2 实现使用 `docs/api/openapi-v2.yaml` 的 operation 级 `IMPLEMENTED` 表达并行演进。Issue #25 继续遵循已批准 v2 契约且不修改 v1；v2 正式发布前需由项目负责人确认合并契约或修订治理规则。
 
 在第 1–3 项结论形成前不修改仓库 `LICENSE`，也不宣称项目对外开源。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项的一次受控取件授权已由 Issue #39 使用完毕，第 13 项的 Issue #19 人工门禁已通过。模型制品不得进入 Git；Issue #25 可在校验批准制品、保持离线运行等边界下实施默认 Compose 与产品运行时接入。v2 可按已批准契约继续实施。

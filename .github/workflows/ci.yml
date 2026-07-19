@@ -45,6 +45,8 @@ jobs:
       - run: npm run build
   compose-smoke:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: compose.yaml:compose.fts-only.yaml
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +73,7 @@ jobs:
           test -n "$csrf"
           grep -i '^Cache-Control: no-store' "$headers"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
@@ -126,6 +128,46 @@ jobs:
           echo "$summary" | jq -e '.parseStatus == "SUCCEEDED" and .chunkingRule.strategy == "STRUCTURE_FIRST" and .chunkingRule.maxTokens == 400 and .chunkingRule.overlapTokens == 50 and .mockData == true'
           echo "$blocks" | jq -e '.items | length > 0' >/dev/null
           echo "$chunks" | jq -e '(.items | length > 0) and all(.items[]; .tokenCount <= 400 and .chunkingRuleVersion == "structure-400-overlap-50-v1")' >/dev/null
+          parse_hash="$(echo "$summary" | jq -r .parseResultHash)"
+          curl --fail --silent -b "$cookies" -H "X-CSRF-Token: $csrf" -H 'Idempotency-Key: compose-review-submit-001' -H 'Content-Type: application/json' -d "{\"parseResultHash\":\"$parse_hash\"}" "http://localhost:5173/api/v2/knowledge-versions/$version_id/review-submissions" | jq -e '.version.status == "IN_REVIEW"'
+          reviewer_headers="$(mktemp)"
+          reviewer_cookies="$(mktemp)"
+          reviewer_auth="$(curl --fail --silent -D "$reviewer_headers" -c "$reviewer_cookies" -H 'Content-Type: application/json' -d '{"userCode":"mock-knowledge-reviewer","mockData":true}' http://localhost:5173/api/v2/auth-sessions)"
+          echo "$reviewer_auth" | jq -e '.roles | index("KNOWLEDGE_REVIEWER")'
+          reviewer_csrf="$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\r", "", $2); print $2 }' "$reviewer_headers")"
+          curl --fail --silent -b "$reviewer_cookies" -H "X-CSRF-Token: $reviewer_csrf" -H 'Idempotency-Key: compose-review-approve-001' -H 'Content-Type: application/json' -d "{\"parseResultHash\":\"$parse_hash\",\"acknowledgedWarningCodes\":[]}" "http://localhost:5173/api/v2/knowledge-versions/$version_id/approvals" | jq -e '.version.status == "APPROVED"'
+          previous_version_id="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select gen_random_uuid()')"
+          previous_revision_id="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select gen_random_uuid()')"
+          docker compose exec -T postgres psql -U service_insight -d service_insight -v ON_ERROR_STOP=1 -v successor="$version_id" -v previous="$previous_version_id" -v previous_revision="$previous_revision_id" <<'SQL'
+          insert into knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data)
+          select :'previous', document_id, 0, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', original_file_id, current_timestamp, current_timestamp, true
+          from knowledge_version_v2 where version_id = :'successor';
+          insert into knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, created_at, cleaned_text_hash, product_line_display_name, created_by, mock_data)
+          values (:'previous_revision', :'previous', 1, '模拟数据：旧发布版本', 'TDH', current_timestamp, 'sha256:0000000000000000000000000000000000000000000000000000000000000000', 'TDH（模拟数据）', 'mock-knowledge-editor', true);
+          update knowledge_version_v2 set current_draft_revision_id = :'previous_revision' where version_id = :'previous';
+          update knowledge_document set current_published_version_id = :'previous'
+          where document_id = (select document_id from knowledge_version_v2 where version_id = :'successor');
+          SQL
+          publication="$(curl --fail --silent -b "$reviewer_cookies" -H "X-CSRF-Token: $reviewer_csrf" -H 'Idempotency-Key: compose-publication-001' -H 'Content-Type: application/json' -d '{}' "http://localhost:5173/api/v2/knowledge-versions/$version_id/publications")"
+          index_task_id="$(echo "$publication" | jq -r .taskId)"
+          concurrent_response="$(mktemp)"
+          test "$(curl --silent -o "$concurrent_response" -w '%{http_code}' -b "$reviewer_cookies" -H "X-CSRF-Token: $reviewer_csrf" -H 'Idempotency-Key: compose-publication-002' -H 'Content-Type: application/json' -d '{}' "http://localhost:5173/api/v2/knowledge-versions/$version_id/publications")" = "409"
+          jq -e '.code == "INDEX_TASK_ALREADY_ACTIVE"' "$concurrent_response"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from index_task where resource_id='$version_id' and status in ('PENDING','RUNNING')")" = "1"
+          index_status=""
+          for attempt in $(seq 1 40); do
+            index_task="$(curl --fail --silent -b "$reviewer_cookies" "http://localhost:5173/api/v2/index-tasks/$index_task_id")"
+            index_status="$(echo "$index_task" | jq -r .status)"
+            if test "$index_status" = "FAILED"; then break; fi
+            sleep 0.25
+          done
+          echo "$index_task" | jq -e '.status == "FAILED" and .attempt == 3 and .ftsStatus == "SUCCEEDED" and .embeddingStatus == "FAILED"'
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from knowledge_chunk_index where version_id='$version_id'")" = "0"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from knowledge_chunk_fts_stage where task_id='$index_task_id'")" = "0"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from index_task_attempt where task_id='$index_task_id'")" = "3"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select status from knowledge_version_v2 where version_id='$previous_version_id'")" = "PUBLISHED"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select current_published_version_id from knowledge_document where document_id=(select document_id from knowledge_version_v2 where version_id='$version_id')")" = "$previous_version_id"
+          test "$(curl --fail --silent -b "$reviewer_cookies" -H "X-CSRF-Token: $reviewer_csrf" -H 'Idempotency-Key: compose-publication-001' -H 'Content-Type: application/json' -d '{}' "http://localhost:5173/api/v2/knowledge-versions/$version_id/publications" | jq -r .taskId)" = "$index_task_id"
           auth_session_id="$(echo "$auth" | jq -r .sessionId)"
           db_snapshot_before="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select (select count(*) from auth_session where session_id='$auth_session_id' and invalidated_at is null) || ',' || (select count(*) from knowledge_document where document_id='$document_id') || ',' || (select count(*) from knowledge_version_v2 where version_id='$version_id') || ',' || (select count(*) from parse_task where task_id='$task_id' and status='SUCCEEDED') || ',' || (select count(*) from knowledge_parse_result where version_id='$version_id') || ',' || (select count(*) from knowledge_parsed_block where version_id='$version_id') || ',' || (select count(*) from knowledge_chunk where version_id='$version_id')")"
           file_row="$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select f.storage_key || '|' || f.content_hash from knowledge_original_file f join knowledge_version_v2 v on v.original_file_id=f.file_id where v.version_id='$version_id'")"
@@ -154,10 +196,10 @@ jobs:
           curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14"
           curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id" | jq -e '.status == "ACTIVE" and .runCount == 3 and .latestRun.sequence == 3'
           curl --fail --silent -o /dev/null -b "$cookies" -H "X-CSRF-Token: $csrf" -X DELETE http://localhost:5173/api/v2/auth-sessions/current
-          rm -f "$headers" "$cookies" "$precheck_headers" "$precheck_cookies" "$precheck_first" "$precheck_second" "$first_status" "$second_status" "$run_limit"
+          rm -f "$headers" "$cookies" "$precheck_headers" "$precheck_cookies" "$precheck_first" "$precheck_second" "$first_status" "$second_status" "$run_limit" "$reviewer_headers" "$reviewer_cookies"
       - name: Verify frontend remains available when backend stops
         run: |
           docker compose stop backend

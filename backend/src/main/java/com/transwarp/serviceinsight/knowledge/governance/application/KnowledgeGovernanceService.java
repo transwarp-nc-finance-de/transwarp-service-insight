@@ -229,6 +229,37 @@ public class KnowledgeGovernanceService {
     }
   }
 
+  @Transactional
+  public CommandResponse deprecate(
+      String sessionCookie,
+      String csrfToken,
+      String idempotencyKey,
+      UUID versionId,
+      RequiredCommandReasonRequest request) {
+    var identity = authorize(sessionCookie, csrfToken, Role.KNOWLEDGE_REVIEWER);
+    validateIdempotencyKey(idempotencyKey);
+    repository.lockIdempotency("DEPRECATE", idempotencyKey);
+    var state = visibleReviewerVersion(versionId, identity);
+    var requestHash = requestHash("DEPRECATE", versionId, identity.userCode(), request.reason());
+    var replay = replayCommand("DEPRECATE", idempotencyKey, requestHash);
+    if (replay != null) return replay;
+    if (!"PUBLISHED".equals(state.version().status())) {
+      throw illegalState("仅 PUBLISHED 知识版本可废弃");
+    }
+    return apply(
+        "DEPRECATE",
+        "DEPRECATED",
+        state,
+        identity,
+        null,
+        Set.of(),
+        request.reason(),
+        idempotencyKey,
+        requestHash,
+        state.version().submittedBy(),
+        state.version().approvedBy());
+  }
+
   private CommandResponse apply(
       String commandType,
       String target,

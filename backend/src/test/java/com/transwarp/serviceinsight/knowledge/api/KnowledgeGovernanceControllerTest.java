@@ -2,6 +2,8 @@ package com.transwarp.serviceinsight.knowledge.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,7 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingException;
+import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingPort;
+import com.transwarp.serviceinsight.knowledge.publication.port.KnowledgePublicationRepository;
 import java.io.ByteArrayOutputStream;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -29,6 +36,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -38,6 +46,8 @@ class KnowledgeGovernanceControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private JdbcTemplate jdbc;
+  @Autowired private KnowledgePublicationRepository publicationRepository;
+  @MockitoBean private EmbeddingPort embeddingPort;
 
   @Test
   void editorSubmitsAndDifferentReviewerApprovesWithIdempotentReplay() throws Exception {
@@ -321,6 +331,310 @@ class KnowledgeGovernanceControllerTest {
         .isInstanceOf(DataAccessException.class);
   }
 
+  @Test
+  void approvedVersionPublicationImmediatelyReturnsPendingIndexTask() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var reviewer = login("mock-knowledge-reviewer");
+    var uploaded = uploadAndAwait(editor, "publication-upload-001", "# 模拟数据\n\n待发布索引内容");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "publication-submit-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+    var previousVersionId = seedPreviousPublishedVersion(uploaded.versionId());
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "approvals",
+            "publication-approve-001",
+            "{\"parseResultHash\":\""
+                + uploaded.parseResultHash()
+                + "\",\"acknowledgedWarningCodes\":[]}")
+        .andExpect(status().isOk());
+
+    when(embeddingPort.embedPassages(anyList()))
+        .thenAnswer(
+            invocation ->
+                ((List<?>) invocation.getArgument(0))
+                    .stream().map(ignored -> new float[768]).toList());
+    var publication =
+        command(reviewer, uploaded.versionId(), "publications", "publication-command-001", "{}")
+            .andExpect(status().isAccepted())
+            .andExpect(header().string("Idempotency-Replayed", "false"))
+            .andExpect(jsonPath("$.resourceId").value(uploaded.versionId()))
+            .andExpect(jsonPath("$.status").value("PENDING"))
+            .andExpect(jsonPath("$.attempt").value(0))
+            .andExpect(jsonPath("$.maxAttempts").value(3))
+            .andExpect(jsonPath("$.ftsStatus").value("PENDING"))
+            .andExpect(jsonPath("$.embeddingStatus").value("PENDING"))
+            .andReturn();
+
+    var taskId = json(publication).path("taskId").asText();
+    awaitIndexTask(reviewer, taskId, "SUCCEEDED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_chunk_index WHERE version_id = ? AND fts_document IS NOT NULL",
+                Integer.class,
+                java.util.UUID.fromString(uploaded.versionId())))
+        .isGreaterThan(0);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_chunk_fts_stage WHERE task_id = ?",
+                Integer.class,
+                java.util.UUID.fromString(taskId)))
+        .isZero();
+    mockMvc
+        .perform(
+            get("/api/v2/knowledge-versions/{versionId}/parse-preview", uploaded.versionId())
+                .cookie(reviewer.getResponse().getCookie("SESSION")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.versionStatus").value("PUBLISHED"));
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM knowledge_version_v2 WHERE version_id = ?",
+                String.class,
+                previousVersionId))
+        .isEqualTo("DEPRECATED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT current_published_version_id FROM knowledge_document WHERE document_id = (SELECT document_id FROM knowledge_version_v2 WHERE version_id = ?)",
+                java.util.UUID.class,
+                java.util.UUID.fromString(uploaded.versionId())))
+        .isEqualTo(java.util.UUID.fromString(uploaded.versionId()));
+  }
+
+  @Test
+  void retryableEmbeddingFailureStopsAfterThreeAttemptsAndKeepsVersionApproved() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var reviewer = login("mock-knowledge-reviewer");
+    var uploaded = uploadAndAwait(editor, "publication-retry-upload-001", "# 模拟数据\n\n向量服务超时");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "publication-retry-submit-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+    var previousVersionId = seedPreviousPublishedVersion(uploaded.versionId());
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "approvals",
+            "publication-retry-approve-001",
+            "{\"parseResultHash\":\""
+                + uploaded.parseResultHash()
+                + "\",\"acknowledgedWarningCodes\":[]}")
+        .andExpect(status().isOk());
+    when(embeddingPort.embedPassages(anyList()))
+        .thenThrow(new EmbeddingException("EMBEDDING_TIMEOUT", "模拟数据：向量超时", true));
+
+    var publication =
+        command(
+                reviewer,
+                uploaded.versionId(),
+                "publications",
+                "publication-retry-command-001",
+                "{}")
+            .andExpect(status().isAccepted())
+            .andReturn();
+
+    var taskId = json(publication).path("taskId").asText();
+    var failed = awaitIndexTask(reviewer, taskId, "FAILED");
+    assertThat(json(failed).path("attempt").asInt()).isEqualTo(3);
+    assertThat(json(failed).path("error").path("code").asText()).isEqualTo("EMBEDDING_TIMEOUT");
+    assertThat(json(failed).path("ftsStatus").asText()).isEqualTo("SUCCEEDED");
+    assertThat(json(failed).path("embeddingStatus").asText()).isEqualTo("FAILED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_chunk_fts_stage WHERE task_id = ? AND fts_document IS NOT NULL",
+                Integer.class,
+                java.util.UUID.fromString(taskId)))
+        .isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_chunk_index WHERE version_id = ?",
+                Integer.class,
+                java.util.UUID.fromString(uploaded.versionId())))
+        .isZero();
+    mockMvc
+        .perform(
+            get("/api/v2/knowledge-versions/{versionId}/parse-preview", uploaded.versionId())
+                .cookie(reviewer.getResponse().getCookie("SESSION")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.versionStatus").value("APPROVED"));
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM knowledge_version_v2 WHERE version_id = ?",
+                String.class,
+                previousVersionId))
+        .isEqualTo("PUBLISHED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT current_published_version_id FROM knowledge_document WHERE document_id = (SELECT document_id FROM knowledge_version_v2 WHERE version_id = ?)",
+                java.util.UUID.class,
+                java.util.UUID.fromString(uploaded.versionId())))
+        .isEqualTo(previousVersionId);
+  }
+
+  @Test
+  void concurrentPublicationCreatesOnlyOneActiveTask() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var reviewer = login("mock-knowledge-reviewer");
+    var uploaded = uploadAndAwait(editor, "publication-concurrent-upload-001", "# 模拟数据\n\n并发发布");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "publication-concurrent-submit-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "approvals",
+            "publication-concurrent-approve-001",
+            "{\"parseResultHash\":\""
+                + uploaded.parseResultHash()
+                + "\",\"acknowledgedWarningCodes\":[]}")
+        .andExpect(status().isOk());
+    var embeddingStarted = new CountDownLatch(1);
+    var releaseEmbedding = new CountDownLatch(1);
+    when(embeddingPort.embedPassages(anyList()))
+        .thenAnswer(
+            invocation -> {
+              embeddingStarted.countDown();
+              if (!releaseEmbedding.await(5, TimeUnit.SECONDS)) {
+                throw new AssertionError("embedding release timed out");
+              }
+              return ((List<?>) invocation.getArgument(0))
+                  .stream().map(ignored -> new float[768]).toList();
+            });
+
+    var first =
+        command(
+                reviewer,
+                uploaded.versionId(),
+                "publications",
+                "publication-concurrent-command-001",
+                "{}")
+            .andExpect(status().isAccepted())
+            .andReturn();
+    assertThat(embeddingStarted.await(5, TimeUnit.SECONDS)).isTrue();
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "publications",
+            "publication-concurrent-command-002",
+            "{}")
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("INDEX_TASK_ALREADY_ACTIVE"));
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM index_task WHERE resource_id = ? AND status IN ('PENDING', 'RUNNING')",
+                Integer.class,
+                java.util.UUID.fromString(uploaded.versionId())))
+        .isEqualTo(1);
+    releaseEmbedding.countDown();
+    awaitIndexTask(reviewer, json(first).path("taskId").asText(), "SUCCEEDED");
+  }
+
+  @Test
+  void deterministicEmbeddingFailureIsNotRetried() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var reviewer = login("mock-knowledge-reviewer");
+    var uploaded = uploadAndAwait(editor, "publication-invalid-upload-001", "# 模拟数据\n\n非法向量响应");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "publication-invalid-submit-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "approvals",
+            "publication-invalid-approve-001",
+            "{\"parseResultHash\":\""
+                + uploaded.parseResultHash()
+                + "\",\"acknowledgedWarningCodes\":[]}")
+        .andExpect(status().isOk());
+    when(embeddingPort.embedPassages(anyList()))
+        .thenThrow(new EmbeddingException("EMBEDDING_INVALID_RESPONSE", "模拟数据：向量维度不符合契约", false));
+    var publication =
+        command(
+                reviewer,
+                uploaded.versionId(),
+                "publications",
+                "publication-invalid-command-001",
+                "{}")
+            .andExpect(status().isAccepted())
+            .andReturn();
+
+    var taskId = json(publication).path("taskId").asText();
+    var failed = awaitIndexTask(reviewer, taskId, "FAILED");
+    assertThat(json(failed).path("attempt").asInt()).isEqualTo(1);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM index_task_attempt WHERE task_id = ?",
+                Integer.class,
+                java.util.UUID.fromString(taskId)))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void restartRecoveryAppendsInterruptedAttemptBeforeRescheduling() throws Exception {
+    var editor = login("mock-knowledge-editor");
+    var reviewer = login("mock-knowledge-reviewer");
+    var uploaded = uploadAndAwait(editor, "publication-recovery-upload-001", "# 模拟数据\n\n重启恢复");
+    command(
+            editor,
+            uploaded.versionId(),
+            "review-submissions",
+            "publication-recovery-submit-001",
+            "{\"parseResultHash\":\"" + uploaded.parseResultHash() + "\"}")
+        .andExpect(status().isOk());
+    command(
+            reviewer,
+            uploaded.versionId(),
+            "approvals",
+            "publication-recovery-approve-001",
+            "{\"parseResultHash\":\""
+                + uploaded.parseResultHash()
+                + "\",\"acknowledgedWarningCodes\":[]}")
+        .andExpect(status().isOk());
+    var taskId = java.util.UUID.randomUUID();
+    var versionId = java.util.UUID.fromString(uploaded.versionId());
+    var revisionId =
+        jdbc.queryForObject(
+            "SELECT current_draft_revision_id FROM knowledge_version_v2 WHERE version_id = ?",
+            java.util.UUID.class,
+            versionId);
+    var startedAt = Instant.now().minusSeconds(10);
+    jdbc.update(
+        "INSERT INTO index_task(task_id, resource_id, revision_id, actor_user_code, status, fts_status, embedding_status, attempt, max_attempts, created_at, started_at) VALUES (?, ?, ?, 'mock-knowledge-reviewer', 'RUNNING', 'SUCCEEDED', 'RUNNING', 1, 3, ?, ?)",
+        taskId,
+        versionId,
+        revisionId,
+        Timestamp.from(startedAt.minusSeconds(1)),
+        Timestamp.from(startedAt));
+
+    publicationRepository.recoverIncompleteTasks(Instant.now());
+
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT error_code FROM index_task_attempt WHERE task_id = ? AND attempt = 1",
+                String.class,
+                taskId))
+        .isEqualTo("INDEX_INTERRUPTED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM index_task WHERE task_id = ?", String.class, taskId))
+        .isEqualTo("PENDING");
+  }
+
   private int concurrentSubmit(
       MvcResult editor, Uploaded uploaded, String key, CountDownLatch ready, CountDownLatch start)
       throws Exception {
@@ -335,6 +649,40 @@ class KnowledgeGovernanceControllerTest {
         .andReturn()
         .getResponse()
         .getStatus();
+  }
+
+  private java.util.UUID seedPreviousPublishedVersion(String successorVersionId) {
+    var successorId = java.util.UUID.fromString(successorVersionId);
+    var previousId = java.util.UUID.randomUUID();
+    var previousRevisionId = java.util.UUID.randomUUID();
+    var documentId =
+        jdbc.queryForObject(
+            "SELECT document_id FROM knowledge_version_v2 WHERE version_id = ?",
+            java.util.UUID.class,
+            successorId);
+    var originalFileId =
+        jdbc.queryForObject(
+            "SELECT original_file_id FROM knowledge_version_v2 WHERE version_id = ?",
+            java.util.UUID.class,
+            successorId);
+    jdbc.update(
+        "INSERT INTO knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data) VALUES (?, ?, 0, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE)",
+        previousId,
+        documentId,
+        originalFileId);
+    jdbc.update(
+        "INSERT INTO knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, created_at, cleaned_text_hash, product_line_display_name, created_by, mock_data) VALUES (?, ?, 1, '模拟数据：旧发布版本', 'TDH', CURRENT_TIMESTAMP, 'sha256:0000000000000000000000000000000000000000000000000000000000000000', 'TDH（模拟数据）', 'mock-knowledge-editor', TRUE)",
+        previousRevisionId,
+        previousId);
+    jdbc.update(
+        "UPDATE knowledge_version_v2 SET current_draft_revision_id = ? WHERE version_id = ?",
+        previousRevisionId,
+        previousId);
+    jdbc.update(
+        "UPDATE knowledge_document SET current_published_version_id = ? WHERE document_id = ?",
+        previousId,
+        documentId);
+    return previousId;
   }
 
   private org.springframework.test.web.servlet.ResultActions command(
@@ -412,6 +760,22 @@ class KnowledgeGovernanceControllerTest {
       Thread.sleep(50);
     }
     throw new AssertionError("Parse task did not complete");
+  }
+
+  private MvcResult awaitIndexTask(MvcResult login, String taskId, String expectedStatus)
+      throws Exception {
+    for (int attempt = 0; attempt < 40; attempt++) {
+      var response =
+          mockMvc
+              .perform(
+                  get("/api/v2/index-tasks/{taskId}", taskId)
+                      .cookie(login.getResponse().getCookie("SESSION")))
+              .andExpect(status().isOk())
+              .andReturn();
+      if (expectedStatus.equals(json(response).path("status").asText())) return response;
+      Thread.sleep(50);
+    }
+    throw new AssertionError("Index task did not reach " + expectedStatus);
   }
 
   private String previewHash(MvcResult login, String versionId) throws Exception {

@@ -6,6 +6,8 @@ import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedExc
 import com.transwarp.serviceinsight.identity.application.UnauthenticatedException;
 import com.transwarp.serviceinsight.knowledge.governance.api.KnowledgeGovernanceController;
 import com.transwarp.serviceinsight.knowledge.ingestion.application.KnowledgeApiException;
+import com.transwarp.serviceinsight.knowledge.publication.api.IndexTaskController;
+import com.transwarp.serviceinsight.knowledge.publication.api.KnowledgePublicationController;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
       KnowledgeIngestionController.class,
       ParseTaskController.class,
       ParsePreviewController.class,
-      KnowledgeGovernanceController.class
+      KnowledgeGovernanceController.class,
+      KnowledgePublicationController.class,
+      IndexTaskController.class
     })
 public class KnowledgeIngestionExceptionHandler {
   private static final Logger LOGGER =
