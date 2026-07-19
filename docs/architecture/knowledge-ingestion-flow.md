@@ -13,7 +13,7 @@ Source of truth for: 未来知识导入、审核和发布边界
 
 只有授权、脱敏、审核通过且在有效期内的版本可进入线上检索。导入、解析、切片、审核、发布、废弃和重建索引必须有独立状态与版本，不得在在线预诊请求中执行。
 
-当前仓库只允许模拟、公开或脱敏文件，通过本地 Compose volume 与 PostgreSQL 完成首次上传、解析预览、不可变草稿修订和职责分离审核；不连接真实知识源、不发布知识版本、不构建真实索引。数据源授权、版权、保留删除策略、权限继承和外部存储均需人工确认。
+当前仓库只允许模拟、公开或脱敏文件，通过本地 Compose volume 与 PostgreSQL 完成首次上传、解析预览、不可变草稿修订、职责分离审核及双索引原子发布；不连接真实知识源，也尚未提供在线检索 API。数据源授权、版权、保留删除策略、权限继承和外部存储均需人工确认。
 
 ## 一期已确认目标边界
 
@@ -32,4 +32,4 @@ Source of truth for: 未来知识导入、审核和发布边界
 
 ## 当前实施状态
 
-Issue #21 已实现首次上传、不可变 Compose volume 文件、Markdown/TXT/文本型 PDF 解析、最大三次 ParseTask、解析摘要以及 Block/Chunk 分页预览。Issue #22 已实现不可变草稿修订、重新解析、`DRAFT → IN_REVIEW → APPROVED`、审核退回、`parseResultHash` 与警告确认、职责分离、命令幂等和不可变审核历史。扫描 PDF、OCR、发布、IndexTask、FTS、pgvector 和 Evidence 仍未实现；当前切片不代表一期完成。
+Issue #21 已实现首次上传和解析预览，Issue #22 已实现不可变草稿审核，Issue #25 已实现独立 `IndexTask`、PostgreSQL FTS、pgvector 768 维向量、本地离线 E5、原子发布与废弃。扫描 PDF、OCR、在线 Retrieval 和 Evidence 仍未实现；当前切片不代表一期完成。

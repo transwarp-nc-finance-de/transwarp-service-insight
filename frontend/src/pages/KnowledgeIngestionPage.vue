@@ -7,8 +7,10 @@ interface ParseWarning {
   message: string
 }
 
+type VersionStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'DEPRECATED'
+
 interface ParseSummary {
-  versionStatus: 'DRAFT' | 'IN_REVIEW' | 'APPROVED'
+  versionStatus: VersionStatus
   submittedBy?: string | null
   parserVersion: string
   parseResultHash: string
@@ -17,7 +19,7 @@ interface ParseSummary {
 
 interface KnowledgeVersion {
   versionId: string
-  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED'
+  status: VersionStatus
   submittedBy?: string | null
   approvedBy?: string | null
 }
@@ -39,6 +41,7 @@ const warningNote = ref('')
 const returnReason = ref('')
 const reviewVersionId = ref('')
 const governanceLoading = ref(false)
+const indexTask = ref<Record<string, unknown>>()
 
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0]
@@ -139,6 +142,48 @@ async function approve() {
 async function returnToDraft() {
   if (!version.value || !returnReason.value.trim()) return
   await governanceCommand('draft-returns', { reason: returnReason.value.trim() })
+}
+
+async function publish() {
+  if (!version.value || version.value.status !== 'APPROVED') return
+  governanceLoading.value = true
+  error.value = ''
+  try {
+    indexTask.value = await request(
+      `/api/v2/knowledge-versions/${version.value.versionId}/publications`,
+      {
+        ...writeRequest('{}'),
+        headers: { ...writeHeaders(), 'Content-Type': 'application/json' },
+      },
+    )
+    await pollIndexTask(String(indexTask.value?.taskId))
+    if (indexTask.value?.status === 'SUCCEEDED') version.value.status = 'PUBLISHED'
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '双索引发布暂时不可用'
+  } finally {
+    governanceLoading.value = false
+  }
+}
+
+async function pollIndexTask(taskId: string): Promise<void> {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    indexTask.value = await request(`/api/v2/index-tasks/${taskId}`)
+    if (indexTask.value?.status !== 'PENDING' && indexTask.value?.status !== 'RUNNING') return
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error('索引任务仍在处理，可稍后通过任务列表继续查询')
+}
+
+async function deprecate() {
+  if (!version.value || version.value.status !== 'PUBLISHED' || !returnReason.value.trim()) return
+  const result = await request(
+    `/api/v2/knowledge-versions/${version.value.versionId}/deprecations`,
+    {
+      ...writeRequest(JSON.stringify({ reason: returnReason.value.trim() })),
+      headers: { ...writeHeaders(), 'Content-Type': 'application/json' },
+    },
+  )
+  version.value = result.version as KnowledgeVersion
 }
 
 async function revise() {
@@ -327,6 +372,19 @@ async function request(path: string, init: Parameters<typeof fetch>[1] = {}) {
         >
           批准
         </button>
+        <button
+          data-test="publish"
+          :disabled="governanceLoading || version.status !== 'APPROVED'"
+          @click="publish"
+        >
+          发布双索引
+        </button>
+        <p v-if="indexTask" class="notice">
+          索引任务：{{ indexTask.status }}（FTS {{ indexTask.ftsStatus }} / 向量
+          {{ indexTask.embeddingStatus }}，尝试 {{ indexTask.attempt }}/{{
+            indexTask.maxAttempts
+          }}）
+        </p>
         <label
           >退回原因<input data-test="return-reason" v-model="returnReason" maxlength="1000"
         /></label>
@@ -336,6 +394,13 @@ async function request(path: string, init: Parameters<typeof fetch>[1] = {}) {
           @click="returnToDraft"
         >
           退回草稿
+        </button>
+        <button
+          data-test="deprecate"
+          :disabled="governanceLoading || version.status !== 'PUBLISHED' || !returnReason.trim()"
+          @click="deprecate"
+        >
+          废弃已发布版本
         </button>
         <label
           >清洗文本<textarea

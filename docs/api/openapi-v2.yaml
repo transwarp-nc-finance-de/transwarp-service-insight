@@ -360,7 +360,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: publishKnowledgeVersion
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 创建双索引发布任务
       description: 仅 APPROVED 可执行；FTS 与向量索引均成功后才原子发布并废弃旧版，半索引版本不可检索。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -378,7 +378,7 @@ paths:
     post:
       tags: [KnowledgeVersion]
       operationId: deprecateKnowledgeVersion
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 废弃知识版本
       security: [{ CookieAuth: [], CsrfToken: [] }]
       parameters: [{ $ref: '#/components/parameters/VersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
@@ -421,7 +421,7 @@ paths:
     get:
       tags: [IndexTask]
       operationId: listIndexTasks
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询双索引任务
       description: 任务由发布命令创建；最大尝试次数为 3，历史失败任务不可变。
       parameters:
@@ -442,7 +442,7 @@ paths:
     get:
       tags: [IndexTask]
       operationId: getIndexTask
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询不可变双索引任务
       responses:
         '200': { $ref: '#/components/responses/IndexTaskOk' }
@@ -1207,7 +1207,7 @@ components:
       required: [versionId, versionStatus, submittedBy, parseTaskId, parseStatus, parserVersion, parseResultHash, parsedBlockCount, chunkCount, warnings, chunkingRule, mockData]
       properties:
         versionId: { type: string, format: uuid }
-        versionStatus: { type: string, enum: [DRAFT, IN_REVIEW, APPROVED] }
+        versionStatus: { $ref: '#/components/schemas/KnowledgeVersionStatus' }
         submittedBy: { type: string, nullable: true, maxLength: 100 }
         parseTaskId: { type: string, format: uuid }
         parseStatus: { type: string, enum: [SUCCEEDED], description: 有警告时仍为 SUCCEEDED }

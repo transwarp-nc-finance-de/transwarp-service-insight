@@ -7,6 +7,9 @@ spring:
     locations: classpath:db/migration,classpath:db/vendor/postgresql
 
 app:
+  embedding:
+    base-url: ${LOCAL_EMBEDDING_URL:http://localhost:8090}
+    timeout: ${LOCAL_EMBEDDING_TIMEOUT:PT30S}
   knowledge:
     storage-path: ${KNOWLEDGE_STORAGE_PATH:${java.io.tmpdir}/service-insight-knowledge}
   identity:

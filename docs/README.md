@@ -2,7 +2,7 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
-当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession、知识上传解析预览、不可变草稿审核，以及持久化预诊 Session/Run 与完整度策略只读切片；发布、检索、反馈、提交记录、评估等其余一期目标能力仍未实现。
+当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃，以及持久化预诊 Session/Run 与完整度策略只读切片；在线检索、反馈、提交记录、评估等其余一期目标能力仍未实现。
 
 首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
 
@@ -32,7 +32,10 @@
 | 产品需求、流程、权限、指标与业务术语 | [`product/`](product/) | 产品语义与验收口径；业务术语先归入相关产品文档 |
 | 当前架构与未来设计 | [`architecture/`](architecture/) | 已实现架构事实与明确标为 DRAFT 的目标设计 |
 | 长期、高成本架构决策 | [`architecture/decisions/`](architecture/decisions/) | 按 `ADR-NNNN-*.md` 记录多方案决策及其权衡 |
-| 已实现 API | [OpenAPI](api/openapi.yaml) | 已发布接口的唯一契约 |
+| 已发布 v1 API | [OpenAPI](api/openapi.yaml) | 已发布 v1 接口的唯一契约 |
+| 已批准 v2 API | [OpenAPI v2 DRAFT](api/openapi-v2.yaml) | v2 实施契约与逐 operation 实现状态；尚未发布为正式契约 |
+
+当前存在需显式保留的治理差异：根 `AGENTS.md` 将 `docs/api/openapi.yaml` 定义为全部已实现接口的唯一契约，而既有 ADR-0006、CI 和已交付 v2 切片使用 `openapi-v2.yaml` 的 operation 级 `IMPLEMENTED` 表达并行演进。本次沿用既有 v2 规则且不改写 v1；在 v2 正式发布前，项目负责人需确认是合并契约还是修订根规则。该差异记录在 `docs/project/open-questions.md`，不得把 v2 DRAFT 描述成已发布 API。
 | 开发说明 | [`development/`](development/) | 本地开发与测试方法 |
 | Agent 协作配置 | [`agents/`](agents/) | 工程 Skill 使用的 Issue Tracker、标签与领域文档消费规则 |
 | 运维治理 | [`operations/`](operations/) | 可观测性、数据保留等运维规则 |

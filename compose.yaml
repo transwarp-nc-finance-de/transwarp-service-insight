@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: service_insight
       POSTGRES_USER: service_insight
@@ -14,7 +14,23 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"
-    networks: [app]
+    networks: [index-internal]
+
+  local-embedding:
+    build:
+      context: .
+      dockerfile: local-embedding/Dockerfile
+    environment:
+      MODEL_DIR: /model
+    volumes:
+      - ${LOCAL_EMBEDDING_MODEL_PATH:-./.local/embedding-model-unconfigured}:/model:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    networks: [index-internal]
 
   backend:
     build:
@@ -28,6 +44,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      local-embedding:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -35,9 +53,10 @@ services:
       DB_USER: service_insight
       DB_PASSWORD: service_insight_local
       KNOWLEDGE_STORAGE_PATH: /var/lib/service-insight/knowledge
+      LOCAL_EMBEDDING_URL: http://local-embedding:8090
     volumes:
       - knowledge-files:/var/lib/service-insight/knowledge
-    networks: [app]
+    networks: [index-internal, edge]
 
   frontend:
     build:
@@ -47,10 +66,12 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:5173:80"
-    networks: [app]
+    networks: [edge]
 
 networks:
-  app:
+  index-internal:
+    internal: true
+  edge:
 
 volumes:
   postgres-data:

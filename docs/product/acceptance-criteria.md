@@ -17,7 +17,7 @@
 
 以下为 `CONFIRMED` 的目标标准，不代表当前实现已经满足：固定评估集使用不少于 30 条 `模拟数据` 样例；权限泄漏率必须为 0%，引用错误率必须为 0%，降级场景通过率必须为 100%，Recall@5 必须不低于 80%。评估结果必须注明“小样本工程评估，不代表生产效果”。
 
-契约门禁已完成：`/api/v2` OpenAPI 的方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射已于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览，以及不可变草稿修订、送审、退回和批准，v1 Mock 保持兼容；发布、检索、评估等其余目标不得被表述为已实现接口。
+契约门禁已完成：`/api/v2` OpenAPI 的方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射已于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃及持久化 Precheck Session/Run，v1 Mock 保持兼容；在线检索、Evidence、反馈、评估等其余目标不得被表述为已实现接口。
 
 混合检索必须在两路过滤后各取前 20 条，使用版本化 RRF（`k=60`）融合并稳定返回前 5 条；相同输入、索引与规则版本必须产生相同顺序。
 
