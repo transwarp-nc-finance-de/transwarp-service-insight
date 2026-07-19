@@ -1207,7 +1207,7 @@ components:
       required: [versionId, versionStatus, submittedBy, parseTaskId, parseStatus, parserVersion, parseResultHash, parsedBlockCount, chunkCount, warnings, chunkingRule, mockData]
       properties:
         versionId: { type: string, format: uuid }
-        versionStatus: { type: string, enum: [DRAFT, IN_REVIEW, APPROVED] }
+        versionStatus: { $ref: '#/components/schemas/KnowledgeVersionStatus' }
         submittedBy: { type: string, nullable: true, maxLength: 100 }
         parseTaskId: { type: string, format: uuid }
         parseStatus: { type: string, enum: [SUCCEEDED], description: 有警告时仍为 SUCCEEDED }

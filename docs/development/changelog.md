@@ -12,7 +12,7 @@ Source of truth for: 当前技术 MVP 的用户可见实施增量
 
 - Issue #25：接入固定 `multilingual-e5-base` 离线服务、pgvector 768 维与 PostgreSQL FTS，新增可恢复且最多三次尝试的 `IndexTask`、原子发布/旧版废弃、显式废弃 API 和最小治理 UI；模型制品保持 Git 外置，在线 Retrieval/Evidence 仍未实现。
 
-- Decision Gate #19 经人工复核 Issue #39、PR #42、资格报告、模型 manifest、依赖锁、SBOM/NOTICE、镜像绑定和仓库外原始结果后确认为 `PASS` 并关闭；允许 Issue #25 在固定制品、逐文件 SHA-256 校验、离线运行和受控要素变化后重新评估的边界下实施。模型制品仍不得提交 Git，尚未进入默认 Compose 或产品运行时。
+- Decision Gate #19 经人工复核 Issue #39、PR #42、资格报告、模型 manifest、依赖锁、SBOM/NOTICE、镜像绑定和仓库外原始结果后确认为 `PASS` 并关闭；Issue #25 已在固定制品、逐文件 SHA-256 校验、离线运行和受控要素变化后重新评估的边界下完成接入。模型文件仍不提交 Git 或写入镜像，由默认 Compose 以只读外置制品加载。
 
 ## 2026-07-17
 

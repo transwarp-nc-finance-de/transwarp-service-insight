@@ -17,7 +17,7 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 本文仅定义产品能力和边界，不包含后端代码、接口协议、数据库设计、真实 API 地址、真实 RAG 接入、真实大模型接入或真实 AIOps 实现。涉及 AIOps 的内容仅为后续对接的产品接口要求，不代表当前已经完成真实系统接入。
 
-当前状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`。技术 MVP 保持 v1 Mock 完全兼容，并已实现 v2 AuthSession、本地 PostgreSQL、四个模拟身份及角色/产品线矩阵、知识首次上传、异步解析和预览，以及不可变草稿修订、送审、退回和批准；知识发布、pgvector、持久化预诊/反馈/审计与评估仍未实现。真实知识、真实身份和外部集成都在一期范围外。
+当前状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`。技术 MVP 保持 v1 Mock 完全兼容，并已实现 v2 AuthSession、本地 PostgreSQL、四个模拟身份及角色/产品线矩阵、知识上传解析与不可变审核、pgvector/FTS 双索引原子发布和废弃，以及持久化 Precheck Session/Run；在线检索、Evidence、反馈、评估等能力仍未实现。真实知识、真实身份和外部集成都在一期范围外。
 
 ## 正文
 
@@ -279,13 +279,13 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 ### 13. 已确认状态与待确认事项
 
-(1) `CONFIRMED`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射已获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览，以及不可变草稿修订、送审、退回和批准，v1 Mock 保持兼容，其余 v2 operation 仍未实现。
+(1) `CONFIRMED`：完整 `/api/v2` OpenAPI 的方法、Schema、错误码、幂等、分页、异步任务状态与 v1→v2 映射已获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃及持久化 Precheck Session/Run，v1 Mock 保持兼容，在线检索、Evidence、反馈、评估等其余 v2 operation 仍未实现。
 
 (2) `CONFIRMED`：`PrecheckContext` 可选字段约束、稳定枚举和附件元数据 Schema 已随 API v2 DRAFT 获人工批准；`local-identity-v1` 与 `local-catalog-v1` 稳定种子值已确认并实现，真实 AIOps 字段映射不属于一期。
 
 (3) `CONFIRMED`：默认 Embedding、固定 revision、内部非商用边界、许可证剩余风险、安全边界、代表性测试机和资格门槛已获人工确认；Issue #39 已完成受控取件和资格实测，Issue #19 于 2026-07-19 经人工复核确认为 `PASS`。
 
-(4) `CONFIRMED`：默认 Embedding 的完整 SHA-256 manifest、最终依赖锁/SBOM/NOTICE、镜像 digest、资源性能实测和 `mock-eval-v1` 资格结果已由 Issue #39 产生并经人工复核。允许 Issue #25 在制品不进入 Git、构建校验批准 SHA-256、运行时离线且受控要素变化后重新评估的边界下实施。
+(4) `CONFIRMED`：默认 Embedding 的完整 SHA-256 manifest、最终依赖锁/SBOM/NOTICE、镜像 digest、资源性能实测和 `mock-eval-v1` 资格结果已由 Issue #39 产生并经人工复核。Issue #25 已在模型文件不进入 Git/镜像、启动校验批准 SHA-256、运行时离线且受控要素变化后重新评估的边界下完成双索引发布接入。
 
 (5) `CONFIRMED`：不少于 30 条模拟评估样例的具体内容已交付；非门禁聚合指标的基线和观察周期仍为后续观察项，不构成当前开发阻塞。
 
