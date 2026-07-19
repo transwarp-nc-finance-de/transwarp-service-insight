@@ -4,6 +4,7 @@ import com.transwarp.serviceinsight.identity.api.V2ApiError;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
 import com.transwarp.serviceinsight.identity.application.UnauthenticatedException;
+import com.transwarp.serviceinsight.precheck.retrieval.api.EvidenceController;
 import com.transwarp.serviceinsight.precheck.v2.application.PrecheckV2Exception;
 import java.time.Instant;
 import java.util.List;
@@ -20,7 +21,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(
-    assignableTypes = {PersistentPrecheckController.class, CompletenessPolicyController.class})
+    assignableTypes = {
+      PersistentPrecheckController.class,
+      CompletenessPolicyController.class,
+      EvidenceController.class
+    })
 public class PersistentPrecheckExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ResponseEntity<V2ApiError> validation(MethodArgumentNotValidException exception) {

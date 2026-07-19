@@ -32,4 +32,4 @@ Source of truth for: 未来知识导入、审核和发布边界
 
 ## 当前实施状态
 
-Issue #21 已实现首次上传和解析预览，Issue #22 已实现不可变草稿审核，Issue #25 已实现独立 `IndexTask`、PostgreSQL FTS、pgvector 768 维向量、本地离线 E5、原子发布与废弃。扫描 PDF、OCR、在线 Retrieval 和 Evidence 仍未实现；当前切片不代表一期完成。
+Issue #21 已实现首次上传和解析预览，Issue #22 已实现不可变草稿审核，Issue #25 已实现独立 `IndexTask`、PostgreSQL FTS、pgvector 768 维向量、本地离线 E5、原子发布与废弃，Issue #26 已实现授权在线混合 Retrieval 与 Evidence 快照/读取。扫描 PDF 和 OCR 仍未实现；当前切片不代表一期完成。

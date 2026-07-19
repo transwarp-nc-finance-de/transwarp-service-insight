@@ -1,5 +1,7 @@
 package com.transwarp.serviceinsight.precheck.v2.api;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -7,17 +9,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingException;
+import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingPort;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -27,6 +33,16 @@ class PersistentPrecheckControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private JdbcTemplate jdbc;
+  @MockitoBean private EmbeddingPort embeddingPort;
+
+  @BeforeEach
+  void embeddingAvailable() {
+    when(embeddingPort.embedQueries(anyList()))
+        .thenAnswer(
+            invocation ->
+                ((List<?>) invocation.getArgument(0))
+                    .stream().map(ignored -> new float[768]).toList());
+  }
 
   @Test
   void precheckUserCreatesSessionWithPersistentRunOneAndSafeDegradedResult() throws Exception {
@@ -57,14 +73,110 @@ class PersistentPrecheckControllerTest {
         .andExpect(
             jsonPath("$.latestRun.result.allowedActions")
                 .value(org.hamcrest.Matchers.hasItem("CONTINUE_SUBMISSION")))
-        .andExpect(jsonPath("$.latestRun.result.retrieval.mode").value("UNAVAILABLE"))
-        .andExpect(jsonPath("$.latestRun.result.retrieval.degraded").value(true))
-        .andExpect(jsonPath("$.latestRun.result.evidence").isEmpty())
+        .andExpect(jsonPath("$.latestRun.result.retrieval.mode").value("HYBRID"))
+        .andExpect(jsonPath("$.latestRun.result.retrieval.degraded").value(false))
+        .andExpect(jsonPath("$.latestRun.result.evidence").isArray())
         .andExpect(
             jsonPath("$.latestRun.result.disclaimer")
                 .value(org.hamcrest.Matchers.containsString("不是最终根因")))
         .andExpect(jsonPath("$.latestRun.result.mockData").value(true))
         .andExpect(jsonPath("$.mockData").value(true));
+  }
+
+  @Test
+  void authorizedHybridRetrievalCreatesEvidenceAndReauthorizesEveryRead() throws Exception {
+    var allowed = seedPublishedIndex("TDH", "模拟数据：TDH MOCK-1001 排查依据");
+    seedPublishedIndex("STREAMING", "模拟数据：越权 MOCK-1001 机密依据");
+    var login = login("mock-precheck-tdh");
+
+    var created =
+        mockMvc
+            .perform(
+                post("/api/v2/precheck-sessions")
+                    .cookie(login.getResponse().getCookie("SESSION"))
+                    .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(sessionRequest("mock-host-retrieval-001", "模拟数据：MOCK-1001 查询失败")))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.latestRun.result.retrieval.mode").value("HYBRID"))
+            .andExpect(
+                jsonPath("$.latestRun.result.evidence[*].title")
+                    .value(org.hamcrest.Matchers.hasItem("模拟数据：TDH MOCK-1001 排查依据")))
+            .andExpect(
+                jsonPath("$.latestRun.result.evidence[*].title")
+                    .value(
+                        org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.hasItem("模拟数据：越权 MOCK-1001 机密依据"))))
+            .andReturn();
+    var evidence =
+        objectMapper
+            .readTree(created.getResponse().getContentAsByteArray())
+            .at("/latestRun/result/evidence");
+    var evidenceId = "";
+    for (var item : evidence) {
+      if ("模拟数据：TDH MOCK-1001 排查依据".equals(item.path("title").asText())) {
+        evidenceId = item.path("evidenceId").asText();
+      }
+    }
+    org.assertj.core.api.Assertions.assertThat(evidenceId).isNotBlank();
+
+    mockMvc
+        .perform(
+            get("/api/v2/evidence/{evidenceId}", evidenceId)
+                .cookie(login.getResponse().getCookie("SESSION")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.document.documentId").value(allowed.documentId().toString()))
+        .andExpect(jsonPath("$.versionId").value(allowed.versionId().toString()))
+        .andExpect(jsonPath("$.chunkId").value(allowed.chunkId().toString()))
+        .andExpect(jsonPath("$.contentHash").value("sha256:retrieval-fixture"))
+        .andExpect(jsonPath("$.excerpt").value(org.hamcrest.Matchers.containsString("MOCK-1001")))
+        .andExpect(jsonPath("$.storageKey").doesNotExist());
+
+    jdbc.update(
+        "DELETE FROM local_identity_product_line WHERE user_code = 'mock-precheck-tdh' AND product_line_code = 'TDH'");
+    try {
+      mockMvc
+          .perform(
+              get("/api/v2/evidence/{evidenceId}", evidenceId)
+                  .cookie(login.getResponse().getCookie("SESSION")))
+          .andExpect(status().isNotFound())
+          .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+      mockMvc
+          .perform(
+              get("/api/v2/evidence/{evidenceId}", java.util.UUID.randomUUID())
+                  .cookie(login.getResponse().getCookie("SESSION")))
+          .andExpect(status().isNotFound())
+          .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    } finally {
+      jdbc.update(
+          "INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-precheck-tdh', 'TDH')");
+    }
+  }
+
+  @Test
+  void embeddingFailureUsesFtsOnlyAndForcesLowConfidence() throws Exception {
+    seedPublishedIndex("TDH", "模拟数据：FTS MOCK-1001 排查依据");
+    when(embeddingPort.embedQueries(anyList()))
+        .thenThrow(new EmbeddingException("EMBEDDING_TIMEOUT", "模拟数据：向量服务超时", true));
+    var login = login("mock-precheck-tdh");
+
+    mockMvc
+        .perform(
+            post("/api/v2/precheck-sessions")
+                .cookie(login.getResponse().getCookie("SESSION"))
+                .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(sessionRequest("mock-host-fts-only-001", "模拟数据：MOCK-1001 查询失败")))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.latestRun.status").value("DEGRADED"))
+        .andExpect(jsonPath("$.latestRun.result.retrieval.mode").value("FTS_ONLY"))
+        .andExpect(jsonPath("$.latestRun.result.confidence").value("LOW"))
+        .andExpect(
+            jsonPath("$.latestRun.result.evidence.length()")
+                .value(org.hamcrest.Matchers.greaterThan(0)))
+        .andExpect(
+            jsonPath("$.latestRun.result.allowedActions")
+                .value(org.hamcrest.Matchers.hasItem("CONTINUE_SUBMISSION")));
   }
 
   @Test
@@ -433,7 +545,7 @@ class PersistentPrecheckControllerTest {
                 .content(completeContext))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("ACTIVE"))
-        .andExpect(jsonPath("$.latestRun.status").value("DEGRADED"))
+        .andExpect(jsonPath("$.latestRun.status").value("COMPLETED"))
         .andExpect(jsonPath("$.latestRun.result.completeness.complete").value(true))
         .andExpect(jsonPath("$.latestRun.result.completeness.missingFieldCodes").isEmpty());
   }
@@ -618,4 +730,72 @@ class PersistentPrecheckControllerTest {
         """
         .formatted(hostRequestId, title);
   }
+
+  private PublishedIndex seedPublishedIndex(String productLineCode, String title) {
+    var documentId = java.util.UUID.randomUUID();
+    var fileId = java.util.UUID.randomUUID();
+    var versionId = java.util.UUID.randomUUID();
+    var revisionId = java.util.UUID.randomUUID();
+    var taskId = java.util.UUID.randomUUID();
+    var chunkId = java.util.UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO knowledge_document(document_id, title, product_line_code, product_line_display_name, source_type, created_by, created_at, mock_data) VALUES (?, ?, ?, ?, 'MOCK', 'mock-knowledge-editor', CURRENT_TIMESTAMP, TRUE)",
+        documentId,
+        title,
+        productLineCode,
+        productLineCode + "（模拟数据）");
+    jdbc.update(
+        "INSERT INTO knowledge_original_file(file_id, storage_key, content_hash, size_bytes, media_type, original_name, created_at) VALUES (?, ?, 'sha256:0000000000000000000000000000000000000000000000000000000000000000', 1, 'text/plain', 'retrieval-fixture.txt', CURRENT_TIMESTAMP)",
+        fileId,
+        "retrieval-fixture/" + fileId);
+    jdbc.update(
+        "INSERT INTO knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data) VALUES (?, ?, 1, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE)",
+        versionId,
+        documentId,
+        fileId);
+    jdbc.update(
+        "INSERT INTO knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, created_at, cleaned_text_hash, product_line_display_name, created_by, mock_data) VALUES (?, ?, 1, ?, ?, CURRENT_TIMESTAMP, 'sha256:0000000000000000000000000000000000000000000000000000000000000000', ?, 'mock-knowledge-editor', TRUE)",
+        revisionId,
+        versionId,
+        title,
+        productLineCode,
+        productLineCode + "（模拟数据）");
+    jdbc.update(
+        "UPDATE knowledge_version_v2 SET current_draft_revision_id = ? WHERE version_id = ?",
+        revisionId,
+        versionId);
+    jdbc.update(
+        "UPDATE knowledge_document SET current_published_version_id = ? WHERE document_id = ?",
+        versionId,
+        documentId);
+    jdbc.update(
+        "INSERT INTO parse_task(task_id, resource_id, draft_revision_id, status, attempt, max_attempts, created_at, started_at, completed_at) VALUES (?, ?, ?, 'SUCCEEDED', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        taskId,
+        versionId,
+        revisionId);
+    var text = title + "。模拟数据：检查完整错误码 MOCK-1001 和组件版本。";
+    jdbc.update(
+        "INSERT INTO knowledge_revision_chunk(chunk_id, task_id, revision_id, sequence, structure_path, text_content, token_count, content_hash, chunking_rule_version) VALUES (?, ?, ?, 1, '# fixture', ?, 12, 'sha256:retrieval-fixture', 'structure-400-overlap-50-v1')",
+        chunkId,
+        taskId,
+        revisionId,
+        text);
+    jdbc.update(
+        "INSERT INTO knowledge_chunk_index(chunk_id, version_id, revision_id, product_line_code, text_content, fts_document, embedding, embedding_dimensions, embedding_model, embedding_revision, content_hash, indexed_at) VALUES (?, ?, ?, ?, ?, ?, ?, 768, 'intfloat/multilingual-e5-base', 'd13f1b27baf31030b7fd040960d60d909913633f', 'sha256:retrieval-fixture', CURRENT_TIMESTAMP)",
+        chunkId,
+        versionId,
+        revisionId,
+        productLineCode,
+        text,
+        text.toLowerCase(java.util.Locale.ROOT),
+        zeroVector());
+    return new PublishedIndex(documentId, versionId, chunkId);
+  }
+
+  private String zeroVector() {
+    return "[" + String.join(",", java.util.Collections.nCopies(768, "0.0")) + "]";
+  }
+
+  private record PublishedIndex(
+      java.util.UUID documentId, java.util.UUID versionId, java.util.UUID chunkId) {}
 }

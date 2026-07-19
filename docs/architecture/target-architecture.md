@@ -49,6 +49,6 @@ Issue #39 已完成固定 revision 的受控取件并生成、复核文件清单
 
 一期明确不建设真实外部系统集成、自动 SLA/运维动作、真实生成式模型、多 Agent、高级检索链、全格式解析、生产级平台能力或完整运营平台。候选技术不得仅为未来可能性创建空接口、空服务或 Compose 组件。
 
-当前 `/api/v1` 保持兼容；一期新语义由 `/api/v2` 承载。v1/v2 DTO 通过 Mapper 隔离，领域模型不依赖 HTTP 版本。完整 DRAFT OpenAPI 已覆盖方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃及持久化 Precheck Session/Run，在线检索、Evidence、反馈、评估等其余 v2 operation 仍未实现，v1 契约与行为不变。
+当前 `/api/v1` 保持兼容；一期新语义由 `/api/v2` 承载。v1/v2 DTO 通过 Mapper 隔离，领域模型不依赖 HTTP 版本。完整 DRAFT OpenAPI 已覆盖方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence 读取，反馈、评估等其余 v2 operation 仍未实现，v1 契约与行为不变。
 
 一期冻结的 v2 资源组为：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。冻结只覆盖职责和路径前缀，不代表具体方法、Schema 或完整 CRUD 已实现。

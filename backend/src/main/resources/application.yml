@@ -10,6 +10,7 @@ app:
   embedding:
     base-url: ${LOCAL_EMBEDDING_URL:http://localhost:8090}
     timeout: ${LOCAL_EMBEDDING_TIMEOUT:PT30S}
+    query-timeout: ${LOCAL_EMBEDDING_QUERY_TIMEOUT:PT1S}
   knowledge:
     storage-path: ${KNOWLEDGE_STORAGE_PATH:${java.io.tmpdir}/service-insight-knowledge}
   identity:

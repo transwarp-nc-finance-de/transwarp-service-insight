@@ -11,7 +11,7 @@ Source of truth for: 模块职责、依赖方向与替换边界
 
 ## Knowledge
 
-当前已实现模拟 `KnowledgeDocument`、`KnowledgeVersion`、`KnowledgeDraftRevision`、`ParseTask`、解析结果、`KnowledgeChunk`、不可变审核历史、`IndexTask` 与双索引发布状态的 PostgreSQL 持久化，以及不可变 Compose volume 原始文件 Adapter；API 已交付首次上传、任务查询、解析预览、草稿修订、送审、退回、批准、原子发布和废弃。在线检索、Evidence 和真实/外部知识源仍未实现；仅双索引成功并处于当前 `PUBLISHED` 状态的版本可供后续检索端点使用。
+当前已实现模拟 `KnowledgeDocument`、`KnowledgeVersion`、`KnowledgeDraftRevision`、`ParseTask`、解析结果、`KnowledgeChunk`、不可变审核历史、`IndexTask`、双索引发布状态、Run 检索审计与 Evidence 快照的 PostgreSQL 持久化，以及不可变 Compose volume 原始文件 Adapter；API 已交付首次上传、任务查询、解析预览、草稿修订、送审、退回、批准、原子发布、废弃、授权混合检索和 Evidence 重新授权读取。真实/外部知识源仍未实现；检索只使用双索引成功且处于当前 `PUBLISHED` 状态的版本。
 
 ## 未来模块（DRAFT）
 

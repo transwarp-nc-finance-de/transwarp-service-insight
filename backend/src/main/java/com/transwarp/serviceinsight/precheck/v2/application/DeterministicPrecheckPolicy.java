@@ -1,5 +1,6 @@
 package com.transwarp.serviceinsight.precheck.v2.application;
 
+import com.transwarp.serviceinsight.precheck.retrieval.domain.RetrievalModels.RetrievalOutcome;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CapabilityStatus;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CompletenessAssessment;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CompletenessPolicy;
@@ -14,7 +15,11 @@ public class DeterministicPrecheckPolicy {
   private static final int MAX_RUNS = 3;
   private static final String DISCLAIMER = "本结果不是最终根因、最终方案或正式复盘结论，须由人工确认。";
 
-  public PrecheckResult evaluate(PrecheckContext context, CompletenessPolicy policy, int sequence) {
+  public PrecheckResult evaluate(
+      PrecheckContext context,
+      CompletenessPolicy policy,
+      int sequence,
+      RetrievalOutcome retrieval) {
     var missing = missing(context, policy);
     var completeness =
         new CompletenessAssessment(
@@ -28,24 +33,78 @@ public class DeterministicPrecheckPolicy {
     if (!missing.isEmpty() && sequence < MAX_RUNS) actions.add("SUPPLEMENT_INFORMATION");
     actions.add("CONTINUE_SUBMISSION");
     actions.add("CONFIRM_SELF_SERVICE");
+    var confidence = confidence(missing, retrieval);
     return new PrecheckResult(
-        missing.isEmpty() ? "模拟数据：信息完整度检查通过，但检索能力尚未实现。" : "模拟数据：当前信息仍可补充，以下内容仅供人工参考。",
-        List.of("请由 SLA 处理人核对上下文和脱敏信息后决定下一步。"),
+        summary(missing, retrieval),
+        recommendations(retrieval),
         completeness,
-        "LOW",
-        List.of("当前未实现 FTS、向量检索或真实 Evidence，置信度按确定性规则固定为 LOW。"),
-        List.of(),
+        confidence.level(),
+        confidence.reasons(),
+        retrieval.evidence().stream()
+            .map(
+                evidence ->
+                    java.util.Map.<String, Object>of(
+                        "evidenceId", evidence.evidenceId(),
+                        "title", evidence.title(),
+                        "excerpt", evidence.excerpt(),
+                        "mockData", true))
+            .toList(),
         List.of("建议人工核对完整错误码、复现步骤和近期变更；用户仍可继续提交。"),
         missing,
         actions,
         DISCLAIMER,
         new RetrievalDegradation(
-            "UNAVAILABLE",
-            new CapabilityStatus(false, "FTS_NOT_IMPLEMENTED", "模拟数据：FTS 尚未实现"),
-            new CapabilityStatus(false, "EMBEDDING_NOT_IMPLEMENTED", "模拟数据：local-embedding 尚未接入"),
-            true),
+            retrieval.mode(),
+            new CapabilityStatus(
+                retrieval.fts().available(), retrieval.fts().code(), retrieval.fts().message()),
+            new CapabilityStatus(
+                retrieval.embedding().available(),
+                retrieval.embedding().code(),
+                retrieval.embedding().message()),
+            retrieval.degraded()),
         true);
   }
+
+  private Confidence confidence(List<String> missing, RetrievalOutcome retrieval) {
+    if (!missing.isEmpty()) {
+      return new Confidence("LOW", List.of("仍有待补充信息，确定性规则将置信度限制为 LOW。"));
+    }
+    if ("UNAVAILABLE".equals(retrieval.mode()) || retrieval.evidence().isEmpty()) {
+      return new Confidence("LOW", List.of("无可用 Evidence，确定性规则将置信度限制为 LOW。"));
+    }
+    if ("FTS_ONLY".equals(retrieval.mode())) {
+      return new Confidence("LOW", List.of("向量召回不可用，FTS_ONLY 降级强制使用 LOW。"));
+    }
+    var crossConfirmed =
+        retrieval.fusion().selected().stream()
+            .filter(item -> item.ftsRank() != null && item.vectorRank() != null)
+            .count();
+    if (retrieval.evidence().size() >= 2 && crossConfirmed >= 2) {
+      return new Confidence("HIGH", List.of("信息完整且至少两条 Evidence 由 FTS 与向量召回共同印证。"));
+    }
+    return new Confidence("MEDIUM", List.of("存在可用 Evidence，但双路共同印证仍有限。"));
+  }
+
+  private String summary(List<String> missing, RetrievalOutcome retrieval) {
+    if ("UNAVAILABLE".equals(retrieval.mode())) {
+      return "模拟数据：检索暂时不可用，请人工核对上下文后继续处理。";
+    }
+    if (retrieval.evidence().isEmpty()) {
+      return "模拟数据：未找到当前权限范围内的可用依据，请人工继续核对。";
+    }
+    return missing.isEmpty()
+        ? "模拟数据：已基于当前授权范围内的 Evidence 生成确定性预诊摘要。"
+        : "模拟数据：已找到授权 Evidence，但当前信息仍建议补充。";
+  }
+
+  private List<String> recommendations(RetrievalOutcome retrieval) {
+    if (retrieval.evidence().isEmpty()) {
+      return List.of("请由 SLA 处理人核对完整错误码、复现步骤和近期变更后决定下一步。");
+    }
+    return List.of("请人工打开并核验列出的 Evidence，再决定排查方向；建议不构成最终方案。");
+  }
+
+  private record Confidence(String level, List<String> reasons) {}
 
   private List<String> missing(PrecheckContext context, CompletenessPolicy policy) {
     var values = new LinkedHashSet<String>();

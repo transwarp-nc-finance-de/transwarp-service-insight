@@ -73,7 +73,7 @@ jobs:
           test -n "$csrf"
           grep -i '^Cache-Control: no-store' "$headers"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
@@ -96,7 +96,7 @@ jobs:
           test "$(sort "$first_status" "$second_status" | tr '\n' ',')" = "200,201,"
           precheck_session_id="$(jq -r .sessionId "$precheck_first")"
           test "$precheck_session_id" = "$(jq -r .sessionId "$precheck_second")"
-          jq -e '.status == "ACTIVE" and .runCount == 1 and .latestRun.sequence == 1 and .latestRun.result.confidence == "LOW" and .latestRun.result.retrieval.mode == "UNAVAILABLE" and .latestRun.result.evidence == [] and (.latestRun.result.allowedActions | index("CONTINUE_SUBMISSION")) != null and .latestRun.result.mockData == true' "$precheck_first"
+          jq -e '.status == "ACTIVE" and .runCount == 1 and .latestRun.sequence == 1 and .latestRun.result.confidence == "LOW" and .latestRun.result.retrieval.mode == "HYBRID" and .latestRun.result.evidence == [] and (.latestRun.result.allowedActions | index("CONTINUE_SUBMISSION")) != null and .latestRun.result.mockData == true' "$precheck_first"
           run_two_payload="$(echo "$precheck_payload" | jq '.context.title = "模拟数据：Compose 第二轮"')"
           run_two="$(curl --fail --silent -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Idempotency-Key: compose-precheck-run-002' -H 'Content-Type: application/json' -d "$run_two_payload" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs")"
           echo "$run_two" | jq -e '.sequence == 2 and (.result.allowedActions | index("CONTINUE_SUBMISSION")) != null'
@@ -196,7 +196,7 @@ jobs:
           curl --fail --silent -D "$headers" -b "$cookies" http://localhost:5173/api/v2/auth-sessions/current | jq -e '.userCode == "mock-knowledge-editor"'
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc 'select count(*) from local_identity where mock_data')" = "4"
-          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by installed_rank) from flyway_schema_history where success")" = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"
           curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id" | jq -e '.status == "ACTIVE" and .runCount == 3 and .latestRun.sequence == 3'
           curl --fail --silent -o /dev/null -b "$cookies" -H "X-CSRF-Token: $csrf" -X DELETE http://localhost:5173/api/v2/auth-sessions/current
           rm -f "$headers" "$cookies" "$precheck_headers" "$precheck_cookies" "$precheck_first" "$precheck_second" "$first_status" "$second_status" "$run_limit" "$reviewer_headers" "$reviewer_cookies"

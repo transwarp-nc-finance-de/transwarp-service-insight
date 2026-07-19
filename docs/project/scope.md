@@ -12,7 +12,7 @@
 
 当前未接真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、真实知识源、知识审核发布、RAG、LLM、多 Agent、真实 Wiki/历史 SLA 或真实 SLA 创建接口。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
 
-能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion 首次上传、解析预览、草稿修订与审核切片 `IMPLEMENTED`；知识发布、Retrieval、LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
+能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion、双索引原子发布/废弃、授权混合 Retrieval 与 Evidence 读取切片 `IMPLEMENTED`；LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
 ## 一期范围重定义访谈（2026-07-13）
 

@@ -42,9 +42,38 @@ export interface PrecheckRun {
     missingInformation: string[]
     allowedActions: string[]
     disclaimer: string
-    retrieval: { mode: string; degraded: boolean }
+    evidence: EvidenceReference[]
+    retrieval: {
+      mode: 'HYBRID' | 'FTS_ONLY' | 'UNAVAILABLE'
+      degraded: boolean
+      fts: RetrievalCapability
+      embedding: RetrievalCapability
+    }
     mockData: boolean
   }
+}
+
+export interface RetrievalCapability {
+  available: boolean
+  code: string
+  message: string
+}
+
+export interface EvidenceReference {
+  evidenceId: string
+  title: string
+  excerpt: string
+  mockData: boolean
+}
+
+export interface Evidence {
+  evidenceId: string
+  document: { documentId: string; title: string }
+  versionId: string
+  chunkId: string
+  excerpt: string
+  contentHash: string
+  mockData: boolean
 }
 
 export interface PrecheckSession {
