@@ -4,19 +4,23 @@ Status: ACTIVE
 
 Owner: 研发负责人
 
-Last reviewed: 2026-07-18
+Last reviewed: 2026-07-19
 
 Source of truth for: 当前技术 MVP 的用户可见实施增量
 
+## 2026-07-19
+
+- Decision Gate #19 经人工复核 Issue #39、PR #42、资格报告、模型 manifest、依赖锁、SBOM/NOTICE、镜像绑定和仓库外原始结果后确认为 `PASS` 并关闭；允许 Issue #25 在固定制品、逐文件 SHA-256 校验、离线运行和受控要素变化后重新评估的边界下实施。模型制品仍不得提交 Git，尚未进入默认 Compose 或产品运行时。
+
 ## 2026-07-17
 
-- Issue #39：新增可整体删除的隔离 Embedding 资格 Harness，完成固定 revision 五文件受控取件、实际 SHA-256 manifest、依赖锁/SBOM/NOTICE、`network=none` CPU 真实推理、4 GiB 资源与查询实测、32/128/512 精确 Token 桶的 36 组批量基线及 `mock-eval-v1` 四项资格指标；工程总体建议为 `PASS`，Decision Gate #19 仍等待人工确认，模型未进入 Git、默认 Compose 或产品运行时。
+- Issue #39：新增可整体删除的隔离 Embedding 资格 Harness，完成固定 revision 五文件受控取件、实际 SHA-256 manifest、依赖锁/SBOM/NOTICE、`network=none` CPU 真实推理、4 GiB 资源与查询实测、32/128/512 精确 Token 桶的 36 组批量基线及 `mock-eval-v1` 四项资格指标；当日工程总体建议为 `PASS`，Decision Gate #19 当时仍等待人工确认，模型未进入 Git、默认 Compose 或产品运行时。
 
 ## 2026-07-16
 
 - Issue #23：新增 API v2 持久化预诊 Session/Run 基础闭环，覆盖业务幂等、完整 Context 与策略/结果快照、最多三轮补充、本人恢复、终态只读、显式自助结束、确定性 Mock 降级输出、最小前端 Sandbox，以及真实 PostgreSQL 并发与重启恢复门禁。
 - Issue #22：实现不可变知识草稿修订、职责分离送审、审核退回和批准命令，并持久化不可变审核历史；知识发布、索引和检索仍未实现。
-- Issue #19：记录固定默认 Embedding、内部非商用使用边界、供应链与安全约束、资源和 `mock-eval-v1` 资格协议；当前人工建议保持 `BLOCKED`，本增量不下载、运行、打包或默认启用模型制品。
+- Issue #19：记录固定默认 Embedding、内部非商用使用边界、供应链与安全约束、资源和 `mock-eval-v1` 资格协议；该日阶段状态为 `BLOCKED`，本增量不下载、运行、打包或默认启用模型制品。
 
 ## 2026-07-15
 
