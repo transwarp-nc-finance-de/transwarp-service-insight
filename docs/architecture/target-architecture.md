@@ -2,7 +2,7 @@
 
 Status: DRAFT  
 Owner: 架构负责人  
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-19
 Source of truth for: 一期已确认目标架构与未实现边界
 
 目标采用模块化单体与 Workflow-first，不把微服务或多 Agent 作为基础依赖。
@@ -33,9 +33,9 @@ Port → 可替换 Adapter → 数据、模型及外部系统
 
 一期不引入 Reranker 或 Query Rewrite。全文与向量在过滤后各召回前 20 条，使用 RRF 及固定 `k=60` 融合并返回前 5 条；同分时按知识版本 ID、Chunk ID 稳定排序。参数和规则版本由受控配置管理并进入审计，可由固定评估集驱动调整，但不提供运行时调参页面。
 
-默认 Embedding 已确认为 `intfloat/multilingual-e5-base@d13f1b27baf31030b7fd040960d60d909913633f`，固定 768 维、512 Token 上限及 `query:`/`passage:` 前缀，只使用必要 Safetensors 与 tokenizer，不执行远程代码。模型制品不超过 2 GB、服务内存不超过 4 GB、CPU 并发 1 查询 P95 不超过 1 秒；内部非商用使用边界和许可证剩余风险已获人工确认，最终供应链证据、本机实测与固定评估集表现仍是启用门禁。
+默认 Embedding 已确认为 `intfloat/multilingual-e5-base@d13f1b27baf31030b7fd040960d60d909913633f`，固定 768 维、512 Token 上限及 `query:`/`passage:` 前缀，只使用必要 Safetensors 与 tokenizer，不执行远程代码。模型制品不超过 2 GB、服务内存不超过 4 GB、CPU 并发 1 查询 P95 不超过 1 秒；内部非商用使用边界、许可证剩余风险、最终供应链证据、本机实测与固定评估集表现已在 Issue #19 于 2026-07-19 经人工复核通过。
 
-已授权后续独立 Ticket 按固定 revision 在受控环境进行一次取件，生成并复核文件清单和 SHA-256 后再供 `local-embedding` 镜像构建使用；Issue #19 本身不下载模型。制品不提交 Git，容器运行时禁止联网下载；取件授权不等于允许打包、默认启用或将门禁标为 `PASS`。
+Issue #39 已完成固定 revision 的受控取件并生成、复核文件清单与 SHA-256；Issue #19 最终状态为 `PASS`，允许 Issue #25 将批准制品用于 `local-embedding` 镜像和双索引闭环。制品不提交 Git，构建必须校验批准的逐文件 SHA-256，容器运行时禁止联网或隐式下载；模型、revision、依赖锁或 manifest 变化后必须重新评估。
 
 一期 Generation Adapter 使用确定性模板/规则，根据检索证据生成结构化 `模拟数据` 输出；不调用真实生成式模型。本地 Embedding 只负责检索向量，不能被视为生成能力。真实生成模型继续由 Generation Port 隔离并推迟到二期评审。
 

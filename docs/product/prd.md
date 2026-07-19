@@ -2,7 +2,7 @@
 
 Status: CONFIRMED
 Owner: 产品负责人
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-19
 Source of truth for: 一期本地完整纵向闭环的产品需求
 
 ## 目的
@@ -283,9 +283,9 @@ Source of truth for: 一期本地完整纵向闭环的产品需求
 
 (2) `CONFIRMED`：`PrecheckContext` 可选字段约束、稳定枚举和附件元数据 Schema 已随 API v2 DRAFT 获人工批准；`local-identity-v1` 与 `local-catalog-v1` 稳定种子值已确认并实现，真实 AIOps 字段映射不属于一期。
 
-(3) `CONFIRMED`：默认 Embedding、固定 revision、内部非商用边界、许可证剩余风险、安全边界、代表性测试机和资格门槛已获人工确认；允许后续独立 Ticket 进行一次受控取件。本确认不允许 Issue #19 本身下载模型，也不代表模型门禁通过。
+(3) `CONFIRMED`：默认 Embedding、固定 revision、内部非商用边界、许可证剩余风险、安全边界、代表性测试机和资格门槛已获人工确认；Issue #39 已完成受控取件和资格实测，Issue #19 于 2026-07-19 经人工复核确认为 `PASS`。
 
-(4) `OPEN QUESTION`：默认 Embedding 的完整 SHA-256 manifest、最终依赖锁/SBOM/NOTICE、镜像 digest、资源性能实测和 `mock-eval-v1` 资格结果尚未产生；证据齐备前不得打包、默认启用或将门禁标为 `PASS`。
+(4) `CONFIRMED`：默认 Embedding 的完整 SHA-256 manifest、最终依赖锁/SBOM/NOTICE、镜像 digest、资源性能实测和 `mock-eval-v1` 资格结果已由 Issue #39 产生并经人工复核。允许 Issue #25 在制品不进入 Git、构建校验批准 SHA-256、运行时离线且受控要素变化后重新评估的边界下实施。
 
 (5) `CONFIRMED`：不少于 30 条模拟评估样例的具体内容已交付；非门禁聚合指标的基线和观察周期仍为后续观察项，不构成当前开发阻塞。
 
