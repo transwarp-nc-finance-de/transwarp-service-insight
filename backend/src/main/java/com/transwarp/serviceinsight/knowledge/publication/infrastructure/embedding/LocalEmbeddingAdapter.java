@@ -16,26 +16,42 @@ import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class LocalEmbeddingAdapter implements EmbeddingPort {
-  private final RestClient client;
+  private final RestClient passageClient;
+  private final RestClient queryClient;
   private final ObjectMapper objectMapper;
 
   public LocalEmbeddingAdapter(
       RestClient.Builder builder,
       ObjectMapper objectMapper,
       @Value("${app.embedding.base-url:http://localhost:8090}") String baseUrl,
-      @Value("${app.embedding.timeout:PT30S}") Duration timeout) {
-    var requestFactory = new SimpleClientHttpRequestFactory();
-    requestFactory.setConnectTimeout(timeout);
-    requestFactory.setReadTimeout(timeout);
-    this.client = builder.baseUrl(baseUrl).requestFactory(requestFactory).build();
+      @Value("${app.embedding.timeout:PT30S}") Duration timeout,
+      @Value("${app.embedding.query-timeout:PT1S}") Duration queryTimeout) {
+    this.passageClient = client(builder, baseUrl, timeout);
+    this.queryClient = client(builder.clone(), baseUrl, queryTimeout);
     this.objectMapper = objectMapper;
   }
 
   @Override
   public List<float[]> embedPassages(List<String> texts) {
+    return embed(passageClient, "passage", texts);
+  }
+
+  @Override
+  public List<float[]> embedQueries(List<String> texts) {
+    return embed(queryClient, "query", texts);
+  }
+
+  private RestClient client(RestClient.Builder builder, String baseUrl, Duration timeout) {
+    var requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setConnectTimeout(timeout);
+    requestFactory.setReadTimeout(timeout);
+    return builder.baseUrl(baseUrl).requestFactory(requestFactory).build();
+  }
+
+  private List<float[]> embed(RestClient client, String prefix, List<String> texts) {
     if (texts.isEmpty()) return List.of();
     try {
-      var requestBody = serializedRequest(texts);
+      var requestBody = serializedRequest(prefix, texts);
       var response =
           client
               .post()
@@ -80,9 +96,9 @@ public class LocalEmbeddingAdapter implements EmbeddingPort {
     return new EmbeddingException("EMBEDDING_INVALID_RESPONSE", "向量响应不符合 768 维固定契约。", false);
   }
 
-  private byte[] serializedRequest(List<String> texts) {
+  private byte[] serializedRequest(String prefix, List<String> texts) {
     try {
-      return objectMapper.writeValueAsBytes(new EmbeddingRequest("passage", texts));
+      return objectMapper.writeValueAsBytes(new EmbeddingRequest(prefix, texts));
     } catch (JsonProcessingException exception) {
       throw new EmbeddingException("EMBEDDING_REQUEST_INVALID", "向量请求无法按固定契约序列化。", false);
     }

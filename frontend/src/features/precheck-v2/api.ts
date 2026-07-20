@@ -1,5 +1,12 @@
 import { readCsrfToken } from '../identity/useAuthSession'
-import type { PrecheckContext, PrecheckRun, PrecheckSession, RunPage, SessionPage } from './types'
+import type {
+  Evidence,
+  PrecheckContext,
+  PrecheckRun,
+  PrecheckSession,
+  RunPage,
+  SessionPage,
+} from './types'
 
 export async function listSessions(): Promise<SessionPage> {
   return request('/api/v2/precheck-sessions?size=20')
@@ -7,6 +14,10 @@ export async function listSessions(): Promise<SessionPage> {
 
 export async function listRuns(sessionId: string): Promise<RunPage> {
   return request(`/api/v2/precheck-sessions/${sessionId}/runs?size=20`)
+}
+
+export async function getEvidence(evidenceId: string): Promise<Evidence> {
+  return request(`/api/v2/evidence/${evidenceId}`)
 }
 
 export async function createSession(context: PrecheckContext): Promise<PrecheckSession> {

@@ -4,10 +4,16 @@ import {
   confirmSelfService,
   createRun,
   createSession,
+  getEvidence,
   listRuns,
   listSessions,
 } from '../features/precheck-v2/api'
-import type { PrecheckContext, PrecheckRun, PrecheckSession } from '../features/precheck-v2/types'
+import type {
+  Evidence,
+  PrecheckContext,
+  PrecheckRun,
+  PrecheckSession,
+} from '../features/precheck-v2/types'
 
 const session = ref<PrecheckSession>()
 const runs = ref<PrecheckRun[]>([])
@@ -17,6 +23,7 @@ const impactScope = ref('模拟数据：单个测试任务')
 const loading = ref(false)
 const error = ref('')
 const notice = ref('')
+const selectedEvidence = ref<Evidence>()
 
 onMounted(restore)
 
@@ -72,6 +79,12 @@ async function terminate() {
 
 function continueSubmission() {
   notice.value = '模拟数据：已跳过建议，后续仍由人工确认 SLA 提交；本页未持久化提交记录。'
+}
+
+async function viewEvidence(evidenceId: string) {
+  await execute(async () => {
+    selectedEvidence.value = await getEvidence(evidenceId)
+  })
 }
 
 async function execute(action: () => Promise<void>) {
@@ -181,9 +194,31 @@ function context(hostRequestId: string): PrecheckContext {
             </p>
             <p>待补充：{{ run.result.missingInformation.join('、') || '无' }}</p>
             <p>人工介入：{{ run.result.humanInterventionAdvice.join('；') }}</p>
-            <p>检索降级：{{ run.result.retrieval.mode }}</p>
+            <p>检索模式：{{ run.result.retrieval.mode }}</p>
+            <p v-if="run.result.retrieval.degraded" class="fallback">
+              {{ run.result.retrieval.fts.message }}；{{ run.result.retrieval.embedding.message }}
+            </p>
+            <div v-if="run.result.evidence.length" class="evidence-list">
+              <strong>Evidence（最多 5 条）</strong>
+              <button
+                v-for="item in run.result.evidence"
+                :key="item.evidenceId"
+                class="secondary"
+                data-test="evidence-link"
+                @click="viewEvidence(item.evidenceId)"
+              >
+                {{ item.title }}：{{ item.excerpt }}
+              </button>
+            </div>
             <p class="fallback">{{ run.result.disclaimer }}</p>
           </article>
+          <aside v-if="selectedEvidence" class="reference" data-test="evidence-detail">
+            <h3>{{ selectedEvidence.document.title }}</h3>
+            <p>{{ selectedEvidence.excerpt }}</p>
+            <p>内容哈希：{{ selectedEvidence.contentHash }}</p>
+            <p>版本：{{ selectedEvidence.versionId }} · 切片：{{ selectedEvidence.chunkId }}</p>
+            <p class="fallback">模拟数据；Evidence 每次打开都会重新进行权限校验。</p>
+          </aside>
         </template>
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PrecheckRun } from '../features/precheck-v2/types'
 import PersistentPrecheckPage from './PersistentPrecheckPage.vue'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -74,9 +75,59 @@ describe('persistent precheck v2 sandbox', () => {
     await wrapper.get('[data-test="continue"]').trigger('click')
     expect(wrapper.text()).toContain('由人工确认 SLA 提交')
   })
+
+  it('shows degradation and loads an authorized evidence snapshot', async () => {
+    const evidenceRun = run(1)
+    evidenceRun.result.retrieval = {
+      mode: 'FTS_ONLY',
+      degraded: true,
+      fts: { available: true, code: 'FTS_AVAILABLE', message: '模拟数据：全文检索可用' },
+      embedding: {
+        available: false,
+        code: 'EMBEDDING_UNAVAILABLE',
+        message: '模拟数据：向量检索暂时不可用',
+      },
+    }
+    evidenceRun.result.evidence = [
+      {
+        evidenceId: 'evidence-1',
+        title: 'TDH 排查手册（模拟数据）',
+        excerpt: '模拟数据：检查错误码。',
+        mockData: true,
+      },
+    ]
+    const restored = session(1)
+    restored.latestRun = evidenceRun
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok({ items: [restored] }))
+      .mockResolvedValueOnce(ok({ items: [evidenceRun] }))
+      .mockResolvedValueOnce(
+        ok({
+          evidenceId: 'evidence-1',
+          document: { documentId: 'document-1', title: 'TDH 排查手册（模拟数据）' },
+          versionId: 'version-1',
+          chunkId: 'chunk-1',
+          excerpt: '模拟数据：检查错误码。',
+          contentHash: 'sha256:mock',
+          mockData: true,
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(PersistentPrecheckPage)
+    await flushPromises()
+    expect(wrapper.text()).toContain('FTS_ONLY')
+    expect(wrapper.text()).toContain('向量检索暂时不可用')
+    await wrapper.get('[data-test="evidence-link"]').trigger('click')
+    await flushPromises()
+
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/v2/evidence/evidence-1')
+    expect(wrapper.get('[data-test="evidence-detail"]').text()).toContain('sha256:mock')
+  })
 })
 
-function run(sequence: number) {
+function run(sequence: number): PrecheckRun {
   return {
     runId: `run-${sequence}`,
     sessionId: 'session-1',
@@ -110,11 +161,21 @@ function run(sequence: number) {
       },
       confidence: 'LOW',
       confidenceReasons: ['未接入检索'],
+      evidence: [],
       humanInterventionAdvice: ['人工核对'],
       missingInformation: ['ERROR_MESSAGE'],
       allowedActions: ['SUPPLEMENT_INFORMATION', 'CONTINUE_SUBMISSION'],
       disclaimer: '不是最终根因、最终方案或正式复盘结论。',
-      retrieval: { mode: 'UNAVAILABLE', degraded: true },
+      retrieval: {
+        mode: 'UNAVAILABLE',
+        degraded: true,
+        fts: { available: false, code: 'FTS_UNAVAILABLE', message: '全文检索不可用' },
+        embedding: {
+          available: false,
+          code: 'EMBEDDING_NOT_ATTEMPTED',
+          message: '未执行向量检索',
+        },
+      },
       mockData: true,
     },
   }

@@ -2,6 +2,8 @@ package com.transwarp.serviceinsight.precheck.v2.application;
 
 import com.transwarp.serviceinsight.identity.application.AuthSessionApplicationService;
 import com.transwarp.serviceinsight.identity.domain.Role;
+import com.transwarp.serviceinsight.precheck.retrieval.application.AuthorizedRetrievalService;
+import com.transwarp.serviceinsight.precheck.retrieval.port.RetrievalAuditPort;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CompletenessPolicy;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CompletenessPolicyPage;
 import com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.CreationResult;
@@ -31,17 +33,23 @@ public class PersistentPrecheckService {
   private final AuthSessionApplicationService authSessions;
   private final PrecheckContextNormalizer contextNormalizer;
   private final DeterministicPrecheckPolicy precheckPolicy;
+  private final AuthorizedRetrievalService retrieval;
+  private final RetrievalAuditPort retrievalAudit;
   private final Clock clock;
 
   public PersistentPrecheckService(
       PersistentPrecheckRepository repository,
       AuthSessionApplicationService authSessions,
       PrecheckContextNormalizer contextNormalizer,
+      AuthorizedRetrievalService retrieval,
+      RetrievalAuditPort retrievalAudit,
       Clock clock) {
     this.repository = repository;
     this.authSessions = authSessions;
     this.contextNormalizer = contextNormalizer;
     this.precheckPolicy = new DeterministicPrecheckPolicy();
+    this.retrieval = retrieval;
+    this.retrievalAudit = retrievalAudit;
     this.clock = clock;
   }
 
@@ -74,17 +82,9 @@ public class PersistentPrecheckService {
     var now = clock.instant();
     var sessionId = UUID.randomUUID();
     var runId = UUID.randomUUID();
-    var result = precheckPolicy.evaluate(context, policy, 1);
-    var run =
-        new PrecheckRun(
-            runId,
-            sessionId,
-            1,
-            result.completeness().complete() ? "DEGRADED" : "NEED_MORE_INFORMATION",
-            context,
-            result,
-            now,
-            now);
+    var retrievalResult = retrieval.retrieve(auth.identity(), context);
+    var result = precheckPolicy.evaluate(context, policy, 1, retrievalResult);
+    var run = new PrecheckRun(runId, sessionId, 1, runStatus(result), context, result, now, now);
     var session =
         new PrecheckSession(
             sessionId,
@@ -98,6 +98,7 @@ public class PersistentPrecheckService {
             now,
             true);
     repository.create(session, run, hash);
+    retrievalAudit.save(runId, auth.identity().userCode(), retrievalResult, now);
     return new CreationResult(session, false);
   }
 
@@ -153,18 +154,13 @@ public class PersistentPrecheckService {
     var policy = repository.findPolicy(context.issueType().code());
     var now = clock.instant();
     var sequence = session.runCount() + 1;
-    var result = precheckPolicy.evaluate(context, policy, sequence);
+    var retrievalResult = retrieval.retrieve(auth.identity(), context);
+    var result = precheckPolicy.evaluate(context, policy, sequence, retrievalResult);
     var run =
         new PrecheckRun(
-            UUID.randomUUID(),
-            sessionId,
-            sequence,
-            result.completeness().complete() ? "DEGRADED" : "NEED_MORE_INFORMATION",
-            context,
-            result,
-            now,
-            now);
+            UUID.randomUUID(), sessionId, sequence, runStatus(result), context, result, now, now);
     repository.appendRun(run, idempotencyKey, requestHash);
+    retrievalAudit.save(run.runId(), auth.identity().userCode(), retrievalResult, now);
     return new RunCreationResult(run, false);
   }
 
@@ -350,6 +346,13 @@ public class PersistentPrecheckService {
           default -> Comparator.comparing(PrecheckSession::updatedAt);
         };
     return directed(comparator, direction).thenComparing(PrecheckSession::sessionId);
+  }
+
+  private String runStatus(
+      com.transwarp.serviceinsight.precheck.v2.domain.PersistentPrecheckModels.PrecheckResult
+          result) {
+    if (result.retrieval().degraded()) return "DEGRADED";
+    return result.completeness().complete() ? "COMPLETED" : "NEED_MORE_INFORMATION";
   }
 
   private Comparator<PrecheckRun> runComparator(String sortBy, String direction) {

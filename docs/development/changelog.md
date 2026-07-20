@@ -8,6 +8,11 @@ Last reviewed: 2026-07-19
 
 Source of truth for: 当前技术 MVP 的用户可见实施增量
 
+## 2026-07-20
+
+- Issue #26：实现授权优先的在线混合检索与不可变 Evidence 快照。FTS/向量召回均在排序前过滤当前身份产品线和当前 `PUBLISHED` 版本，固定采用两路各 Top 20、RRF `k=60`、最终 Top 5 与稳定 UUID 同分排序；每个 Run 重新检索并保存规则、候选、rank、模式和 Evidence 审计快照。
+- `GET /api/v2/evidence/{evidenceId}` 每次按当前身份重新授权，不存在与无权限统一安全 `404`，不返回宿主路径或直接文件 URL。Embedding 故障降级为 `FTS_ONLY / LOW`，FTS 故障降级为 `UNAVAILABLE / LOW`，两者均保留人工继续提交；历史 Run 与 Evidence 不随服务恢复或权限变化改写。Sandbox 新增三种检索模式、降级原因、置信度和受控 Evidence 查看。
+
 ## 2026-07-19
 
 - Issue #25：接入固定 `multilingual-e5-base` 离线服务、pgvector 768 维与 PostgreSQL FTS，新增可恢复且最多三次尝试的 `IndexTask`、原子发布/旧版废弃、显式废弃 API 和最小治理 UI；模型制品保持 Git 外置，在线 Retrieval/Evidence 仍未实现。

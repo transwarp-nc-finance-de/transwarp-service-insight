@@ -454,7 +454,7 @@ paths:
     get:
       tags: [Evidence]
       operationId: getEvidence
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 重新授权后读取受控依据
       description: 不提供可枚举列表；每次按当前身份和产品线范围重新授权。不存在与无权限统一返回安全 404。
       responses:
