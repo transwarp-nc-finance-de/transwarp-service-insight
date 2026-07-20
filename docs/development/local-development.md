@@ -25,7 +25,7 @@ docker compose down --remove-orphans
 
 `LOCAL_EMBEDDING_MODEL_PATH` 必须指向 Issue #19 批准的五文件只读制品目录；启动时会校验白名单、逐文件字节/SHA-256 和 manifest SHA-256，不匹配即失败。模型不进入 Git 或镜像，服务仅连接 `index-internal` 内部网络。显式 FTS-only 模式使用 `docker compose -f compose.yaml -f compose.fts-only.yaml up -d --wait`，此模式不启动 embedding 服务。
 
-浏览器访问 `http://127.0.0.1:5173`。前端入口绑定宿主机 `127.0.0.1:5173`，本地 PostgreSQL 仅绑定 `127.0.0.1:5432`，后端只在 Compose 网络内提供 8080，local-embedding 不发布宿主端口；数据库保存版本化模拟目录、模拟身份、会话、知识解析元数据和双索引，`knowledge-files` volume 只保存本地模拟原始文件，不得写入真实业务数据。
+浏览器访问 `http://127.0.0.1:5173`。前端入口绑定宿主机 `127.0.0.1:5173`，本地 PostgreSQL 仅绑定 `127.0.0.1:5432`，后端只在 Compose 网络内提供 8080，local-embedding 不发布宿主端口；数据库保存版本化模拟目录与身份、AuthSession、知识治理与双索引、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent，`knowledge-files` volume 只保存本地模拟原始知识文件，不得写入真实业务数据。
 
 ### 非容器开发
 

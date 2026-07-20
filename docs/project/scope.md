@@ -4,13 +4,13 @@
 
 统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession、知识闭环、持久化预诊/Evidence、独立 Feedback/SubmissionContinuation 和结构化 AuditEvent 切片。
 
-当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、本地模拟身份 UI、Compose PostgreSQL、OpenAPI 和 CI。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
+当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、本地模拟身份 UI、Compose PostgreSQL、OpenAPI 和 CI。v2 已实现知识审核发布、持久化预诊、授权优先的本地混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
 
 前端 `/sandbox` 是 Mock AIOps，仅用于本地开发、联调、演示和自动化测试；`/embed` 是不复制 SLA 表单的嵌入式预诊面板。用户始终可忽略建议并由 AIOps 继续原有提交，反馈失败不影响提交。
 
-后端 v1 预诊继续使用应用层工作流、细粒度 Port/Mock Adapter 和进程内 Session Repository。v2 AuthSession 使用 `IdentityContextPort`、Flyway 和本地 PostgreSQL 保存四个版本化模拟身份、目录与服务端会话；知识切片将模拟原始文件保存于 Compose volume，并将文档、草稿版本、ParseTask 与解析预览保存于本地 PostgreSQL。初次预诊创建 Run 1，追问在同一 Session 中递增 Run。所有输入只允许模拟、公开或脱敏信息，不保存附件内容或真实敏感正文。
+后端 v1 预诊继续使用应用层工作流、细粒度 Port/Mock Adapter 和进程内 Session Repository。v2 使用 `IdentityContextPort`、Flyway 和本地 PostgreSQL 持久化模拟身份与目录、AuthSession、知识治理、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent；模拟原始知识文件保存于 Compose volume。初次预诊创建 Run 1，追问在同一 Session 中递增 Run。所有输入只允许模拟、公开或脱敏信息，不保存问题附件内容或真实敏感正文。
 
-当前未接真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、真实知识源、知识审核发布、RAG、LLM、多 Agent、真实 Wiki/历史 SLA 或真实 SLA 创建接口。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
+当前未实现生成式 RAG/LLM 或多 Agent，也未接入真实 AIOps、SSO/身份传递、企业共享或生产数据库、真实业务数据、真实知识源、真实 Wiki/历史 SLA 或真实 SLA 创建接口。当前已实现的 Retrieval 仅消费本地发布的模拟、公开或脱敏知识。智能输出是 `模拟数据`，包含依据、置信度、人工介入建议和待补充信息，不是最终根因、最终方案或正式复盘结论。
 
 能力矩阵：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；Local Identity/PostgreSQL Foundation `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；业务 Persistence `IN PROGRESS`；Knowledge Ingestion、双索引原子发布/废弃、授权混合 Retrieval 与 Evidence 读取切片 `IMPLEMENTED`；LLM Generation、Agent Orchestration 均为 `NOT STARTED`。
 
@@ -48,7 +48,7 @@
 - Run 完成、信息完整或达到 Run 上限都不自动结束 Session。只有用户明确确认模拟继续提交或确认采纳建议并结束预诊时，Session 才以 `CONTINUED_SUBMISSION` 或 `SELF_SERVICE_CONFIRMED` 原因进入业务终态；记录反馈本身不终止 Session。
 - 用户可恢复自己的未终止且仍可补充的 Session；终态 Session 只读。管理员不得接管或恢复其他用户的 Session。恢复时必须重新校验当前身份与产品线权限。
 - 产品线、产品或组件变化时必须新建 Session；版本、级别、描述等变化可在原 Session 创建下一 Run，但必须重新检索。每个 Run 保存完整规范化上下文快照，旧 Run 与证据不可变。
-- 反馈与模拟继续提交是两个独立命令和审计事件，具有独立失败、重试与幂等边界；反馈失败不得影响继续提交。当前 v1 OpenAPI 将两者耦合，本轮只记录目标差异，不修改已实现契约。
+- 反馈与模拟继续提交是两个独立命令和审计事件，具有独立失败、重试与幂等边界；反馈失败不得影响继续提交。v2 已实现独立 Feedback、SubmissionContinuation 与对应结构化 AuditEvent；v1 OpenAPI 继续保持原有耦合语义且零变化。
 - Feedback 分别记录采纳行为 `ADOPTED / PARTIALLY_ADOPTED / IGNORED` 与可选有用性评价 `HELPFUL / NOT_HELPFUL`，原因文本可选。缺少有用性评价不影响采纳记录或继续提交。
 - 模拟继续提交保存用户、时间、Session、幂等键和可选原因，不生成 `ticketId` 或模拟工单。`hostTicketId` 仅作为二期 DRAFT 关联概念，待 AIOps 返回真实标识。
 - 审计只保存结构化元数据与稳定引用 ID，包括主体、Session/Run、动作、状态、策略/规则/Embedding/索引版本、Evidence ID、反馈、继续提交、错误和降级，不复制业务正文。正文只能经原领域对象重新授权读取。
