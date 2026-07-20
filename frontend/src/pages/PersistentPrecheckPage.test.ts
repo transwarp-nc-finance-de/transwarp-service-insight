@@ -38,8 +38,6 @@ describe('persistent precheck v2 sandbox', () => {
 
     expect(wrapper.text()).toContain('3/3 Runs')
     expect(wrapper.get('[data-test="supplement"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('[data-test="continue"]').trigger('click')
-    expect(wrapper.text()).toContain('由人工确认 SLA 提交')
     await wrapper.get('[data-test="terminate"]').trigger('click')
     await flushPromises()
 
@@ -72,8 +70,6 @@ describe('persistent precheck v2 sandbox', () => {
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     )
     expect(wrapper.text()).toContain('第 2 次')
-    await wrapper.get('[data-test="continue"]').trigger('click')
-    expect(wrapper.text()).toContain('由人工确认 SLA 提交')
   })
 
   it('shows degradation and loads an authorized evidence snapshot', async () => {
@@ -124,6 +120,58 @@ describe('persistent precheck v2 sandbox', () => {
 
     expect(fetchMock.mock.calls[2][0]).toBe('/api/v2/evidence/evidence-1')
     expect(wrapper.get('[data-test="evidence-detail"]').text()).toContain('sha256:mock')
+  })
+
+  it('records feedback independently before explicitly continuing submission', async () => {
+    const restored = session(1)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok({ items: [restored] }))
+      .mockResolvedValueOnce(ok({ items: [run(1)] }))
+      .mockResolvedValueOnce(
+        ok({
+          feedbackId: 'feedback-1',
+          sessionId: 'session-1',
+          runId: 'run-1',
+          adoptionStatus: 'PARTIALLY_ADOPTED',
+          helpfulness: null,
+          reason: null,
+          mockData: true,
+        }),
+      )
+      .mockResolvedValueOnce(
+        ok({
+          continuationId: 'continuation-1',
+          sessionId: 'session-1',
+          confirmedBy: 'mock-precheck-tdh',
+          mockData: true,
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(PersistentPrecheckPage)
+    await flushPromises()
+    await wrapper.get('[data-test="feedback-adoption"]').setValue('PARTIALLY_ADOPTED')
+    await wrapper.get('[data-test="feedback-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/v2/feedback')
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body as string)).toEqual({
+      sessionId: 'session-1',
+      runId: 'run-1',
+      adoptionStatus: 'PARTIALLY_ADOPTED',
+    })
+    expect(wrapper.get('[data-test="continue"]')).toBeDefined()
+
+    await wrapper.get('[data-test="continue"]').trigger('click')
+    await flushPromises()
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/v2/submission-continuations')
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body as string)).toEqual({
+      sessionId: 'session-1',
+      confirmed: true,
+      reason: '模拟数据：由人工确认继续提交',
+    })
+    expect(wrapper.get('[data-test="session-status"]').text()).toContain('TERMINATED')
   })
 })
 

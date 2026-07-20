@@ -10,6 +10,7 @@ Source of truth for: 当前技术 MVP 的用户可见实施增量
 
 ## 2026-07-20
 
+- Issue #24：实现独立持久化 Feedback 与 SubmissionContinuation、`CONTINUED_SUBMISSION` 终止语义，以及按 ADMIN 产品线授权查询的脱敏不可变 AuditEvent；前端新增独立反馈/继续提交和管理员审计页，且不创建 SLA、工单草稿、`ticketId` 或回执。
 - Issue #26：实现授权优先的在线混合检索与不可变 Evidence 快照。FTS/向量召回均在排序前过滤当前身份产品线和当前 `PUBLISHED` 版本，固定采用两路各 Top 20、RRF `k=60`、最终 Top 5 与稳定 UUID 同分排序；每个 Run 重新检索并保存规则、候选、rank、模式和 Evidence 审计快照。
 - `GET /api/v2/evidence/{evidenceId}` 每次按当前身份重新授权，不存在与无权限统一安全 `404`，不返回宿主路径或直接文件 URL。Embedding 故障降级为 `FTS_ONLY / LOW`，FTS 故障降级为 `UNAVAILABLE / LOW`，两者均保留人工继续提交；历史 Run 与 Evidence 不随服务恢复或权限变化改写。Sandbox 新增三种检索模式、降级原因、置信度和受控 Evidence 查看。
 

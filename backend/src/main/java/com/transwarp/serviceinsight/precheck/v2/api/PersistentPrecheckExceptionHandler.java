@@ -1,9 +1,11 @@
 package com.transwarp.serviceinsight.precheck.v2.api;
 
+import com.transwarp.serviceinsight.audit.v2.api.StructuredAuditController;
 import com.transwarp.serviceinsight.identity.api.V2ApiError;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
 import com.transwarp.serviceinsight.identity.application.UnauthenticatedException;
+import com.transwarp.serviceinsight.precheck.interaction.api.InteractionController;
 import com.transwarp.serviceinsight.precheck.retrieval.api.EvidenceController;
 import com.transwarp.serviceinsight.precheck.v2.application.PrecheckV2Exception;
 import java.time.Instant;
@@ -24,7 +26,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
     assignableTypes = {
       PersistentPrecheckController.class,
       CompletenessPolicyController.class,
-      EvidenceController.class
+      EvidenceController.class,
+      InteractionController.class,
+      StructuredAuditController.class
     })
 public class PersistentPrecheckExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)

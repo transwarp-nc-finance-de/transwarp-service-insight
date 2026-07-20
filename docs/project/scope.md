@@ -1,8 +1,8 @@
 # 当前实现与一期目标范围：SLA 智能预诊助手
 
-状态：ACTIVE，Last reviewed: 2026-07-19。当前实现与一期目标必须分开解读。
+状态：ACTIVE，Last reviewed: 2026-07-20。当前实现与一期目标必须分开解读。
 
-统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession、知识上传解析预览和草稿审核切片。
+统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession、知识闭环、持久化预诊/Evidence、独立 Feedback/SubmissionContinuation 和结构化 AuditEvent 切片。
 
 当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、本地模拟身份 UI、Compose PostgreSQL、OpenAPI 和 CI。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
 

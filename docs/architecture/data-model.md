@@ -35,10 +35,10 @@ Source of truth for: 领域概念及未来持久化语义
 
 当前 API 为每次初始预诊返回相互独立的 `precheckId` 与 `sessionId`，并返回 `confidenceReason`、策略版本、Mock 规则版本以及明确的模型/索引不适用标识。当前无持久化，`PrecheckRun` 尚不对应数据库记录。
 
-一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识首次上传、ParseTask、解析预览，以及知识修订与不可变审核历史；原始文件保存在 Compose volume，不存为数据库大字段。其余内容仍是目标持久化语义。
+一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识上传/治理/发布、Precheck Session/Run/Evidence、独立 Feedback、SubmissionContinuation 与不可变结构化 AuditEvent；原始文件保存在 Compose volume，不存为数据库大字段。评估运行等未标记 `IMPLEMENTED` 的资源仍是目标持久化语义。
 
 未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表全部目标持久化已经启用。
 
-当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
+当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已按 API v2 DRAFT 实现，并保持两个事务、幂等键和失败边界。
 
 当前 v1 也没有独立的有用性评价字段且保持兼容；该可选维度已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。

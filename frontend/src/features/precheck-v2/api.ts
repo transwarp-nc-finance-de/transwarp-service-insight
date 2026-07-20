@@ -1,11 +1,15 @@
 import { readCsrfToken } from '../identity/useAuthSession'
 import type {
+  AdoptionStatus,
   Evidence,
+  Feedback,
+  Helpfulness,
   PrecheckContext,
   PrecheckRun,
   PrecheckSession,
   RunPage,
   SessionPage,
+  SubmissionContinuation,
 } from './types'
 
 export async function listSessions(): Promise<SessionPage> {
@@ -32,6 +36,31 @@ export async function confirmSelfService(sessionId: string, reason: string) {
   return write(
     `/api/v2/precheck-sessions/${sessionId}/self-service-confirmations`,
     { confirmed: true, reason },
+    commandKey(),
+  )
+}
+
+export async function createFeedback(
+  sessionId: string,
+  runId: string,
+  adoptionStatus: AdoptionStatus,
+  helpfulness?: Helpfulness,
+  reason?: string,
+): Promise<Feedback> {
+  return write(
+    '/api/v2/feedback',
+    compact({ sessionId, runId, adoptionStatus, helpfulness, reason }),
+    commandKey(),
+  )
+}
+
+export async function continueSubmission(
+  sessionId: string,
+  reason?: string,
+): Promise<SubmissionContinuation> {
+  return write(
+    '/api/v2/submission-continuations',
+    compact({ sessionId, confirmed: true, reason }),
     commandKey(),
   )
 }
@@ -64,4 +93,8 @@ async function decode<T>(response: Response): Promise<T> {
 
 function commandKey() {
   return `sandbox-${crypto.randomUUID()}`
+}
+
+function compact<T extends object>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T
 }

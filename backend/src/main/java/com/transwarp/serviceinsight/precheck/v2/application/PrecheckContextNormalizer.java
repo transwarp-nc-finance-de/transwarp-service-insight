@@ -73,6 +73,26 @@ public class PrecheckContextNormalizer {
     return sha256((sessionId + ":" + text(reason)).getBytes(StandardCharsets.UTF_8));
   }
 
+  public String feedbackCommandHash(
+      UUID sessionId, UUID runId, String adoptionStatus, String helpfulness, String reason) {
+    return sha256(
+        (sessionId
+                + ":"
+                + runId
+                + ":"
+                + adoptionStatus
+                + ":"
+                + text(helpfulness)
+                + ":"
+                + text(reason))
+            .getBytes(StandardCharsets.UTF_8));
+  }
+
+  public String continuationCommandHash(UUID sessionId, boolean confirmed, String reason) {
+    return sha256(
+        (sessionId + ":" + confirmed + ":" + text(reason)).getBytes(StandardCharsets.UTF_8));
+  }
+
   private String text(String value) {
     if (value == null) return "";
     return Normalizer.normalize(

@@ -94,3 +94,27 @@ export interface SessionPage {
 export interface RunPage {
   items: PrecheckRun[]
 }
+
+export type AdoptionStatus = 'ADOPTED' | 'PARTIALLY_ADOPTED' | 'IGNORED'
+export type Helpfulness = 'HELPFUL' | 'NOT_HELPFUL'
+
+export interface Feedback {
+  feedbackId: string
+  sessionId: string
+  runId: string
+  adoptionStatus: AdoptionStatus
+  helpfulness?: Helpfulness
+  reason?: string
+  recordedAt: string
+  mockData: boolean
+}
+
+export interface SubmissionContinuation {
+  continuationId: string
+  sessionId: string
+  confirmedBy: string
+  confirmedAt: string
+  reason?: string
+  auditEventId: string
+  mockData: boolean
+}
