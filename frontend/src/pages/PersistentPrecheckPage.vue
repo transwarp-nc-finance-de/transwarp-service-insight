@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue'
 import {
   confirmSelfService,
+  continueSubmission as persistContinuation,
+  createFeedback,
   createRun,
   createSession,
   getEvidence,
@@ -9,6 +11,7 @@ import {
   listSessions,
 } from '../features/precheck-v2/api'
 import type {
+  AdoptionStatus,
   Evidence,
   PrecheckContext,
   PrecheckRun,
@@ -24,6 +27,8 @@ const loading = ref(false)
 const error = ref('')
 const notice = ref('')
 const selectedEvidence = ref<Evidence>()
+const adoptionStatus = ref<AdoptionStatus>('PARTIALLY_ADOPTED')
+const feedbackSaved = ref(false)
 
 onMounted(restore)
 
@@ -77,8 +82,30 @@ async function terminate() {
   })
 }
 
-function continueSubmission() {
-  notice.value = '模拟数据：已跳过建议，后续仍由人工确认 SLA 提交；本页未持久化提交记录。'
+async function submitFeedback() {
+  if (!session.value) return
+  await execute(async () => {
+    await createFeedback(
+      session.value!.sessionId,
+      session.value!.latestRun.runId,
+      adoptionStatus.value,
+    )
+    feedbackSaved.value = true
+    notice.value = '模拟数据：反馈已独立保存；不会结束 Session，也不影响人工继续提交。'
+  })
+}
+
+async function continueSubmission() {
+  if (!session.value) return
+  await execute(async () => {
+    await persistContinuation(session.value!.sessionId, '模拟数据：由人工确认继续提交')
+    session.value = {
+      ...session.value!,
+      status: 'TERMINATED',
+      terminationReason: 'CONTINUED_SUBMISSION',
+    }
+    notice.value = '模拟数据：已记录人工继续提交确认；未创建 SLA、工单草稿、ticketId 或回执。'
+  })
 }
 
 async function viewEvidence(evidenceId: string) {
@@ -146,6 +173,26 @@ function context(hostRequestId: string): PrecheckContext {
         <label>标题<input v-model="title" data-test="title" /></label>
         <label>描述<textarea v-model="description" rows="6" /></label>
         <label>影响范围<input v-model="impactScope" /></label>
+        <fieldset v-if="session?.status === 'ACTIVE'">
+          <legend>独立反馈（模拟数据）</legend>
+          <label>
+            建议采纳情况
+            <select v-model="adoptionStatus" data-test="feedback-adoption">
+              <option value="ADOPTED">已采纳</option>
+              <option value="PARTIALLY_ADOPTED">部分采纳</option>
+              <option value="IGNORED">未采纳</option>
+            </select>
+          </label>
+          <button
+            class="secondary"
+            data-test="feedback-submit"
+            :disabled="loading || feedbackSaved"
+            @click="submitFeedback"
+          >
+            {{ feedbackSaved ? '反馈已保存' : '保存反馈' }}
+          </button>
+          <p class="fallback">反馈不会结束 Session；未选择有用性不代表“无帮助”。</p>
+        </fieldset>
         <div class="actions">
           <button v-if="!session" class="primary" :disabled="loading" @click="start">
             创建 Session
@@ -161,7 +208,12 @@ function context(hostRequestId: string): PrecheckContext {
           >
             补充并再次预诊
           </button>
-          <button class="secondary" data-test="continue" @click="continueSubmission">
+          <button
+            class="secondary"
+            data-test="continue"
+            :disabled="loading || !session || session.status !== 'ACTIVE'"
+            @click="continueSubmission"
+          >
             跳过建议并继续人工提交
           </button>
           <button
@@ -182,7 +234,7 @@ function context(hostRequestId: string): PrecheckContext {
         <p v-if="!session" class="empty">登录预诊用户后创建，或自动恢复自己的 ACTIVE Session。</p>
         <template v-else>
           <p class="meta">
-            <span>{{ session.status }}</span
+            <span data-test="session-status">{{ session.status }}</span
             ><span>{{ session.runCount }}/{{ session.maxRuns }} Runs</span>
           </p>
           <article v-for="run in runs" :key="run.runId" class="reference">

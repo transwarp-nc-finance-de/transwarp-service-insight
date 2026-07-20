@@ -1,5 +1,8 @@
 package com.transwarp.serviceinsight.precheck.v2.application;
 
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StoredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StructuredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.port.StructuredAuditPort;
 import com.transwarp.serviceinsight.identity.application.AuthSessionApplicationService;
 import com.transwarp.serviceinsight.identity.domain.Role;
 import com.transwarp.serviceinsight.precheck.retrieval.application.AuthorizedRetrievalService;
@@ -35,6 +38,7 @@ public class PersistentPrecheckService {
   private final DeterministicPrecheckPolicy precheckPolicy;
   private final AuthorizedRetrievalService retrieval;
   private final RetrievalAuditPort retrievalAudit;
+  private final StructuredAuditPort audit;
   private final Clock clock;
 
   public PersistentPrecheckService(
@@ -43,6 +47,7 @@ public class PersistentPrecheckService {
       PrecheckContextNormalizer contextNormalizer,
       AuthorizedRetrievalService retrieval,
       RetrievalAuditPort retrievalAudit,
+      StructuredAuditPort audit,
       Clock clock) {
     this.repository = repository;
     this.authSessions = authSessions;
@@ -50,6 +55,7 @@ public class PersistentPrecheckService {
     this.precheckPolicy = new DeterministicPrecheckPolicy();
     this.retrieval = retrieval;
     this.retrievalAudit = retrievalAudit;
+    this.audit = audit;
     this.clock = clock;
   }
 
@@ -99,6 +105,36 @@ public class PersistentPrecheckService {
             true);
     repository.create(session, run, hash);
     retrievalAudit.save(runId, auth.identity().userCode(), retrievalResult, now);
+    record(
+        auth.identity().userCode(),
+        "PRECHECK_SESSION_CREATED",
+        "PrecheckSession",
+        sessionId,
+        context.productLine().code(),
+        Map.of(
+            "runId",
+            runId.toString(),
+            "policyVersion",
+            result.completeness().policyVersion(),
+            "degraded",
+            result.retrieval().degraded()),
+        now);
+    record(
+        auth.identity().userCode(),
+        "PRECHECK_RUN_CREATED",
+        "PrecheckRun",
+        runId,
+        context.productLine().code(),
+        Map.of(
+            "sessionId",
+            sessionId.toString(),
+            "sequence",
+            1,
+            "retrievalMode",
+            result.retrieval().mode(),
+            "degraded",
+            result.retrieval().degraded()),
+        now);
     return new CreationResult(session, false);
   }
 
@@ -161,6 +197,22 @@ public class PersistentPrecheckService {
             UUID.randomUUID(), sessionId, sequence, runStatus(result), context, result, now, now);
     repository.appendRun(run, idempotencyKey, requestHash);
     retrievalAudit.save(run.runId(), auth.identity().userCode(), retrievalResult, now);
+    record(
+        auth.identity().userCode(),
+        "PRECHECK_RUN_CREATED",
+        "PrecheckRun",
+        run.runId(),
+        context.productLine().code(),
+        Map.of(
+            "sessionId",
+            sessionId.toString(),
+            "sequence",
+            sequence,
+            "retrievalMode",
+            result.retrieval().mode(),
+            "degraded",
+            result.retrieval().degraded()),
+        now);
     return new RunCreationResult(run, false);
   }
 
@@ -202,8 +254,17 @@ public class PersistentPrecheckService {
     if (!"ACTIVE".equals(session.status())) {
       throw conflict("ILLEGAL_STATE_TRANSITION", "终态 Session 只读", Map.of("mockData", true));
     }
-    return new TerminationResult(
-        repository.terminate(sessionId, idempotencyKey, requestHash, clock.instant()), false);
+    var now = clock.instant();
+    var termination = repository.terminate(sessionId, idempotencyKey, requestHash, now);
+    record(
+        auth.identity().userCode(),
+        "SELF_SERVICE_CONFIRMED",
+        "PrecheckSession",
+        sessionId,
+        session.latestRun().contextSnapshot().productLine().code(),
+        Map.of("terminationReason", "SELF_SERVICE_CONFIRMED"),
+        now);
+    return new TerminationResult(termination, false);
   }
 
   public PrecheckSessionPage listSessions(
@@ -440,5 +501,29 @@ public class PersistentPrecheckService {
 
   private PrecheckV2Exception conflict(String code, String message, Map<String, Object> details) {
     return new PrecheckV2Exception(code, HttpStatus.CONFLICT, message, details);
+  }
+
+  private void record(
+      String actor,
+      String action,
+      String subjectType,
+      UUID subjectId,
+      String productLineCode,
+      Map<String, Object> metadata,
+      java.time.Instant occurredAt) {
+    audit.record(
+        new StoredAuditEvent(
+            new StructuredAuditEvent(
+                UUID.randomUUID(),
+                actor,
+                action,
+                subjectType,
+                subjectId,
+                "SUCCEEDED",
+                metadata,
+                occurredAt,
+                true),
+            productLineCode,
+            null));
   }
 }

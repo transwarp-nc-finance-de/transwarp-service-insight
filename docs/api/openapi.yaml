@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Transwarp Service Insight Precheck API
   version: 1.0.0
-  description: 当前技术 MVP 的唯一已实现接口契约；所有示例均为模拟数据。
+  description: 当前技术 MVP 的已实现 v1 接口唯一契约；v2 运行时状态见 openapi-v2.yaml 的 operation 级 IMPLEMENTED 标记。所有示例均为模拟数据。
 paths:
   /api/v1/health:
     get:

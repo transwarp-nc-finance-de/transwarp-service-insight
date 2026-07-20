@@ -1,5 +1,8 @@
 package com.transwarp.serviceinsight.identity.application;
 
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StoredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StructuredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.port.StructuredAuditPort;
 import com.transwarp.serviceinsight.identity.domain.AuthSession;
 import com.transwarp.serviceinsight.identity.port.IdentityContextPort;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +11,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,15 +21,18 @@ public class AuthSessionApplicationService {
   private static final int CSRF_TOKEN_BYTES = 32;
 
   private final IdentityContextPort identityContextPort;
+  private final StructuredAuditPort audit;
   private final Clock clock;
   private final Duration sessionTtl;
   private final SecureRandom secureRandom = new SecureRandom();
 
   public AuthSessionApplicationService(
       IdentityContextPort identityContextPort,
+      StructuredAuditPort audit,
       Clock clock,
       @Value("${app.identity.session-ttl:PT8H}") Duration sessionTtl) {
     this.identityContextPort = identityContextPort;
+    this.audit = audit;
     this.clock = clock;
     this.sessionTtl = sessionTtl;
   }
@@ -40,6 +47,12 @@ public class AuthSessionApplicationService {
         new AuthSession(
             UUID.randomUUID(), identity, generateCsrfToken(), now, now.plus(sessionTtl));
     identityContextPort.replaceSession(parseSessionId(previousSessionCookie), session, now);
+    record(
+        session,
+        "AUTH_SESSION_CREATED",
+        Map.of(
+            "roles", identity.roles().stream().map(Enum::name).sorted().toList(),
+            "productLineCodes", identity.productLineCodes().stream().sorted().toList()));
     return session;
   }
 
@@ -59,6 +72,7 @@ public class AuthSessionApplicationService {
         session.sessionId(), session.csrfToken(), clock.instant())) {
       throw new UnauthenticatedException();
     }
+    record(session, "AUTH_SESSION_LOGGED_OUT", Map.of());
   }
 
   public AuthSession requireWriteSession(String sessionCookie, String csrfToken) {
@@ -73,6 +87,23 @@ public class AuthSessionApplicationService {
     var bytes = new byte[CSRF_TOKEN_BYTES];
     secureRandom.nextBytes(bytes);
     return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  }
+
+  private void record(AuthSession session, String action, Map<String, Object> metadata) {
+    audit.record(
+        new StoredAuditEvent(
+            new StructuredAuditEvent(
+                UUID.randomUUID(),
+                session.identity().userCode(),
+                action,
+                "AuthSession",
+                session.sessionId(),
+                "SUCCEEDED",
+                metadata,
+                clock.instant(),
+                true),
+            null,
+            null));
   }
 
   private boolean csrfMatches(String expected, String actual) {

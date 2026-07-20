@@ -2,6 +2,9 @@ package com.transwarp.serviceinsight.knowledge.publication.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StoredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StructuredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.port.StructuredAuditPort;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.AuthSessionApplicationService;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
@@ -31,18 +34,21 @@ public class KnowledgePublicationService {
   private final ObjectMapper objectMapper;
   private final Clock clock;
   private final KnowledgeIndexProcessor processor;
+  private final StructuredAuditPort audit;
 
   public KnowledgePublicationService(
       KnowledgePublicationRepository repository,
       AuthSessionApplicationService authSessions,
       ObjectMapper objectMapper,
       Clock clock,
-      KnowledgeIndexProcessor processor) {
+      KnowledgeIndexProcessor processor,
+      StructuredAuditPort audit) {
     this.repository = repository;
     this.authSessions = authSessions;
     this.objectMapper = objectMapper;
     this.clock = clock;
     this.processor = processor;
+    this.audit = audit;
   }
 
   @Transactional
@@ -89,6 +95,22 @@ public class KnowledgePublicationService {
             idempotencyKey,
             requestHash,
             clock.instant());
+    audit.record(
+        new StoredAuditEvent(
+            new StructuredAuditEvent(
+                UUID.randomUUID(),
+                identity.userCode(),
+                "KNOWLEDGE_PUBLICATION_REQUESTED",
+                "IndexTask",
+                task.taskId(),
+                "SUCCEEDED",
+                Map.of(
+                    "versionId", versionId.toString(),
+                    "productLineCode", version.productLineCode()),
+                clock.instant(),
+                true),
+            version.productLineCode(),
+            null));
     enqueueAfterCommit(task.taskId());
     return new PublicationResponse(task, false);
   }

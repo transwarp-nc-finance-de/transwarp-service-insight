@@ -1,5 +1,8 @@
 package com.transwarp.serviceinsight.knowledge.ingestion.application;
 
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StoredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.domain.StructuredAuditModels.StructuredAuditEvent;
+import com.transwarp.serviceinsight.audit.v2.port.StructuredAuditPort;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.AuthSessionApplicationService;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
@@ -34,6 +37,7 @@ public class KnowledgeIngestionService {
   private final KnowledgeIngestionRepository repository;
   private final OriginalFileStorage fileStorage;
   private final KnowledgeParseProcessor parseProcessor;
+  private final StructuredAuditPort audit;
   private final Clock clock;
 
   public KnowledgeIngestionService(
@@ -41,11 +45,13 @@ public class KnowledgeIngestionService {
       KnowledgeIngestionRepository repository,
       OriginalFileStorage fileStorage,
       KnowledgeParseProcessor parseProcessor,
+      StructuredAuditPort audit,
       Clock clock) {
     this.authSessions = authSessions;
     this.repository = repository;
     this.fileStorage = fileStorage;
     this.parseProcessor = parseProcessor;
+    this.audit = audit;
     this.clock = clock;
   }
 
@@ -133,6 +139,24 @@ public class KnowledgeIngestionService {
             clock.instant());
     try {
       var created = repository.create(aggregate);
+      audit.record(
+          new StoredAuditEvent(
+              new StructuredAuditEvent(
+                  UUID.randomUUID(),
+                  identity.userCode(),
+                  "KNOWLEDGE_VERSION_CREATED",
+                  "KnowledgeVersion",
+                  created.version().versionId(),
+                  "SUCCEEDED",
+                  Map.of(
+                      "documentId", created.document().documentId().toString(),
+                      "parseTaskId", created.parseTask().taskId().toString(),
+                      "sourceType", metadata.sourceType(),
+                      "productLineCode", metadata.productLine().code()),
+                  clock.instant(),
+                  true),
+              metadata.productLine().code(),
+              null));
       parseProcessor.enqueue(taskId);
       return new UploadResult(created, false);
     } catch (RuntimeException exception) {

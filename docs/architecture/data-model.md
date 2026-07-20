@@ -1,12 +1,12 @@
 # 领域数据模型
 
-Status: DRAFT  
+Status: ACTIVE
 Owner: 后端负责人  
-Last reviewed: 2026-07-16
-Source of truth for: 领域概念及未来持久化语义
+Last reviewed: 2026-07-20
+Source of truth for: 领域概念及当前与未来持久化语义
 
-- `PrecheckSession`：一次预诊会话及当前状态；当前仅有内存中的页面会话语义。
-- `PrecheckRun`：会话中的单次执行，包含独立 ID、轮次和状态。
+- `PrecheckSession`：一次持久化预诊会话及当前状态；创建后为 `ACTIVE`，仅由人工确认自助完成或 `SubmissionContinuation` 转入 `TERMINATED`，终态只读。
+- `PrecheckRun`：会话中的单次不可变持久化执行，包含独立 ID、轮次、Context/结果快照和状态。
 - `PrecheckContext`：一期冻结的宿主无关问题快照语义，包含来源系统、宿主请求 ID、表单 Schema 版本、问题类型、产品线/产品/组件/版本、问题级别、服务类型、标题、纯文本描述、补充信息、影响范围和附件元数据；HTTP DTO 不是该领域概念的事实来源。
 - `PrecheckContext` 最小有效条件：`sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`title`、`descriptionPlainText` 必须存在；其他字段可由完整度策略追问。
 - `AdditionalInformationItem`：问题类型专属补充条目，包含稳定字段编码、显示名和纯文本值。未知编码可随 Run 快照保留，但不参与完整度判断，也不能影响权限或策略。
@@ -35,10 +35,10 @@ Source of truth for: 领域概念及未来持久化语义
 
 当前 API 为每次初始预诊返回相互独立的 `precheckId` 与 `sessionId`，并返回 `confidenceReason`、策略版本、Mock 规则版本以及明确的模型/索引不适用标识。当前无持久化，`PrecheckRun` 尚不对应数据库记录。
 
-一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识首次上传、ParseTask、解析预览，以及知识修订与不可变审核历史；原始文件保存在 Compose volume，不存为数据库大字段。其余内容仍是目标持久化语义。
+一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识上传/治理/发布、Precheck Session/Run/Evidence、独立 Feedback、SubmissionContinuation 与不可变结构化 AuditEvent；原始文件保存在 Compose volume，不存为数据库大字段。评估运行等未标记 `IMPLEMENTED` 的资源仍是目标持久化语义。
 
 未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表全部目标持久化已经启用。
 
-当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。
+当前 v1 `FeedbackRequest` 同时包含 `adoptionStatus` 与 `continuedSubmission`，与上述目标领域模型存在差异。当前 v1 契约保持不变；独立 Feedback 与 SubmissionContinuation 已按 API v2 DRAFT 实现，并保持两个事务、幂等键和失败边界。
 
 当前 v1 也没有独立的有用性评价字段且保持兼容；该可选维度已由 `APPROVED_FOR_IMPLEMENTATION` 的 API v2 DRAFT 表达。

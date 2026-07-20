@@ -3,6 +3,7 @@ import SandboxPage from '../pages/SandboxPage.vue'
 import EmbedPrecheckPage from '../pages/EmbedPrecheckPage.vue'
 import KnowledgeIngestionPage from '../pages/KnowledgeIngestionPage.vue'
 import PersistentPrecheckPage from '../pages/PersistentPrecheckPage.vue'
+import AuditEventsPage from '../pages/AuditEventsPage.vue'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -11,5 +12,6 @@ export const router = createRouter({
     { path: '/precheck-v2', component: PersistentPrecheckPage },
     { path: '/embed', component: EmbedPrecheckPage },
     { path: '/knowledge', component: KnowledgeIngestionPage },
+    { path: '/audit', component: AuditEventsPage },
   ],
 })
