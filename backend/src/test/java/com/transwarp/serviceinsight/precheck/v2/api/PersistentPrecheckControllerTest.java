@@ -1,6 +1,8 @@
 package com.transwarp.serviceinsight.precheck.v2.api;
 
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingException;
 import com.transwarp.serviceinsight.knowledge.publication.port.EmbeddingPort;
+import com.transwarp.serviceinsight.precheck.retrieval.port.RetrievalSearchPort;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -21,9 +24,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -34,14 +39,16 @@ class PersistentPrecheckControllerTest {
   @Autowired private ObjectMapper objectMapper;
   @Autowired private JdbcTemplate jdbc;
   @MockitoBean private EmbeddingPort embeddingPort;
+  @MockitoSpyBean private RetrievalSearchPort retrievalSearchPort;
 
   @BeforeEach
   void embeddingAvailable() {
-    when(embeddingPort.embedQueries(anyList()))
-        .thenAnswer(
+    org.mockito.Mockito.doAnswer(
             invocation ->
                 ((List<?>) invocation.getArgument(0))
-                    .stream().map(ignored -> new float[768]).toList());
+                    .stream().map(ignored -> new float[768]).toList())
+        .when(embeddingPort)
+        .embedQueries(anyList());
   }
 
   @Test
@@ -87,6 +94,8 @@ class PersistentPrecheckControllerTest {
   void authorizedHybridRetrievalCreatesEvidenceAndReauthorizesEveryRead() throws Exception {
     var allowed = seedPublishedIndex("TDH", "模拟数据：TDH MOCK-1001 排查依据");
     seedPublishedIndex("STREAMING", "模拟数据：越权 MOCK-1001 机密依据");
+    jdbc.update(
+        "INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-precheck-tdh', 'STREAMING')");
     var login = login("mock-precheck-tdh");
 
     var created =
@@ -119,6 +128,12 @@ class PersistentPrecheckControllerTest {
       }
     }
     org.assertj.core.api.Assertions.assertThat(evidenceId).isNotBlank();
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT e.content_hash = i.content_hash FROM precheck_evidence e JOIN knowledge_chunk_index i ON i.chunk_id=e.chunk_id WHERE e.evidence_id = ?",
+                Boolean.class,
+                java.util.UUID.fromString(evidenceId)))
+        .isTrue();
 
     mockMvc
         .perform(
@@ -150,6 +165,8 @@ class PersistentPrecheckControllerTest {
     } finally {
       jdbc.update(
           "INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-precheck-tdh', 'TDH')");
+      jdbc.update(
+          "DELETE FROM local_identity_product_line WHERE user_code = 'mock-precheck-tdh' AND product_line_code = 'STREAMING'");
     }
   }
 
@@ -177,6 +194,96 @@ class PersistentPrecheckControllerTest {
         .andExpect(
             jsonPath("$.latestRun.result.allowedActions")
                 .value(org.hamcrest.Matchers.hasItem("CONTINUE_SUBMISSION")));
+  }
+
+  @Test
+  void ftsFailureReturnsUnavailableWithoutBlockingHumanSubmission() throws Exception {
+    doThrow(new TransientDataAccessResourceException("模拟数据：FTS 数据库暂时不可用"))
+        .when(retrievalSearchPort)
+        .searchFts(anyString(), anyList());
+    var login = login("mock-precheck-tdh");
+
+    mockMvc
+        .perform(
+            post("/api/v2/precheck-sessions")
+                .cookie(login.getResponse().getCookie("SESSION"))
+                .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(sessionRequest("mock-host-fts-unavailable-001", "模拟数据：FTS 故障继续提交")))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.latestRun.status").value("DEGRADED"))
+        .andExpect(jsonPath("$.latestRun.result.retrieval.mode").value("UNAVAILABLE"))
+        .andExpect(jsonPath("$.latestRun.result.confidence").value("LOW"))
+        .andExpect(jsonPath("$.latestRun.result.evidence").isEmpty())
+        .andExpect(
+            jsonPath("$.latestRun.result.allowedActions")
+                .value(org.hamcrest.Matchers.hasItem("CONTINUE_SUBMISSION")));
+  }
+
+  @Test
+  void embeddingRecoveryCreatesAnIndependentRunWithoutRewritingHistory() throws Exception {
+    seedPublishedIndex("TDH", "模拟数据：多轮 MOCK-1001 Evidence");
+    when(embeddingPort.embedQueries(anyList()))
+        .thenThrow(new EmbeddingException("EMBEDDING_TIMEOUT", "模拟数据：向量服务超时", true));
+    var login = login("mock-precheck-tdh");
+    var first =
+        mockMvc
+            .perform(
+                post("/api/v2/precheck-sessions")
+                    .cookie(login.getResponse().getCookie("SESSION"))
+                    .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        sessionRequest("mock-host-retrieval-recovery-001", "模拟数据：第一轮 MOCK-1001")))
+            .andExpect(status().isCreated())
+            .andReturn();
+    var firstJson = objectMapper.readTree(first.getResponse().getContentAsByteArray());
+    var sessionId = firstJson.path("sessionId").asText();
+    var firstRunId = firstJson.at("/latestRun/runId").asText();
+    var firstEvidenceId = firstJson.at("/latestRun/result/evidence/0/evidenceId").asText();
+    org.assertj.core.api.Assertions.assertThat(
+            firstJson.at("/latestRun/result/retrieval/mode").asText())
+        .isEqualTo("FTS_ONLY");
+
+    org.mockito.Mockito.doAnswer(
+            invocation ->
+                ((List<?>) invocation.getArgument(0))
+                    .stream().map(ignored -> new float[768]).toList())
+        .when(embeddingPort)
+        .embedQueries(anyList());
+    var second =
+        createRun(
+                login,
+                sessionId,
+                "mock-host-retrieval-recovery-001",
+                "retrieval-recovery-run-002",
+                "模拟数据：第二轮 MOCK-1001",
+                "SQL_ENGINE")
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.result.retrieval.mode").value("HYBRID"))
+            .andReturn();
+    var secondJson = objectMapper.readTree(second.getResponse().getContentAsByteArray());
+    var secondEvidenceId = secondJson.at("/result/evidence/0/evidenceId").asText();
+    org.assertj.core.api.Assertions.assertThat(secondEvidenceId)
+        .isNotBlank()
+        .isNotEqualTo(firstEvidenceId);
+
+    var history =
+        mockMvc
+            .perform(
+                get("/api/v2/precheck-sessions/{sessionId}/runs", sessionId)
+                    .cookie(login.getResponse().getCookie("SESSION"))
+                    .queryParam("sortDirection", "ASC"))
+            .andExpect(status().isOk())
+            .andReturn();
+    var runs = objectMapper.readTree(history.getResponse().getContentAsByteArray()).path("items");
+    org.assertj.core.api.Assertions.assertThat(runs.get(0).path("runId").asText())
+        .isEqualTo(firstRunId);
+    org.assertj.core.api.Assertions.assertThat(runs.get(0).at("/result/retrieval/mode").asText())
+        .isEqualTo("FTS_ONLY");
+    org.assertj.core.api.Assertions.assertThat(
+            runs.get(0).at("/result/evidence/0/evidenceId").asText())
+        .isEqualTo(firstEvidenceId);
   }
 
   @Test

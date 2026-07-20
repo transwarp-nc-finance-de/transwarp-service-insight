@@ -34,15 +34,16 @@ public class AuthorizedRetrievalService {
       throw new IllegalArgumentException("identity is not authorized for retrieval context");
     }
     var query = query(context);
+    var productLineScope = List.of(context.productLine().code());
     final List<RetrievalCandidate> ftsCandidates;
     try {
-      ftsCandidates = search.searchFts(query, identity.productLineCodes());
+      ftsCandidates = search.searchFts(query, productLineScope);
     } catch (DataAccessException exception) {
       return unavailable("FTS_UNAVAILABLE", "模拟数据：全文检索暂时不可用");
     }
     try {
       var queryVector = embedding.embedQueries(List.of(query)).getFirst();
-      var vectorCandidates = search.searchVector(queryVector, identity.productLineCodes());
+      var vectorCandidates = search.searchVector(queryVector, productLineScope);
       var result = fusion.fuse(ftsCandidates, vectorCandidates);
       return outcome(
           "HYBRID",

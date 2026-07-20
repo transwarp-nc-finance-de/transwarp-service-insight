@@ -77,6 +77,53 @@ jobs:
           test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select string_agg(version,',' order by version) from seed_version")" = "local-catalog-v1,local-identity-v1"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_role(user_code, role_code) VALUES ('mock-admin','ADMIN'); RAISE EXCEPTION 'duplicate accepted'; EXCEPTION WHEN unique_violation THEN NULL; END; END \$\$;"
           docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "DO \$\$ BEGIN BEGIN INSERT INTO local_identity_product_line(user_code, product_line_code) VALUES ('mock-admin','UNKNOWN'); RAISE EXCEPTION 'unknown product line accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END; END \$\$;"
+          docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight <<'SQL'
+          insert into knowledge_document(document_id, title, product_line_code, product_line_display_name, source_type, created_by, created_at, mock_data)
+          values
+            ('26000000-0000-4000-8000-000000000001', 'Issue 26 TDH Evidence（模拟数据）', 'TDH', 'TDH（模拟数据）', 'MOCK', 'mock-knowledge-editor', current_timestamp, true),
+            ('26000000-0000-4000-8000-000000000011', 'Issue 26 STREAMING Evidence（模拟数据）', 'STREAMING', 'STREAMING（模拟数据）', 'MOCK', 'mock-knowledge-editor', current_timestamp, true);
+          insert into knowledge_original_file(file_id, storage_key, content_hash, size_bytes, media_type, original_name, created_at)
+          values
+            ('26000000-0000-4000-8000-000000000002', 'issue26/current', 'sha256:0000000000000000000000000000000000000000000000000000000000000002', 1, 'text/plain', 'issue26-current.txt', current_timestamp),
+            ('26000000-0000-4000-8000-000000000007', 'issue26/old', 'sha256:0000000000000000000000000000000000000000000000000000000000000007', 1, 'text/plain', 'issue26-old.txt', current_timestamp),
+            ('26000000-0000-4000-8000-000000000012', 'issue26/streaming', 'sha256:0000000000000000000000000000000000000000000000000000000000000012', 1, 'text/plain', 'issue26-streaming.txt', current_timestamp);
+          insert into knowledge_version_v2(version_id, document_id, revision_number, status, created_by, submitted_by, approved_by, original_file_id, created_at, updated_at, mock_data)
+          values
+            ('26000000-0000-4000-8000-000000000003', '26000000-0000-4000-8000-000000000001', 2, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', '26000000-0000-4000-8000-000000000002', current_timestamp, current_timestamp, true),
+            ('26000000-0000-4000-8000-000000000008', '26000000-0000-4000-8000-000000000001', 1, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', '26000000-0000-4000-8000-000000000007', current_timestamp, current_timestamp, true),
+            ('26000000-0000-4000-8000-000000000013', '26000000-0000-4000-8000-000000000011', 1, 'PUBLISHED', 'mock-knowledge-editor', 'mock-knowledge-editor', 'mock-knowledge-reviewer', '26000000-0000-4000-8000-000000000012', current_timestamp, current_timestamp, true);
+          insert into knowledge_draft_revision(revision_id, version_id, revision_number, title, product_line_code, created_at, cleaned_text_hash, product_line_display_name, created_by, mock_data)
+          values
+            ('26000000-0000-4000-8000-000000000004', '26000000-0000-4000-8000-000000000003', 1, 'Issue 26 TDH current（模拟数据）', 'TDH', current_timestamp, 'sha256:0000000000000000000000000000000000000000000000000000000000000004', 'TDH（模拟数据）', 'mock-knowledge-editor', true),
+            ('26000000-0000-4000-8000-000000000009', '26000000-0000-4000-8000-000000000008', 1, 'Issue 26 TDH old（模拟数据）', 'TDH', current_timestamp, 'sha256:0000000000000000000000000000000000000000000000000000000000000009', 'TDH（模拟数据）', 'mock-knowledge-editor', true),
+            ('26000000-0000-4000-8000-000000000014', '26000000-0000-4000-8000-000000000013', 1, 'Issue 26 STREAMING（模拟数据）', 'STREAMING', current_timestamp, 'sha256:0000000000000000000000000000000000000000000000000000000000000014', 'STREAMING（模拟数据）', 'mock-knowledge-editor', true);
+          update knowledge_version_v2 set current_draft_revision_id = '26000000-0000-4000-8000-000000000004' where version_id = '26000000-0000-4000-8000-000000000003';
+          update knowledge_version_v2 set current_draft_revision_id = '26000000-0000-4000-8000-000000000009' where version_id = '26000000-0000-4000-8000-000000000008';
+          update knowledge_version_v2 set current_draft_revision_id = '26000000-0000-4000-8000-000000000014' where version_id = '26000000-0000-4000-8000-000000000013';
+          update knowledge_document set current_published_version_id = '26000000-0000-4000-8000-000000000003' where document_id = '26000000-0000-4000-8000-000000000001';
+          update knowledge_document set current_published_version_id = '26000000-0000-4000-8000-000000000013' where document_id = '26000000-0000-4000-8000-000000000011';
+          insert into parse_task(task_id, resource_id, draft_revision_id, status, attempt, max_attempts, created_at, started_at, completed_at)
+          values
+            ('26000000-0000-4000-8000-000000000005', '26000000-0000-4000-8000-000000000003', '26000000-0000-4000-8000-000000000004', 'SUCCEEDED', 1, 3, current_timestamp, current_timestamp, current_timestamp),
+            ('26000000-0000-4000-8000-00000000000a', '26000000-0000-4000-8000-000000000008', '26000000-0000-4000-8000-000000000009', 'SUCCEEDED', 1, 3, current_timestamp, current_timestamp, current_timestamp),
+            ('26000000-0000-4000-8000-000000000015', '26000000-0000-4000-8000-000000000013', '26000000-0000-4000-8000-000000000014', 'SUCCEEDED', 1, 3, current_timestamp, current_timestamp, current_timestamp);
+          insert into knowledge_revision_chunk(chunk_id, task_id, revision_id, sequence, structure_path, text_content, token_count, content_hash, chunking_rule_version)
+          values
+            ('26000000-0000-4000-8000-000000000006', '26000000-0000-4000-8000-000000000005', '26000000-0000-4000-8000-000000000004', 1, '# issue26', '模拟数据 Compose MOCK-1001 Inceptor SQL_ENGINE 9.1.0-mock TDH current evidence', 12, 'sha256:0000000000000000000000000000000000000000000000000000000000000006', 'structure-400-overlap-50-v1'),
+            ('26000000-0000-4000-8000-00000000000b', '26000000-0000-4000-8000-00000000000a', '26000000-0000-4000-8000-000000000009', 1, '# issue26-old', '模拟数据 Compose MOCK-1001 TDH old noncurrent evidence', 10, 'sha256:000000000000000000000000000000000000000000000000000000000000000b', 'structure-400-overlap-50-v1'),
+            ('26000000-0000-4000-8000-000000000016', '26000000-0000-4000-8000-000000000015', '26000000-0000-4000-8000-000000000014', 1, '# issue26-streaming', '模拟数据 Compose MOCK-1001 STREAMING unauthorized evidence', 10, 'sha256:0000000000000000000000000000000000000000000000000000000000000016', 'structure-400-overlap-50-v1');
+          insert into knowledge_chunk_index(chunk_id, version_id, revision_id, product_line_code, text_content, embedding, embedding_model, embedding_revision, content_hash, indexed_at)
+          select c.chunk_id, v.version_id, c.revision_id, d.product_line_code, c.text_content,
+                 array_prepend(case when c.chunk_id = '26000000-0000-4000-8000-00000000000b' then -1::real else 1::real end, array_fill(0::real, array[767]))::vector,
+                 'intfloat/multilingual-e5-base', 'd13f1b27baf31030b7fd040960d60d909913633f', c.content_hash, current_timestamp
+          from knowledge_revision_chunk c
+          join knowledge_draft_revision r using (revision_id)
+          join knowledge_version_v2 v on v.version_id=r.version_id
+          join knowledge_document d on d.document_id=v.document_id
+          where c.chunk_id in ('26000000-0000-4000-8000-000000000006', '26000000-0000-4000-8000-00000000000b', '26000000-0000-4000-8000-000000000016');
+          SQL
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select i.chunk_id from knowledge_chunk_index i join knowledge_version_v2 v on v.version_id=i.version_id join knowledge_document d on d.document_id=v.document_id where v.status='PUBLISHED' and d.current_published_version_id=v.version_id and i.product_line_code='TDH' and i.fts_document @@ websearch_to_tsquery('simple', '\"MOCK-1001\" OR \"Compose\"') order by ts_rank_cd(i.fts_document, websearch_to_tsquery('simple', '\"MOCK-1001\" OR \"Compose\"')) desc, v.version_id, i.chunk_id limit 20")" = "26000000-0000-4000-8000-000000000006"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select i.chunk_id from knowledge_chunk_index i join knowledge_version_v2 v on v.version_id=i.version_id join knowledge_document d on d.document_id=v.document_id where v.status='PUBLISHED' and d.current_published_version_id=v.version_id and i.product_line_code='TDH' order by i.embedding <=> array_prepend(1::real, array_fill(0::real, array[767]))::vector, v.version_id, i.chunk_id limit 20")" = "26000000-0000-4000-8000-000000000006"
           precheck_headers="$(mktemp)"
           precheck_cookies="$(mktemp)"
           precheck_auth="$(curl --fail --silent -D "$precheck_headers" -c "$precheck_cookies" -H 'Content-Type: application/json' -d '{"userCode":"mock-precheck-tdh","mockData":true}' http://localhost:5173/api/v2/auth-sessions)"
@@ -96,7 +143,16 @@ jobs:
           test "$(sort "$first_status" "$second_status" | tr '\n' ',')" = "200,201,"
           precheck_session_id="$(jq -r .sessionId "$precheck_first")"
           test "$precheck_session_id" = "$(jq -r .sessionId "$precheck_second")"
-          jq -e '.status == "ACTIVE" and .runCount == 1 and .latestRun.sequence == 1 and .latestRun.result.confidence == "LOW" and .latestRun.result.retrieval.mode == "HYBRID" and .latestRun.result.evidence == [] and (.latestRun.result.allowedActions | index("CONTINUE_SUBMISSION")) != null and .latestRun.result.mockData == true' "$precheck_first"
+          jq -e '.status == "ACTIVE" and .runCount == 1 and .latestRun.sequence == 1 and .latestRun.result.confidence == "LOW" and .latestRun.result.retrieval.mode == "FTS_ONLY" and .latestRun.result.retrieval.degraded == true and .latestRun.result.retrieval.embedding.available == false and .latestRun.result.evidence[0].title == "Issue 26 TDH Evidence（模拟数据）" and (.latestRun.result.evidence | length) == 1 and (.latestRun.result.allowedActions | index("CONTINUE_SUBMISSION")) != null and .latestRun.result.mockData == true' "$precheck_first"
+          retrieval_run_id="$(jq -r .latestRun.runId "$precheck_first")"
+          retrieval_evidence_id="$(jq -r .latestRun.result.evidence[0].evidenceId "$precheck_first")"
+          curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/evidence/$retrieval_evidence_id" | jq -e '.versionId == "26000000-0000-4000-8000-000000000003" and .chunkId == "26000000-0000-4000-8000-000000000006" and .contentHash == "sha256:0000000000000000000000000000000000000000000000000000000000000006" and (.storageKey | not)'
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select rule_version || ',' || retrieval_mode from precheck_retrieval_audit where run_id='$retrieval_run_id'")" = "rrf-k60-top20-v1,FTS_ONLY"
+          test "$(docker compose exec -T postgres psql -U service_insight -d service_insight -tAc "select count(*) from precheck_retrieval_candidate c join knowledge_chunk_index i on i.chunk_id=c.chunk_id join knowledge_version_v2 v on v.version_id=i.version_id join knowledge_document d on d.document_id=v.document_id where c.run_id='$retrieval_run_id' and i.product_line_code='TDH' and v.status='PUBLISHED' and d.current_published_version_id=v.version_id")" = "1"
+          if docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U service_insight -d service_insight -c "update precheck_evidence set excerpt='forbidden' where evidence_id='$retrieval_evidence_id'"; then
+            echo "Evidence history mutation was accepted"
+            exit 1
+          fi
           run_two_payload="$(echo "$precheck_payload" | jq '.context.title = "模拟数据：Compose 第二轮"')"
           run_two="$(curl --fail --silent -b "$precheck_cookies" -H "X-CSRF-Token: $precheck_csrf" -H 'Idempotency-Key: compose-precheck-run-002' -H 'Content-Type: application/json' -d "$run_two_payload" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs")"
           echo "$run_two" | jq -e '.sequence == 2 and (.result.allowedActions | index("CONTINUE_SUBMISSION")) != null'
@@ -182,6 +238,7 @@ jobs:
           test "$(awk 'BEGIN { IGNORECASE=1 } /^X-CSRF-Token:/ { gsub("\\r", "", $2); print $2 }' "$headers")" = "$csrf"
           curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id" | jq -e '.status == "ACTIVE" and .runCount == 3 and .latestRun.sequence == 3'
           curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/precheck-sessions/$precheck_session_id/runs?sortDirection=ASC" | jq -e '.items as $items | ($items | length) == 3 and $items[0].sequence == 1 and $items[2].sequence == 3'
+          curl --fail --silent -b "$precheck_cookies" "http://localhost:5173/api/v2/evidence/$retrieval_evidence_id" | jq -e '.evidenceId == $id and .contentHash == "sha256:0000000000000000000000000000000000000000000000000000000000000006"' --arg id "$retrieval_evidence_id"
           curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/parse-tasks/$task_id" | jq -e '.status == "SUCCEEDED"'
           test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview" | jq -r .parseResultHash)" = "$(echo "$summary" | jq -r .parseResultHash)"
           test "$(curl --fail --silent -b "$cookies" "http://localhost:5173/api/v2/knowledge-versions/$version_id/parse-preview/blocks?page=1&size=20" | jq -r .page.totalItems)" = "$(echo "$blocks" | jq -r .page.totalItems)"

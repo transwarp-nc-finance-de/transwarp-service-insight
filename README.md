@@ -140,7 +140,7 @@ curl --fail --silent http://127.0.0.1:5173/api/v1/health
 
 使用 `mock-knowledge-editor` 登录后可访问 `/knowledge`，上传标注为模拟数据的 Markdown、TXT 或文本型 PDF，查看 ParseTask、解析摘要、Block 和 Chunk；审核人可批准后创建双索引发布任务、查看 FTS/向量分支状态并废弃已发布版本。扫描 PDF/OCR、真实知识源和在线检索仍不在该页面范围内。
 
-使用 `mock-precheck-tdh` 登录后可访问 `/precheck-v2`，创建持久化 Session 与 Run 1、补充完整 Context 形成最多三轮 Run、刷新恢复本人活动 Session、跳过建议继续人工提交，以及显式确认自助结束。当前检索明确为 `UNAVAILABLE`，不调用 FTS、pgvector、local-embedding 或真实 Evidence。
+使用 `mock-precheck-tdh` 登录后可访问 `/precheck-v2`，创建持久化 Session 与 Run 1、补充完整 Context 形成最多三轮 Run、刷新恢复本人活动 Session、跳过建议继续人工提交，以及显式确认自助结束。每个 Run 都会在当前 Context 产品线授权范围内查询当前 `PUBLISHED` 知识：FTS 与本地 Embedding 均可用时为 `HYBRID`，Embedding 故障时降级为 `FTS_ONLY`，FTS 故障时为无 Evidence 的 `UNAVAILABLE`；降级均限制为 `LOW` 且不阻断人工继续提交。Evidence 保存不可变快照，并在每次读取时按当前身份重新鉴权。
 
 ### 5.3 `模拟数据` 预诊验收
 
