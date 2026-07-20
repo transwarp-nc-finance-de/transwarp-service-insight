@@ -2,7 +2,7 @@
 
 Status: DRAFT  
 Owner: 产品负责人 / 安全负责人  
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-20
 Source of truth for: 未来角色职责与权限边界
 
 ## 角色
@@ -27,7 +27,7 @@ Source of truth for: 未来角色职责与权限边界
 
 ## 当前实现边界
 
-当前已实现 `local-identity-v1` 的四个模拟身份、服务端 Cookie Session、CSRF、角色与 TDH/STREAMING 产品线矩阵；只适用于本地模拟数据，不构成真实认证或生产授权。v1 预诊仍使用 `mock-policy-v1` 和进程内状态。
+当前已实现 `local-identity-v1` 的四个模拟身份、服务端 Cookie Session、CSRF、角色与 TDH/STREAMING 产品线矩阵；只适用于本地模拟数据，不构成真实认证或生产授权。v1 预诊仍使用 `mock-policy-v1` 和进程内状态；v2 已持久化 Precheck Session/Run、独立 Feedback 与 SubmissionContinuation，并由后端强制 PRECHECK_USER 仅操作自己的 Session、ADMIN 不得替用户确认继续提交、Audit 查询按角色和产品线过滤、无权与不存在统一安全 `404`。
 
 ## 一期已确认本地身份方式
 

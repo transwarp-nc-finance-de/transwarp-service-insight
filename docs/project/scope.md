@@ -76,7 +76,7 @@
 - `sourceSystem + hostRequestId` 作为一期真实幂等键：相同规范化上下文重试返回原 Session/Run，同键不同上下文返回安全冲突并审计，不静默覆盖；新的 `hostRequestId` 可主动重新预诊。
 - 当前 `/api/v1` 字段、语义与行为保持不变；重定义后的一期 Context、知识治理、独立反馈/继续提交、引用和评估能力使用 `/api/v2`。新旧 DTO 通过 Mapper 进入应用用例，领域模型不依赖 HTTP 版本。本轮不修改 OpenAPI。
 - 一期冻结以下 v2 资源组职责与路径前缀：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。具体方法、Schema、错误码与分页已通过 DRAFT 契约评审；API v2 为 `APPROVED_FOR_IMPLEMENTATION`，但本轮不承诺完整 CRUD 已实现。
-- v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射，并已获人工批准；契约整体仍为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`。当前实现三个 AuthSession operation、知识首次上传、单 ParseTask 查询、三个 parse-preview 读取 operation，以及草稿修订、送审、退回和批准四个治理 operation；其他 v2 operation 仍未实现。`docs/api/openapi.yaml` 的 v1 字段、状态码和无认证 Mock 行为保持不变。
+- v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态及 v1→v2 映射，并已获人工批准；契约整体仍为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`。当前已实现 AuthSession、知识上传/治理/发布、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation、结构化 AuditEvent 和完整度策略读取；Evaluation、Metrics、Admin Reset 等未标记 `IMPLEMENTED` 的 operation 仍未实现。`docs/api/openapi.yaml` 的 v1 字段、状态码和无认证 Mock 行为保持不变。
 - 一期本地完整纵向闭环以“模拟继续提交已记录，反馈和审计已持久化，固定评估集可产出最小质量评估结果”为验收终点。
 - 最小评估用于证明检索、引用、权限与降级行为，不要求建设完整运营后台。
 - 一期闭环不以生成或保存模拟 SLA 单据、工单草稿或提交回执为验收内容；Service Insight 仍不创建正式 SLA。

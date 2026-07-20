@@ -2,7 +2,7 @@
 
 状态定义：`ACTIVE` 为当前事实，`DRAFT` 为未实现设计，`ARCHIVED` 仅供历史追溯。
 
-当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession、知识上传解析预览、不可变草稿审核、双索引原子发布/废弃、持久化预诊 Session/Run、授权混合 Retrieval 与 Evidence 读取切片；反馈、提交记录、评估等其余一期目标能力仍未实现。
+当前统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为兼容的 `v1 Mock` 加 v2 AuthSession、知识上传/治理/发布、持久化预诊 Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent；Evaluation、Metrics、Admin Reset 等未标记 `IMPLEMENTED` 的一期目标能力仍未实现。
 
 首次安装、启动、验收、故障排查、升级或清理请从根目录 [M2 本地安装部署手册](../README.md) 开始。
 
@@ -14,7 +14,7 @@
 - 开发：[M2 安装部署](../README.md)、[本地开发](development/local-development.md)、[测试策略](development/test-strategy.md)、[固定模拟评估集维护](development/evaluation-dataset.md)、[Embedding 模型资格调查](development/embedding-model-qualification.md)、[Embedding 模型资格实测报告](development/embedding-model-qualification-report.md)、[变更记录](development/changelog.md)
 - Agent 协作：[Issue Tracker](agents/issue-tracker.md)、[Triage 标签](agents/triage-labels.md)、[领域文档消费规则](agents/domain.md)
 - 运维治理：[可观测性](operations/observability.md)、[数据保留与删除](operations/data-retention.md)
-- 接口：[OpenAPI](api/openapi.yaml)
+- 接口：[已实现 v1 OpenAPI](api/openapi.yaml)、[部分实现 v2 DRAFT OpenAPI](api/openapi-v2.yaml)、[v1→v2 映射](api/v1-v2-mapping.md)
 
 ## DRAFT / ARCHIVED
 

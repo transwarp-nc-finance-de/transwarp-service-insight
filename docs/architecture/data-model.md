@@ -1,12 +1,12 @@
 # 领域数据模型
 
-Status: DRAFT  
+Status: ACTIVE
 Owner: 后端负责人  
-Last reviewed: 2026-07-16
-Source of truth for: 领域概念及未来持久化语义
+Last reviewed: 2026-07-20
+Source of truth for: 领域概念及当前与未来持久化语义
 
-- `PrecheckSession`：一次预诊会话及当前状态；当前仅有内存中的页面会话语义。
-- `PrecheckRun`：会话中的单次执行，包含独立 ID、轮次和状态。
+- `PrecheckSession`：一次持久化预诊会话及当前状态；创建后为 `ACTIVE`，仅由人工确认自助完成或 `SubmissionContinuation` 转入 `TERMINATED`，终态只读。
+- `PrecheckRun`：会话中的单次不可变持久化执行，包含独立 ID、轮次、Context/结果快照和状态。
 - `PrecheckContext`：一期冻结的宿主无关问题快照语义，包含来源系统、宿主请求 ID、表单 Schema 版本、问题类型、产品线/产品/组件/版本、问题级别、服务类型、标题、纯文本描述、补充信息、影响范围和附件元数据；HTTP DTO 不是该领域概念的事实来源。
 - `PrecheckContext` 最小有效条件：`sourceSystem`、`hostRequestId`、`formSchemaVersion`、`issueType`、`productLine`、`title`、`descriptionPlainText` 必须存在；其他字段可由完整度策略追问。
 - `AdditionalInformationItem`：问题类型专属补充条目，包含稳定字段编码、显示名和纯文本值。未知编码可随 Run 快照保留，但不参与完整度判断，也不能影响权限或策略。
