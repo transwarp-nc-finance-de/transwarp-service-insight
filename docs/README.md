@@ -35,7 +35,6 @@
 | 已发布 v1 API | [OpenAPI](api/openapi.yaml) | 已发布 v1 接口的唯一契约 |
 | 已批准 v2 API | [OpenAPI v2 DRAFT](api/openapi-v2.yaml) | v2 实施契约与逐 operation 实现状态；尚未发布为正式契约 |
 
-当前存在需显式保留的治理差异：根 `AGENTS.md` 将 `docs/api/openapi.yaml` 定义为全部已实现接口的唯一契约，而既有 ADR-0006、CI 和已交付 v2 切片使用 `openapi-v2.yaml` 的 operation 级 `IMPLEMENTED` 表达并行演进。本次沿用既有 v2 规则且不改写 v1；在 v2 正式发布前，项目负责人需确认是合并契约还是修订根规则。该差异记录在 `docs/project/open-questions.md`，不得把 v2 DRAFT 描述成已发布 API。
 | 开发说明 | [`development/`](development/) | 本地开发与测试方法 |
 | Agent 协作配置 | [`agents/`](agents/) | 工程 Skill 使用的 Issue Tracker、标签与领域文档消费规则 |
 | 运维治理 | [`operations/`](operations/) | 可观测性、数据保留等运维规则 |

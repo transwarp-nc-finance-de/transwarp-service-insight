@@ -2,9 +2,9 @@
 
 `Transwarp Service Insight` 当前聚焦外挂在 AIOps SLA 流程中的智能预诊能力。AIOps 是正式表单、枚举、校验和最终提交的宿主；本仓库提供独立预诊后端、嵌入式面板以及本地 Mock AIOps Sandbox。
 
-能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion、审核、双索引原子发布与废弃 `IMPLEMENTED`；持久化预诊 Session/Run、三轮补充、恢复、显式自助结束、授权在线 Retrieval 与 Evidence `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；LLM Generation 与 Agent Orchestration 仍为 `NOT STARTED`。
+能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion、审核、双索引原子发布与废弃 `IMPLEMENTED`；持久化预诊 Session/Run、三轮补充、恢复、显式自助结束、授权在线 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；LLM Generation 与 Agent Orchestration 仍为 `NOT STARTED`。
 
-> 当前全部业务内容均为 `模拟数据`。系统仅使用本地 Compose PostgreSQL 保存模拟身份、模拟目录和 AuthSession，不接入真实客户数据、ITSM、AIOps、RAG、LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
+> 当前全部业务内容均为 `模拟数据`。系统使用本地 Compose PostgreSQL 保存模拟身份与目录、AuthSession、知识治理、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent 等本地工程数据，不接入真实客户数据、ITSM、AIOps、生成式 RAG/LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
 
 ## 1. 适用范围
 
@@ -13,7 +13,8 @@
 当前事实以以下文档为准：
 
 - [当前范围](docs/project/scope.md)
-- [OpenAPI 唯一契约](docs/api/openapi.yaml)
+- [已实现 v1 OpenAPI 唯一契约](docs/api/openapi.yaml)
+- [v2 DRAFT 实施契约与 operation 级实现状态](docs/api/openapi-v2.yaml)
 - [文档导航](docs/README.md)
 - [本地开发](docs/development/local-development.md)
 - [测试策略](docs/development/test-strategy.md)
@@ -273,7 +274,7 @@ cd backend
 
 macOS/Linux 将 `.\mvnw.cmd` 替换为 `./mvnw`。
 
-前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和整体仍为 DRAFT / PARTIALLY_IMPLEMENTED 的 v2；当前 v2 已实现 AuthSession、知识上传/解析预览/审核/索引发布、持久化预诊、授权 Retrieval 与 Evidence 等 operation 级 `IMPLEMENTED` 切片）：
+前端和 OpenAPI 契约校验（`openapi:check` 同时校验已实现的 v1 和整体仍为 DRAFT / PARTIALLY_IMPLEMENTED 的 v2；当前 v2 已实现 AuthSession、知识上传/解析预览/审核/索引发布、持久化预诊、授权 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent 等 operation 级 `IMPLEMENTED` 切片）：
 
 ```powershell
 cd frontend
@@ -323,7 +324,8 @@ docker compose up -d --build --wait
 - `backend/`：Spring Boot Mock API、Maven Wrapper 和后端镜像
 - `frontend/`：Vue 应用、Nginx 代理配置和前端镜像
 - `compose.yaml`：前端、后端与本地 PostgreSQL 一键交付拓扑
-- `docs/api/openapi.yaml`：已实现 API 的唯一契约
+- `docs/api/openapi.yaml`：已实现 v1 API 的唯一契约
+- `docs/api/openapi-v2.yaml`：v2 DRAFT 实施契约与 operation 级实现状态的唯一来源
 - `docs/`：ACTIVE 文档、DRAFT 目标设计和 ARCHIVED 历史材料
 - `prompts/`：可长期复用提示词的治理说明
 

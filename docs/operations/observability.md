@@ -2,12 +2,12 @@
 
 Status: DRAFT  
 Owner: 运维/平台负责人  
-Last reviewed: 2026-07-12  
+Last reviewed: 2026-07-20
 Source of truth for: 未来技术、业务和安全观测边界
 
 ## 当前证据
 
-当前仅有进程健康接口、结构化 API 错误 `traceId`、进程内脱敏业务事件、容器健康检查和自动化测试。内存事件重启即清空，不是正式审计或指标平台。
+当前已有进程健康接口、结构化 API 错误 `traceId`、容器健康检查、自动化测试，以及 PostgreSQL 持久化且数据库级不可变的结构化 AuditEvent；`ADMIN` 只能按授权产品线读取不含业务正文的脱敏元数据。Metrics API、指标平台、告警与生产级可观测性仍未实现。
 
 ## 目标指标
 

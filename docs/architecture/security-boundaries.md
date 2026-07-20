@@ -2,12 +2,12 @@
 
 Status: ACTIVE  
 Owner: 安全负责人  
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-20
 Source of truth for: 当前安全硬边界与未来接入门禁
 
 ## 当前边界
 
-当前仅允许模拟、公开或已脱敏输入。服务只接本地 Compose PostgreSQL 保存版本化模拟身份、模拟目录、AuthSession 与知识解析元数据，并以 Compose volume 保存不可变模拟原始文件；不接真实身份系统、知识库、企业共享/生产数据库、模型、AIOps、ITSM 或生产环境。四个 `local-identity-v1` 模拟主体与策略 `mock-policy-v1` 不代表真实鉴权。审计和日志不得记录标题、描述、追问、反馈正文、Token、密钥或附件正文。
+当前仅允许模拟、公开或已脱敏输入。服务只接本地 Compose PostgreSQL 保存版本化模拟身份与目录、AuthSession、知识治理与双索引、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent，并以 Compose volume 保存不可变模拟原始知识文件；不接真实身份系统、知识库、企业共享/生产数据库、生成式模型、AIOps、ITSM 或生产环境。四个 `local-identity-v1` 模拟主体与策略 `mock-policy-v1` 不代表真实鉴权。审计和日志不得记录标题、描述、追问、反馈正文、Token、密钥或附件正文。
 
 所有输出必须包含依据来源、置信度、人工介入建议和待补充信息，并标识 `模拟数据`。输出不得成为最终根因、最终方案或正式复盘结论；失败、低置信度和反馈失败不得阻断人工继续提交。
 
