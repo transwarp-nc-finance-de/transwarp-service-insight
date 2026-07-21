@@ -12,6 +12,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 @Component
@@ -89,6 +90,8 @@ public class LocalEmbeddingAdapter implements EmbeddingPort {
           retryable ? "EMBEDDING_TEMPORARILY_UNAVAILABLE" : "EMBEDDING_REQUEST_REJECTED",
           retryable ? "本地向量服务暂时不可用。" : "向量请求不符合固定契约。",
           retryable);
+    } catch (RestClientException exception) {
+      throw new EmbeddingException("EMBEDDING_TEMPORARILY_UNAVAILABLE", "本地向量服务暂时不可用。", true);
     }
   }
 

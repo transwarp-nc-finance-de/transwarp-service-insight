@@ -10,21 +10,27 @@ describe('evaluation metrics page', () => {
       .fn()
       .mockResolvedValueOnce(ok({ items: [run()] }))
       .mockResolvedValueOnce(ok(metrics()))
+      .mockResolvedValueOnce(ok({ items: [failure()] }))
       .mockResolvedValueOnce(ok({ ...run(), status: 'PENDING', summary: null }))
       .mockResolvedValueOnce(ok({ items: [run()] }))
       .mockResolvedValueOnce(ok(metrics()))
+      .mockResolvedValueOnce(ok({ items: [failure()] }))
     vi.stubGlobal('fetch', fetchMock)
     vi.stubGlobal('crypto', { randomUUID: () => 'command-1' })
 
     const wrapper = mount(EvaluationMetricsPage)
     await flushPromises()
     expect(wrapper.get('[data-test="evaluation-run"]').text()).toContain('Recall@5 86.0%')
+    expect(wrapper.get('[data-test="metrics"]').text()).toContain('Evidence 命中率')
+    expect(wrapper.get('[data-test="evaluation-failures"]').text()).toContain(
+      'MISSING_INFORMATION_MISMATCH',
+    )
     expect(wrapper.text()).toContain('小样本工程评估，不代表生产效果')
 
     await wrapper.get('[data-test="evaluation-start"]').trigger('click')
     await flushPromises()
-    expect(fetchMock.mock.calls[2][0]).toBe('/api/v2/evaluation-runs')
-    expect(fetchMock.mock.calls[2][1].method).toBe('POST')
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/v2/evaluation-runs')
+    expect(fetchMock.mock.calls[3][1].method).toBe('POST')
   })
 })
 
@@ -44,6 +50,18 @@ function run() {
       disclaimer: '小样本工程评估，不代表生产效果',
     },
     error: null,
+    mockData: true,
+  }
+}
+
+function failure() {
+  return {
+    caseId: 'eval-001',
+    scenarioTags: ['EXACT_TERM'],
+    failedChecks: ['MISSING_INFORMATION'],
+    failureCodes: ['MISSING_INFORMATION_MISMATCH'],
+    expected: { evidenceCount: 1 },
+    actual: { evidenceCount: 1 },
     mockData: true,
   }
 }

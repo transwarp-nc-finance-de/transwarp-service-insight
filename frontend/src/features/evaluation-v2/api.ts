@@ -1,5 +1,5 @@
 import { readCsrfToken } from '../identity/useAuthSession'
-import type { EvaluationRun, Metrics } from './types'
+import type { EvaluationFailure, EvaluationRun, Metrics } from './types'
 
 async function body<T>(response: Response): Promise<T> {
   if (response.ok) return (await response.json()) as T
@@ -28,6 +28,16 @@ export async function createEvaluationRun(): Promise<EvaluationRun> {
 export async function listEvaluationRuns(): Promise<{ items: EvaluationRun[] }> {
   return body(
     await fetch('/api/v2/evaluation-runs?size=20&sortBy=createdAt&sortDirection=desc', {
+      credentials: 'include',
+    }),
+  )
+}
+
+export async function listEvaluationFailures(
+  taskId: string,
+): Promise<{ items: EvaluationFailure[] }> {
+  return body(
+    await fetch(`/api/v2/evaluation-runs/${taskId}/failures?size=10&sortDirection=asc`, {
       credentials: 'include',
     }),
   )

@@ -9,13 +9,12 @@ import com.transwarp.serviceinsight.evaluation.domain.EvaluationCase;
 import com.transwarp.serviceinsight.evaluation.domain.EvaluationModels.EvaluationCaseResult;
 import com.transwarp.serviceinsight.evaluation.domain.EvaluationModels.EvaluationSummary;
 import com.transwarp.serviceinsight.evaluation.domain.EvidenceFixtureManifest.EvidenceFixture;
-import com.transwarp.serviceinsight.evaluation.infrastructure.ClasspathEvaluationSetCatalog;
-import com.transwarp.serviceinsight.evaluation.infrastructure.EvaluationFixturePublisher;
+import com.transwarp.serviceinsight.evaluation.port.EvaluationFixturePort;
+import com.transwarp.serviceinsight.evaluation.port.EvaluationRetrievalPort;
 import com.transwarp.serviceinsight.evaluation.port.EvaluationRunRepository;
+import com.transwarp.serviceinsight.evaluation.port.EvaluationSetCatalog;
 import com.transwarp.serviceinsight.identity.domain.IdentityContext;
 import com.transwarp.serviceinsight.identity.domain.Role;
-import com.transwarp.serviceinsight.precheck.retrieval.application.AuthorizedRetrievalService;
-import com.transwarp.serviceinsight.precheck.retrieval.application.AuthorizedRetrievalService.EvaluationFault;
 import com.transwarp.serviceinsight.precheck.retrieval.domain.RetrievalModels.RetrievalOutcome;
 import com.transwarp.serviceinsight.precheck.retrieval.port.RetrievalAuditPort;
 import com.transwarp.serviceinsight.precheck.v2.application.DeterministicPrecheckPolicy;
@@ -35,28 +34,28 @@ public class EvaluationRunProcessor {
   private static final org.slf4j.Logger LOG =
       org.slf4j.LoggerFactory.getLogger(EvaluationRunProcessor.class);
   private final EvaluationRunRepository runs;
-  private final ClasspathEvaluationSetCatalog catalog;
+  private final EvaluationSetCatalog catalog;
   private final PersistentPrecheckRepository prechecks;
-  private final AuthorizedRetrievalService retrieval;
+  private final EvaluationRetrievalPort retrieval;
   private final RetrievalAuditPort retrievalAudit;
   private final PrecheckContextNormalizer normalizer;
   private final ObjectMapper json;
   private final Clock clock;
   private final Executor executor;
-  private final EvaluationFixturePublisher fixtures;
+  private final EvaluationFixturePort fixtures;
   private final StructuredAuditPort audit;
   private final DeterministicPrecheckPolicy policy = new DeterministicPrecheckPolicy();
 
   public EvaluationRunProcessor(
       EvaluationRunRepository runs,
-      ClasspathEvaluationSetCatalog catalog,
+      EvaluationSetCatalog catalog,
       PersistentPrecheckRepository prechecks,
-      AuthorizedRetrievalService retrieval,
+      EvaluationRetrievalPort retrieval,
       RetrievalAuditPort retrievalAudit,
       PrecheckContextNormalizer normalizer,
       ObjectMapper json,
       Clock clock,
-      EvaluationFixturePublisher fixtures,
+      EvaluationFixturePort fixtures,
       StructuredAuditPort audit,
       @Qualifier("applicationTaskExecutor") Executor executor) {
     this.runs = runs;
@@ -157,7 +156,7 @@ public class EvaluationRunProcessor {
       var context = context(taskId, evaluationCase.caseId(), turn.contextSnapshot());
       var currentPolicy = prechecks.findPolicy(context.issueType().code());
       var now = clock.instant();
-      lastRetrieval = retrieval.retrieveForEvaluation(identity, context, fault(evaluationCase));
+      lastRetrieval = retrieval.retrieve(identity, context, evaluationCase.expectedDegradation());
       lastResult = policy.evaluate(context, currentPolicy, turn.runSequence(), lastRetrieval);
       lastRunId = UUID.randomUUID();
       var run =
@@ -319,14 +318,6 @@ public class EvaluationRunProcessor {
       case FTS_ONLY -> "FTS_ONLY".equals(result.mode());
       case UNAVAILABLE -> "UNAVAILABLE".equals(result.mode());
     };
-  }
-
-  private EvaluationFault fault(EvaluationCase item) {
-    if (item.scenarioTags().contains("UNAVAILABLE"))
-      return EvaluationFault.ALL_RETRIEVAL_UNAVAILABLE;
-    if (item.scenarioTags().contains("EMBEDDING_DEGRADATION"))
-      return EvaluationFault.EMBEDDING_UNAVAILABLE;
-    return EvaluationFault.NONE;
   }
 
   private void check(boolean ok, String check, String code, Set<String> checks, Set<String> codes) {

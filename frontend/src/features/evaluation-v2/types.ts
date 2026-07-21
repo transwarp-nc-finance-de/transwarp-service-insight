@@ -18,6 +18,16 @@ export interface EvaluationRun {
   mockData: true
 }
 
+export interface EvaluationFailure {
+  caseId: string
+  scenarioTags: string[]
+  failedChecks: string[]
+  failureCodes: string[]
+  expected: Record<string, unknown>
+  actual: Record<string, unknown>
+  mockData: true
+}
+
 export interface Metrics {
   from: string
   to: string

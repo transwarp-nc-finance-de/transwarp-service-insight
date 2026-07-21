@@ -10,7 +10,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class EvaluationFixturePublisher {
+public class EvaluationFixturePublisher
+    implements com.transwarp.serviceinsight.evaluation.port.EvaluationFixturePort {
   private final JdbcTemplate jdbc;
   private final EmbeddingPort embedding;
   private final boolean postgresql;

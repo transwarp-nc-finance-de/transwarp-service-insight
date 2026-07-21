@@ -8,7 +8,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ClasspathEvaluationSetCatalog {
+public class ClasspathEvaluationSetCatalog
+    implements com.transwarp.serviceinsight.evaluation.port.EvaluationSetCatalog {
   static final String SUPPORTED_VERSION = "mock-eval-v1";
 
   private final ObjectMapper objectMapper;

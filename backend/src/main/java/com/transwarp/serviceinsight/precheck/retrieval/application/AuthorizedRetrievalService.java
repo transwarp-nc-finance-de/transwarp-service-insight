@@ -29,16 +29,14 @@ public class AuthorizedRetrievalService {
   }
 
   public RetrievalOutcome retrieve(IdentityContext identity, PrecheckContext context) {
-    return retrieve(identity, context, EvaluationFault.NONE);
+    return retrieveUsing(identity, context, search, embedding);
   }
 
-  public RetrievalOutcome retrieveForEvaluation(
-      IdentityContext identity, PrecheckContext context, EvaluationFault fault) {
-    return retrieve(identity, context, fault);
-  }
-
-  private RetrievalOutcome retrieve(
-      IdentityContext identity, PrecheckContext context, EvaluationFault fault) {
+  public RetrievalOutcome retrieveUsing(
+      IdentityContext identity,
+      PrecheckContext context,
+      RetrievalSearchPort searchPort,
+      EmbeddingPort embeddingPort) {
     var retrievalStarted = System.nanoTime();
     if (!identity.hasRole(Role.PRECHECK_USER)
         || !identity.canAccessProductLine(context.productLine().code())) {
@@ -46,28 +44,16 @@ public class AuthorizedRetrievalService {
     }
     var query = query(context);
     var productLineScope = List.of(context.productLine().code());
-    if (fault == EvaluationFault.ALL_RETRIEVAL_UNAVAILABLE) {
-      return unavailable("FTS_UNAVAILABLE", "模拟数据：评估场景注入全文检索不可用", elapsed(retrievalStarted));
-    }
     final List<RetrievalCandidate> ftsCandidates;
     try {
-      ftsCandidates = search.searchFts(query, productLineScope);
+      ftsCandidates = searchPort.searchFts(query, productLineScope);
     } catch (DataAccessException exception) {
       return unavailable("FTS_UNAVAILABLE", "模拟数据：全文检索暂时不可用", elapsed(retrievalStarted));
     }
     var embeddingStarted = System.nanoTime();
-    if (fault == EvaluationFault.EMBEDDING_UNAVAILABLE) {
-      return outcome(
-          "FTS_ONLY",
-          new Capability(true, "FTS_AVAILABLE", "模拟数据：全文检索可用"),
-          new Capability(false, "EMBEDDING_UNAVAILABLE", "模拟数据：评估场景注入本地向量检索不可用"),
-          fusion.fuse(ftsCandidates, List.of()),
-          elapsed(retrievalStarted),
-          elapsed(embeddingStarted));
-    }
     try {
-      var queryVector = embedding.embedQueries(List.of(query)).getFirst();
-      var vectorCandidates = search.searchVector(queryVector, productLineScope);
+      var queryVector = embeddingPort.embedQueries(List.of(query)).getFirst();
+      var vectorCandidates = searchPort.searchVector(queryVector, productLineScope);
       var result = fusion.fuse(ftsCandidates, vectorCandidates);
       return outcome(
           "HYBRID",
@@ -138,12 +124,6 @@ public class AuthorizedRetrievalService {
   private long elapsed(long started) {
     return Math.max(
         0, java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
-  }
-
-  public enum EvaluationFault {
-    NONE,
-    EMBEDDING_UNAVAILABLE,
-    ALL_RETRIEVAL_UNAVAILABLE
   }
 
   private String query(PrecheckContext context) {

@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { createEvaluationRun, getMetrics, listEvaluationRuns } from '../features/evaluation-v2/api'
-import type { EvaluationRun, Metrics } from '../features/evaluation-v2/types'
+import {
+  createEvaluationRun,
+  getMetrics,
+  listEvaluationFailures,
+  listEvaluationRuns,
+} from '../features/evaluation-v2/api'
+import type { EvaluationFailure, EvaluationRun, Metrics } from '../features/evaluation-v2/types'
 
 const runs = ref<EvaluationRun[]>([])
 const metrics = ref<Metrics>()
+const failures = ref<EvaluationFailure[]>([])
 const error = ref('')
 const running = ref(false)
 
@@ -19,6 +25,10 @@ async function refresh() {
       (await listEvaluationRuns()).items,
       await getMetrics(from.toISOString(), to.toISOString()),
     ]
+    const latestCompleted = runs.value.find((run) => run.status === 'SUCCEEDED')
+    failures.value = latestCompleted
+      ? (await listEvaluationFailures(latestCompleted.taskId)).items
+      : []
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '模拟数据：管理员评估页加载失败。'
   }
@@ -78,6 +88,14 @@ function percent(value: number) {
         ><span>平均 Run 数</span>
       </article>
       <article>
+        <strong>{{ percent(metrics.informationSupplementRate) }}</strong
+        ><span>信息补充率</span>
+      </article>
+      <article>
+        <strong>{{ percent(metrics.evidenceHitRate) }}</strong
+        ><span>Evidence 命中率</span>
+      </article>
+      <article>
         <strong>{{ percent(metrics.adoptionRate) }}</strong
         ><span>采纳率</span>
       </article>
@@ -109,6 +127,21 @@ function percent(value: number) {
           </p>
           <p class="fallback">{{ run.summary.disclaimer }}</p>
         </template>
+      </article>
+    </section>
+
+    <section class="card run-history" data-test="evaluation-failures">
+      <h2>最新运行失败案例（安全摘要）</h2>
+      <p class="fallback">
+        仅展示 caseId、场景、检查项和结构化计数/状态；不包含评估输入、Evidence ID、摘录或内部推理。
+      </p>
+      <p v-if="!failures.length" class="empty">最新已完成运行没有失败案例。</p>
+      <article v-for="failure in failures" :key="failure.caseId" class="reference">
+        <h3>{{ failure.caseId }} · {{ failure.failureCodes.join('、') }}</h3>
+        <p>场景：{{ failure.scenarioTags.join('、') }}</p>
+        <p>失败检查：{{ failure.failedChecks.join('、') }}</p>
+        <p>期望摘要：{{ JSON.stringify(failure.expected) }}</p>
+        <p>实际摘要：{{ JSON.stringify(failure.actual) }}</p>
       </article>
     </section>
   </main>

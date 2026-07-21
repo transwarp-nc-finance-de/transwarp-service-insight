@@ -8,8 +8,8 @@ import com.transwarp.serviceinsight.audit.v2.port.StructuredAuditPort;
 import com.transwarp.serviceinsight.evaluation.domain.EvaluationModels.*;
 import com.transwarp.serviceinsight.evaluation.domain.EvaluationModels.CreationResult;
 import com.transwarp.serviceinsight.evaluation.domain.EvaluationModels.EvaluationRun;
-import com.transwarp.serviceinsight.evaluation.infrastructure.ClasspathEvaluationSetCatalog;
 import com.transwarp.serviceinsight.evaluation.port.EvaluationRunRepository;
+import com.transwarp.serviceinsight.evaluation.port.EvaluationSetCatalog;
 import com.transwarp.serviceinsight.identity.application.AuthSessionApplicationService;
 import com.transwarp.serviceinsight.identity.domain.Role;
 import com.transwarp.serviceinsight.precheck.v2.application.PrecheckV2Exception;
@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EvaluationRunService {
   private final EvaluationRunRepository repository;
-  private final ClasspathEvaluationSetCatalog catalog;
+  private final EvaluationSetCatalog catalog;
   private final AuthSessionApplicationService authSessions;
   private final StructuredAuditPort audit;
   private final Clock clock;
@@ -38,7 +38,7 @@ public class EvaluationRunService {
 
   public EvaluationRunService(
       EvaluationRunRepository repository,
-      ClasspathEvaluationSetCatalog catalog,
+      EvaluationSetCatalog catalog,
       AuthSessionApplicationService authSessions,
       StructuredAuditPort audit,
       Clock clock,

@@ -1,5 +1,6 @@
 package com.transwarp.serviceinsight.evaluation.api;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -120,7 +121,8 @@ class EvaluationMetricsControllerTest {
         .andExpect(jsonPath("$.summary.permissionLeakageRate").value(0.0))
         .andExpect(jsonPath("$.summary.citationErrorRate").value(0.0))
         .andExpect(jsonPath("$.summary.degradationPassRate").value(1.0))
-        .andExpect(jsonPath("$.summary.recallAt5").isNumber())
+        .andExpect(jsonPath("$.summary.recallAt5").value(0.76))
+        .andExpect(jsonPath("$.summary.gatePassed").value(false))
         .andExpect(jsonPath("$.summary.disclaimer").value("小样本工程评估，不代表生产效果"));
   }
 
@@ -169,11 +171,75 @@ class EvaluationMetricsControllerTest {
             get("/api/v2/metrics")
                 .param("from", "2026-01-01T00:00:00Z")
                 .param("to", "2027-01-01T00:00:00Z")
+                .param("productLineCode", "STREAMING")
                 .cookie(login.getResponse().getCookie("SESSION")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.precheckCount").value(0))
         .andExpect(jsonPath("$.retrievalP95Ms").value(0))
         .andExpect(jsonPath("$.mockData").value(true));
+  }
+
+  @Test
+  void metricsAggregatePersistedPrecheckFeedbackAndContinuationEvents() throws Exception {
+    var login = login("mock-precheck-tdh");
+    var session =
+        mockMvc
+            .perform(
+                post("/api/v2/precheck-sessions")
+                    .cookie(login.getResponse().getCookie("SESSION"))
+                    .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"context":{"sourceSystem":"SANDBOX","hostRequestId":"metrics-api-test-001","formSchemaVersion":"sandbox-v2","issueType":{"code":"FUNCTIONAL_FAILURE","displayName":"功能故障（模拟数据）"},"productLine":{"code":"TDH","displayName":"TDH（模拟数据）"},"product":{"code":"INCEPTOR","displayName":"Inceptor（模拟数据）"},"component":{"code":"SQL_ENGINE","displayName":"SQL 引擎（模拟数据）"},"version":"9.1.0-mock","severity":{"code":"S2","displayName":"S2（模拟数据）"},"serviceType":{"code":"CONSULTATION","displayName":"咨询（模拟数据）"},"title":"模拟数据：指标事件","descriptionPlainText":"模拟数据：查询失败，需人工排查。","additionalInformation":[],"impactScope":"模拟数据：测试租户","attachments":[]}}
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    var sessionJson = objectMapper.readTree(session.getResponse().getContentAsByteArray());
+    var sessionId = sessionJson.path("sessionId").asText();
+    var runId = sessionJson.path("latestRun").path("runId").asText();
+
+    mockMvc
+        .perform(
+            post("/api/v2/feedback")
+                .cookie(login.getResponse().getCookie("SESSION"))
+                .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                .header("Idempotency-Key", "metrics-feedback-command-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"sessionId\":\""
+                        + sessionId
+                        + "\",\"runId\":\""
+                        + runId
+                        + "\",\"adoptionStatus\":\"ADOPTED\",\"helpfulness\":\"HELPFUL\",\"reason\":\"模拟数据：人工采纳\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            post("/api/v2/submission-continuations")
+                .cookie(login.getResponse().getCookie("SESSION"))
+                .header("X-CSRF-Token", login.getResponse().getHeader("X-CSRF-Token"))
+                .header("Idempotency-Key", "metrics-continuation-command-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"sessionId\":\""
+                        + sessionId
+                        + "\",\"confirmed\":true,\"reason\":\"模拟数据：人工继续提交\"}"))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(
+            get("/api/v2/metrics")
+                .param("from", "2026-01-01T00:00:00Z")
+                .param("to", "2027-01-01T00:00:00Z")
+                .param("productLineCode", "TDH")
+                .cookie(login.getResponse().getCookie("SESSION")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.precheckCount", greaterThanOrEqualTo(1)))
+        .andExpect(jsonPath("$.evidenceHitRate").isNumber())
+        .andExpect(jsonPath("$.adoptionRate").value(1.0))
+        .andExpect(jsonPath("$.continuationRate").value(1.0))
+        .andExpect(jsonPath("$.retrievalP95Ms", greaterThanOrEqualTo(0)))
+        .andExpect(jsonPath("$.embeddingP95Ms", greaterThanOrEqualTo(0)));
   }
 
   private MvcResult awaitTerminal(String taskId, MvcResult login) throws Exception {
