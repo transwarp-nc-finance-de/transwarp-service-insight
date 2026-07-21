@@ -10,6 +10,7 @@ import AuthSessionPanel from './features/identity/components/AuthSessionPanel.vu
       ><RouterLink to="/precheck-v2">Precheck v2</RouterLink
       ><RouterLink to="/embed">Embed</RouterLink><RouterLink to="/knowledge">Knowledge</RouterLink>
       <RouterLink to="/audit">Audit</RouterLink>
+      <RouterLink to="/evaluation">Evaluation</RouterLink>
     </nav>
     <AuthSessionPanel />
   </header>

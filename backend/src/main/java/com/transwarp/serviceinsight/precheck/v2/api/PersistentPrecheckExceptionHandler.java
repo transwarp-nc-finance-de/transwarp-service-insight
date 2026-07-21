@@ -1,6 +1,8 @@
 package com.transwarp.serviceinsight.precheck.v2.api;
 
 import com.transwarp.serviceinsight.audit.v2.api.StructuredAuditController;
+import com.transwarp.serviceinsight.evaluation.api.EvaluationRunController;
+import com.transwarp.serviceinsight.evaluation.api.MetricsController;
 import com.transwarp.serviceinsight.identity.api.V2ApiError;
 import com.transwarp.serviceinsight.identity.api.V2FieldError;
 import com.transwarp.serviceinsight.identity.application.CsrfValidationFailedException;
@@ -20,6 +22,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(
@@ -28,7 +31,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
       CompletenessPolicyController.class,
       EvidenceController.class,
       InteractionController.class,
-      StructuredAuditController.class
+      StructuredAuditController.class,
+      EvaluationRunController.class,
+      MetricsController.class
     })
 public class PersistentPrecheckExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -53,6 +58,17 @@ public class PersistentPrecheckExceptionHandler {
         "VALIDATION_ERROR",
         "请求字段校验失败",
         List.of(),
+        false,
+        Map.of("mockData", true));
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  ResponseEntity<V2ApiError> typeMismatch(MethodArgumentTypeMismatchException exception) {
+    return response(
+        HttpStatus.BAD_REQUEST,
+        "VALIDATION_ERROR",
+        "请求字段校验失败",
+        List.of(new V2FieldError(exception.getName(), "INVALID", "字段不合法")),
         false,
         Map.of("mockData", true));
   }

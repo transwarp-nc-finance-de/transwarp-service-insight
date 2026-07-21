@@ -2,6 +2,8 @@
 
 状态：ACTIVE。全部业务内容为 `模拟数据`。
 
+Evaluation 模块由管理员命令创建持久化异步任务，后台执行器把固定 Evidence fixture 发布到现有知识双索引，再对 30 条 `模拟数据` 案例调用同一授权 Retrieval、完整度策略及 Precheck/Retrieval/Evidence 持久化端口。降级案例只注入能力故障以验证真实 FTS fallback/不可用分支；汇总结果与安全失败摘要独立持久化，正常执行但门禁不通过仍为 `SUCCEEDED`。Metrics 从实际持久化事件按身份产品线聚合，并排除 `evaluation-` 前缀的评估轨迹，避免污染运营口径。
+
 ```text
 AIOps（未来真实宿主） / Mock AIOps Sandbox
 → PrecheckContext / HostBridge → Embedded Precheck UI
