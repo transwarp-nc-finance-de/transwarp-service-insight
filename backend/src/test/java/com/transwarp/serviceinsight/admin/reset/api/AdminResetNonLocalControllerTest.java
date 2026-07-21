@@ -1,5 +1,6 @@
 package com.transwarp.serviceinsight.admin.reset.api;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,6 +43,18 @@ class AdminResetNonLocalControllerTest {
                     """
                     {"environmentCode":"LOCAL","confirmationPhrase":"RESET LOCAL MOCK DATA","reason":"模拟数据：非本地环境拒绝"}
                     """))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("ADMIN_RESET_NOT_AVAILABLE"));
+
+    mockMvc
+        .perform(get("/api/v2/admin/resets").cookie(login.getResponse().getCookie("SESSION")))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("ADMIN_RESET_NOT_AVAILABLE"));
+
+    mockMvc
+        .perform(
+            get("/api/v2/admin/resets/{resetId}", java.util.UUID.randomUUID())
+                .cookie(login.getResponse().getCookie("SESSION")))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("ADMIN_RESET_NOT_AVAILABLE"));
   }

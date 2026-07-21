@@ -49,10 +49,10 @@ public class AdminResetController {
 
   @GetMapping
   AdminResetPage list(
-      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDirection,
+      @RequestParam(defaultValue = "DESC") String sortDirection,
       @RequestParam(required = false) String status,
       @CookieValue(name = "SESSION", required = false) String sessionCookie) {
     return service.list(page, size, sortBy, sortDirection, status, sessionCookie);

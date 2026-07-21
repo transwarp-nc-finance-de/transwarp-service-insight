@@ -36,7 +36,7 @@ public class AdminResetService {
       AdminResetRepository repository,
       AuthSessionApplicationService authSessions,
       Clock clock,
-      @Value("${app.environment-code:LOCAL}") String configuredEnvironment) {
+      @Value("${app.environment-code:DISABLED}") String configuredEnvironment) {
     this.repository = repository;
     this.authSessions = authSessions;
     this.clock = clock;
@@ -53,13 +53,7 @@ public class AdminResetService {
       String csrfToken) {
     validateIdempotencyKey(idempotencyKey);
     validateRequest(environmentCode, confirmationPhrase, reason);
-    if (!"LOCAL".equals(configuredEnvironment)) {
-      throw new PrecheckV2Exception(
-          "ADMIN_RESET_NOT_AVAILABLE",
-          HttpStatus.SERVICE_UNAVAILABLE,
-          "受控重置仅在明确标识的本地环境可用",
-          Map.of("mockData", true));
-    }
+    requireLocalEnvironment();
     var auth = authSessions.requireWriteSession(sessionCookie, csrfToken);
     requireAdmin(auth.identity().hasRole(Role.ADMIN));
     var normalizedReason = normalize(reason);
@@ -100,6 +94,7 @@ public class AdminResetService {
 
   @Transactional(readOnly = true)
   public AdminReset get(UUID taskId, String sessionCookie) {
+    requireLocalEnvironment();
     requireAdmin(authSessions.current(sessionCookie).identity().hasRole(Role.ADMIN));
     return repository
         .findById(taskId)
@@ -112,10 +107,12 @@ public class AdminResetService {
   @Transactional(readOnly = true)
   public AdminResetPage list(
       int page, int size, String sortBy, String direction, String status, String sessionCookie) {
+    requireLocalEnvironment();
     requireAdmin(authSessions.current(sessionCookie).identity().hasRole(Role.ADMIN));
-    if (page < 0 || size < 1 || size > 100) throw validation("page", "分页参数不合法");
+    if (page < 1 || size < 1 || size > 100) throw validation("page", "分页参数不合法");
     if (!List.of("createdAt", "status").contains(sortBy)) throw validation("sortBy", "排序字段不合法");
-    if (!List.of("asc", "desc").contains(direction.toLowerCase()))
+    var normalizedDirection = direction.toUpperCase();
+    if (!List.of("ASC", "DESC").contains(normalizedDirection))
       throw validation("sortDirection", "排序方向不合法");
     if (status != null && !List.of("PENDING", "RUNNING", "SUCCEEDED", "FAILED").contains(status))
       throw validation("status", "任务状态不合法");
@@ -123,13 +120,13 @@ public class AdminResetService {
         "status".equals(sortBy)
             ? Comparator.comparing(AdminReset::status)
             : Comparator.comparing(AdminReset::createdAt);
-    if ("desc".equalsIgnoreCase(direction)) comparator = comparator.reversed();
+    if ("DESC".equals(normalizedDirection)) comparator = comparator.reversed();
     var values =
         repository.findAll().stream()
             .filter(item -> status == null || status.equals(item.status()))
             .sorted(comparator.thenComparing(AdminReset::taskId))
             .toList();
-    int start = Math.min(page * size, values.size());
+    int start = Math.min((page - 1) * size, values.size());
     var items = values.subList(start, Math.min(start + size, values.size()));
     return new AdminResetPage(
         items,
@@ -139,7 +136,17 @@ public class AdminResetService {
             values.size(),
             values.isEmpty() ? 0 : (int) Math.ceil((double) values.size() / size),
             sortBy,
-            direction.toLowerCase()));
+            normalizedDirection));
+  }
+
+  private void requireLocalEnvironment() {
+    if (!"LOCAL".equals(configuredEnvironment)) {
+      throw new PrecheckV2Exception(
+          "ADMIN_RESET_NOT_AVAILABLE",
+          HttpStatus.SERVICE_UNAVAILABLE,
+          "受控重置仅在明确标识的本地环境可用",
+          Map.of("mockData", true));
+    }
   }
 
   private void validateRequest(String environment, String phrase, String reason) {

@@ -9,6 +9,4 @@ public interface OriginalFileStorage {
   byte[] read(String storageKey) throws IOException;
 
   void deleteIfPresent(String storageKey);
-
-  void clearAll() throws IOException;
 }

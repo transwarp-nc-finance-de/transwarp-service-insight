@@ -30,4 +30,6 @@ public interface AdminResetRepository {
   void fail(UUID taskId, String code, String message, Instant completedAt);
 
   List<UUID> recoverIncomplete();
+
+  List<AdminReset> findExhaustedRunning();
 }

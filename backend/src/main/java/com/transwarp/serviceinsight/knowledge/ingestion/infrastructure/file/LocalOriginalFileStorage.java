@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,12 +12,20 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LocalOriginalFileStorage implements OriginalFileStorage {
+  private static final String STORAGE_SENTINEL = ".service-insight-knowledge-storage";
   private final Path root;
 
   public LocalOriginalFileStorage(
       @Value("${app.knowledge.storage-path:${java.io.tmpdir}/service-insight-knowledge}")
           String storagePath) {
     root = Path.of(storagePath).toAbsolutePath().normalize();
+    try {
+      Files.createDirectories(root);
+      var sentinel = root.resolve(STORAGE_SENTINEL);
+      if (!Files.exists(sentinel)) Files.createFile(sentinel);
+    } catch (IOException exception) {
+      throw new IllegalStateException("无法初始化本地知识文件存储", exception);
+    }
   }
 
   @Override
@@ -41,17 +48,6 @@ public class LocalOriginalFileStorage implements OriginalFileStorage {
       Files.deleteIfExists(resolve(storageKey));
     } catch (IOException ignored) {
       // Best-effort cleanup is used only when the database transaction did not persist metadata.
-    }
-  }
-
-  @Override
-  public void clearAll() throws IOException {
-    if (!Files.exists(root)) return;
-    if (root.getParent() == null) throw new IOException("拒绝清理文件系统根目录");
-    try (var paths = Files.walk(root)) {
-      for (var path : paths.sorted(Comparator.reverseOrder()).toList()) {
-        if (!path.equals(root)) Files.deleteIfExists(path);
-      }
     }
   }
 

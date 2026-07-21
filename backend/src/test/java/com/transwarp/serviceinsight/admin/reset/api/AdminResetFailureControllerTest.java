@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.transwarp.serviceinsight.knowledge.ingestion.port.OriginalFileStorage;
+import com.transwarp.serviceinsight.admin.reset.port.LocalResetFileStore;
 import java.io.IOException;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -22,8 +22,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(
-    properties =
-        "spring.datasource.url=jdbc:h2:mem:admin_reset_failure_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
+    properties = {
+      "spring.datasource.url=jdbc:h2:mem:admin_reset_failure_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+      "app.environment-code=LOCAL"
+    })
 @AutoConfigureMockMvc
 @ContextConfiguration(classes = AdminResetFailureControllerTest.FailingStorageConfiguration.class)
 class AdminResetFailureControllerTest {
@@ -85,23 +87,10 @@ class AdminResetFailureControllerTest {
   static class FailingStorageConfiguration {
     @Bean
     @Primary
-    OriginalFileStorage failingOriginalFileStorage() {
-      return new OriginalFileStorage() {
+    LocalResetFileStore failingLocalResetFileStore() {
+      return new LocalResetFileStore() {
         @Override
-        public String store(UUID fileId, String originalName, byte[] content) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public byte[] read(String storageKey) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteIfPresent(String storageKey) {}
-
-        @Override
-        public void clearAll() throws IOException {
+        public void clearOriginalFiles() throws IOException {
           throw new IOException("simulated local storage failure");
         }
       };

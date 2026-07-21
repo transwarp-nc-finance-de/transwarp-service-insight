@@ -116,11 +116,16 @@ public class JdbcAdminResetRepository implements AdminResetRepository {
   public List<UUID> recoverIncomplete() {
     jdbc.update(
         "UPDATE admin_reset SET status='PENDING',started_at=NULL WHERE status='RUNNING' AND attempt<max_attempts");
-    jdbc.update(
-        "UPDATE admin_reset SET status='FAILED',error_code='RESET_ATTEMPTS_EXHAUSTED',error_message='本地模拟数据重置已耗尽三次尝试',error_retryable=FALSE,completed_at=CURRENT_TIMESTAMP WHERE status='RUNNING'");
     return jdbc.query(
         "SELECT task_id FROM admin_reset WHERE status='PENDING' ORDER BY created_at",
         (resultSet, rowNumber) -> resultSet.getObject("task_id", UUID.class));
+  }
+
+  @Override
+  public List<AdminReset> findExhaustedRunning() {
+    return jdbc.query(
+        "SELECT * FROM admin_reset WHERE status='RUNNING' AND attempt>=max_attempts ORDER BY created_at",
+        this::reset);
   }
 
   private AdminReset reset(ResultSet resultSet, int rowNumber) throws SQLException {

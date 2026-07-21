@@ -142,6 +142,8 @@ class AdminResetControllerTest {
         .perform(get("/api/v2/admin/resets").cookie(admin.getResponse().getCookie("SESSION")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].taskId").isNotEmpty())
+        .andExpect(jsonPath("$.page.page").value(1))
+        .andExpect(jsonPath("$.page.sortDirection").value("DESC"))
         .andExpect(jsonPath("$.page.totalItems").isNumber());
   }
 
