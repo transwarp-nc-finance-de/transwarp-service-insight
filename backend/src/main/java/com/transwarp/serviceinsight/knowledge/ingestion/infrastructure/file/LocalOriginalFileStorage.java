@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,17 @@ public class LocalOriginalFileStorage implements OriginalFileStorage {
       Files.deleteIfExists(resolve(storageKey));
     } catch (IOException ignored) {
       // Best-effort cleanup is used only when the database transaction did not persist metadata.
+    }
+  }
+
+  @Override
+  public void clearAll() throws IOException {
+    if (!Files.exists(root)) return;
+    if (root.getParent() == null) throw new IOException("拒绝清理文件系统根目录");
+    try (var paths = Files.walk(root)) {
+      for (var path : paths.sorted(Comparator.reverseOrder()).toList()) {
+        if (!path.equals(root)) Files.deleteIfExists(path);
+      }
     }
   }
 

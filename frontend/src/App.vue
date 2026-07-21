@@ -11,6 +11,7 @@ import AuthSessionPanel from './features/identity/components/AuthSessionPanel.vu
       ><RouterLink to="/embed">Embed</RouterLink><RouterLink to="/knowledge">Knowledge</RouterLink>
       <RouterLink to="/audit">Audit</RouterLink>
       <RouterLink to="/evaluation">Evaluation</RouterLink>
+      <RouterLink to="/admin-reset">Reset</RouterLink>
     </nav>
     <AuthSessionPanel />
   </header>

@@ -5,6 +5,7 @@ import KnowledgeIngestionPage from '../pages/KnowledgeIngestionPage.vue'
 import PersistentPrecheckPage from '../pages/PersistentPrecheckPage.vue'
 import AuditEventsPage from '../pages/AuditEventsPage.vue'
 import EvaluationMetricsPage from '../pages/EvaluationMetricsPage.vue'
+import AdminResetPage from '../pages/AdminResetPage.vue'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -15,5 +16,6 @@ export const router = createRouter({
     { path: '/knowledge', component: KnowledgeIngestionPage },
     { path: '/audit', component: AuditEventsPage },
     { path: '/evaluation', component: EvaluationMetricsPage },
+    { path: '/admin-reset', component: AdminResetPage },
   ],
 })

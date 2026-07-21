@@ -4,6 +4,8 @@
 
 Evaluation 模块由管理员命令创建持久化异步任务，后台执行器把固定 Evidence fixture 发布到现有知识双索引，再对 30 条 `模拟数据` 案例调用同一授权 Retrieval、完整度策略及 Precheck/Retrieval/Evidence 持久化端口。降级案例只在 Embedding/检索 Port 边界注入能力故障，再由同一授权检索服务进入真实 FTS fallback/不可用分支；汇总结果与安全失败摘要独立持久化，正常执行但门禁不通过仍为 `SUCCEEDED`。Metrics 从实际持久化事件按身份产品线聚合，并排除 `evaluation-` 前缀的评估轨迹，避免污染运营口径。
 
+Admin Reset 模块只在配置为 `LOCAL` 的环境接受 `ADMIN` 命令，并在 Cookie Session、CSRF、固定确认短语与独立幂等键全部通过后创建持久化异步任务。后台执行器清理原始知识文件与一期模拟业务表，保留重置任务和结构化审计历史，随后从版本化 `local-mock-data-v1` 恢复身份、目录与完整度策略，并用 `mock-eval-v1` fixture 重新发布知识双索引。旧本地会话随重置失效；成功或失败终态均记录不含原因正文、被删除正文、Token 或路径的结构化审计。该能力不操作 Git、模型授权证据或外部系统，也不是备份、灾备或生产恢复。
+
 ```text
 AIOps（未来真实宿主） / Mock AIOps Sandbox
 → PrecheckContext / HostBridge → Embedded Precheck UI

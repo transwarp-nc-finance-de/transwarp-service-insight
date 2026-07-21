@@ -849,7 +849,7 @@ paths:
     post:
       tags: [AdminReset]
       operationId: createAdminReset
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 二次确认后异步重置本地模拟数据
       description: 仅明确标识的本地环境可用；不是备份、恢复、灾备或生产删除能力。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -871,7 +871,7 @@ paths:
     get:
       tags: [AdminReset]
       operationId: listAdminResets
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询本地重置任务
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -890,7 +890,7 @@ paths:
     get:
       tags: [AdminReset]
       operationId: getAdminReset
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询本地重置任务
       responses:
         '200': { $ref: '#/components/responses/AdminResetOk' }

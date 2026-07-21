@@ -1,5 +1,6 @@
 package com.transwarp.serviceinsight.precheck.v2.api;
 
+import com.transwarp.serviceinsight.admin.reset.api.AdminResetController;
 import com.transwarp.serviceinsight.audit.v2.api.StructuredAuditController;
 import com.transwarp.serviceinsight.evaluation.api.EvaluationRunController;
 import com.transwarp.serviceinsight.evaluation.api.MetricsController;
@@ -27,6 +28,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(
     assignableTypes = {
+      AdminResetController.class,
       PersistentPrecheckController.class,
       CompletenessPolicyController.class,
       EvidenceController.class,
