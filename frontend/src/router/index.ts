@@ -4,6 +4,7 @@ import EmbedPrecheckPage from '../pages/EmbedPrecheckPage.vue'
 import KnowledgeIngestionPage from '../pages/KnowledgeIngestionPage.vue'
 import PersistentPrecheckPage from '../pages/PersistentPrecheckPage.vue'
 import AuditEventsPage from '../pages/AuditEventsPage.vue'
+import EvaluationMetricsPage from '../pages/EvaluationMetricsPage.vue'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -13,5 +14,6 @@ export const router = createRouter({
     { path: '/embed', component: EmbedPrecheckPage },
     { path: '/knowledge', component: KnowledgeIngestionPage },
     { path: '/audit', component: AuditEventsPage },
+    { path: '/evaluation', component: EvaluationMetricsPage },
   ],
 })

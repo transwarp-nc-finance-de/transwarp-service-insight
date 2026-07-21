@@ -15,7 +15,9 @@ public final class RetrievalModels {
       Capability fts,
       Capability embedding,
       FusionResult fusion,
-      List<EvidenceSnapshot> evidence) {
+      List<EvidenceSnapshot> evidence,
+      long retrievalDurationMs,
+      long embeddingDurationMs) {
     public boolean degraded() {
       return !"HYBRID".equals(mode);
     }

@@ -35,7 +35,7 @@ Source of truth for: 领域概念及当前与未来持久化语义
 
 当前 API 为每次初始预诊返回相互独立的 `precheckId` 与 `sessionId`，并返回 `confidenceReason`、策略版本、Mock 规则版本以及明确的模型/索引不适用标识。当前无持久化，`PrecheckRun` 尚不对应数据库记录。
 
-一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识上传/治理/发布、Precheck Session/Run/Evidence、独立 Feedback、SubmissionContinuation 与不可变结构化 AuditEvent；原始文件保存在 Compose volume，不存为数据库大字段。评估运行等未标记 `IMPLEMENTED` 的资源仍是目标持久化语义。
+一期已确认使用 PostgreSQL 持久化全部业务状态，包括 Session、Run、Feedback、AuditEvent、KnowledgeDocument、KnowledgeVersion、ParseTask、KnowledgeChunk、索引任务和评估运行。当前数据库 Adapter 已实现 AuthSession、知识上传/治理/发布、Precheck Session/Run/Evidence、独立 Feedback、SubmissionContinuation、不可变结构化 AuditEvent、EvaluationRun 与逐案例结果；原始文件保存在 Compose volume，不存为数据库大字段。EvaluationRun 只保存聚合摘要与安全失败定位字段，实际检索依据继续由不可变 Run/Retrieval/Evidence 轨迹承担。
 
 未来需追踪策略、模型、Prompt 和索引版本，并经人工确定数据保留与删除策略。本文不代表全部目标持久化已经启用。
 

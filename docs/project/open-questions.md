@@ -14,5 +14,6 @@
 12. `EXTERNAL QUESTION`：`PrecheckContext` 与真实 AIOps 表单、枚举及附件标识的映射待 AIOps、产品与 API 负责人确认；不影响一期 Sandbox 的本地模拟闭环。
 13. `CONFIRMED`：Issue #39 已产生固定 revision 的完整 SHA-256 manifest、依赖锁/SBOM/NOTICE、4 GiB 资源与三轮 P95、36 组批量基线及 `mock-eval-v1` 资格结果；工程门禁总体建议为 `PASS`，详见 [资格实测报告](../development/embedding-model-qualification-report.md)。用户于 2026-07-19 人工复核原始 checksum、供应链材料和门禁表后，将 Issue #19 最终确认为 `PASS` 并关闭；Issue #25 已在该批准边界内完成固定制品接入与双索引原子发布闭环。
 14. `CONFIRMED`：用户于 2026-07-20 明确要求解决文档状态冲突；v1 继续以 `docs/api/openapi.yaml` 为唯一 v1 契约，v2 以 `docs/api/openapi-v2.yaml` 中 operation 级 `IMPLEMENTED` 为唯一 v2 运行时契约，未标记 `IMPLEMENTED` 的设计保持 `NOT_IMPLEMENTED / DRAFT`。根 `AGENTS.md`、文档导航与契约说明已同步，不再保留“openapi.yaml 是全部版本唯一契约”的冲突表述。
+15. `OPEN QUESTION`：Issue #27 的 `mock-eval-v1` 固定集在真实 v2 路径运行时，30 条样例的 `expectedMissingFieldCodes` 均与当前 `mock-completeness-v1` 完整性策略产生非硬性差异（当前策略额外要求 `OCCURRED_AT` 及问题类型相关字段）；四项工程门槛仍全部通过，差异已按失败样例安全持久化且不得通过改写固定集或特殊判断掩盖。后续需由产品与评测负责人决定是在新版本固定集中对齐期望，还是调整完整性策略；在结论形成前保留 `mock-eval-v1` 的版本和 checksum。
 
 在第 1–3 项结论形成前不修改仓库 `LICENSE`，也不宣称项目对外开源。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项的一次受控取件授权已由 Issue #39 使用完毕，第 13 项的 Issue #19 人工门禁已通过。模型文件不得进入 Git 或镜像；Issue #25 已在校验批准制品、只读挂载和离线运行边界下完成默认 Compose 与产品运行时接入。v2 可按已批准契约继续实施。

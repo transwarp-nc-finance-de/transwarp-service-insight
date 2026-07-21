@@ -2,9 +2,9 @@
 
 `Transwarp Service Insight` 当前聚焦外挂在 AIOps SLA 流程中的智能预诊能力。AIOps 是正式表单、枚举、校验和最终提交的宿主；本仓库提供独立预诊后端、嵌入式面板以及本地 Mock AIOps Sandbox。
 
-能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion、审核、双索引原子发布与废弃 `IMPLEMENTED`；持久化预诊 Session/Run、三轮补充、恢复、显式自助结束、授权在线 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；LLM Generation 与 Agent Orchestration 仍为 `NOT STARTED`。
+能力状态：Engineering Baseline `DONE`；Architecture Skeleton `IN PROGRESS`；本地身份与 PostgreSQL 基础闭环 `IMPLEMENTED`；Knowledge Ingestion、审核、双索引原子发布与废弃 `IMPLEMENTED`；持久化预诊 Session/Run、三轮补充、恢复、显式自助结束、授权在线 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation、结构化 AuditEvent、EvaluationRun、Metrics 与最小管理员评估页 `IMPLEMENTED`；AIOps Host Integration `PROTOTYPE`；LLM Generation 与 Agent Orchestration 仍为 `NOT STARTED`。
 
-> 当前全部业务内容均为 `模拟数据`。系统使用本地 Compose PostgreSQL 保存模拟身份与目录、AuthSession、知识治理、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent 等本地工程数据，不接入真实客户数据、ITSM、AIOps、生成式 RAG/LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
+> 当前全部业务内容均为 `模拟数据`。系统使用本地 Compose PostgreSQL 保存模拟身份与目录、AuthSession、知识治理、预诊 Session/Run、Evidence、Feedback、SubmissionContinuation、结构化 AuditEvent、EvaluationRun 与聚合指标所需事件等本地工程数据，不接入真实客户数据、ITSM、AIOps、生成式 RAG/LLM、企业共享/生产数据库或生产环境；预诊建议仅供人工参考，不是最终根因、最终方案或正式复盘结论。失败、低置信度或信息不完整不得阻断人工继续提交，SLA 是否提交及提交内容始终由人工确认。
 
 ## 1. 适用范围
 

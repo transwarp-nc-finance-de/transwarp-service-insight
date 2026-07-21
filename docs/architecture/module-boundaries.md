@@ -17,6 +17,7 @@ Source of truth for: 模块职责、依赖方向与替换边界
 
 - Retrieval（已实现本地切片）：权限优先过滤、FTS/向量融合、降级、Evidence 快照与重新授权读取；
 - Feedback/Audit（已实现本地切片）：独立采纳反馈、人工继续提交，以及身份、知识、发布、预诊、Evidence、Feedback、Continuation 的脱敏结构化审计；
+- Evaluation/Metrics（已实现本地切片）：持久化异步固定集执行、实际 v2 检索轨迹、四项工程门禁、安全失败摘要及权限过滤的事件聚合；
 - Policy（部分实现）：版本化完整度策略读取与 Run 快照；运行时编辑/发布仍未实现；
 - Generation（DRAFT）：真实生成式模型、引用绑定和生成护栏；当前仅使用确定性模板/规则；
 - Integration（DRAFT）：真实 AIOps、ITSM、对象存储和外部模型适配。

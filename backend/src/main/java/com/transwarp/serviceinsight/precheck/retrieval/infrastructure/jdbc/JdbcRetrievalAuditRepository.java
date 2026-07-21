@@ -22,13 +22,15 @@ public class JdbcRetrievalAuditRepository implements RetrievalAuditPort {
   @Override
   public void save(UUID runId, String ownerUserCode, RetrievalOutcome outcome, Instant createdAt) {
     jdbc.update(
-        "INSERT INTO precheck_retrieval_audit(run_id, owner_user_code, rule_version, retrieval_mode, fts_status_code, embedding_status_code, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO precheck_retrieval_audit(run_id, owner_user_code, rule_version, retrieval_mode, fts_status_code, embedding_status_code, retrieval_duration_ms, embedding_duration_ms, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         runId,
         ownerUserCode,
         outcome.fusion().ruleVersion(),
         outcome.mode(),
         outcome.fts().code(),
         outcome.embedding().code(),
+        outcome.retrievalDurationMs(),
+        outcome.embeddingDurationMs(),
         Timestamp.from(createdAt));
     for (var candidate : outcome.fusion().ftsCandidates()) {
       saveCandidate(runId, "FTS", candidate.candidate().chunkId(), candidate.rank(), outcome);

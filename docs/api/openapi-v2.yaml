@@ -687,7 +687,7 @@ paths:
     post:
       tags: [EvaluationRun]
       operationId: createEvaluationRun
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 异步运行固定模拟评估集
       description: 小样本工程评估，不代表生产效果；运行状态不可任意修改。
       security: [{ CookieAuth: [], CsrfToken: [] }]
@@ -709,7 +709,7 @@ paths:
     get:
       tags: [EvaluationRun]
       operationId: listEvaluationRuns
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询评估运行
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -728,7 +728,7 @@ paths:
     get:
       tags: [EvaluationRun]
       operationId: getEvaluationRun
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询评估运行及聚合结果
       responses:
         '200': { $ref: '#/components/responses/EvaluationRunOk' }
@@ -740,7 +740,7 @@ paths:
     get:
       tags: [EvaluationRun]
       operationId: listEvaluationRunFailures
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 分页查询评估失败案例
       description: |
         仅 `ADMIN` 可读取。失败案例只提供定位所需的模拟案例 ID、场景标签、失败检查和
@@ -764,7 +764,7 @@ paths:
     get:
       tags: [Metrics]
       operationId: getMetrics
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       summary: 查询权限过滤后的聚合指标
       description: 不返回问题、附件、反馈或知识正文，不能用于自动判责。
       parameters:

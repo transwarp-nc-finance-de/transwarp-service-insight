@@ -3,7 +3,7 @@
 Status: DRAFT  
 Owner: 产品运营负责人  
 Last reviewed: 2026-07-20
-Source of truth for: 未来效果评估口径与归因规则
+Source of truth for: 当前工程评估、聚合指标口径与归因规则
 
 ## 业务指标
 
@@ -21,15 +21,15 @@ Source of truth for: 未来效果评估口径与归因规则
 
 不得仅以“SLA 数量下降”判断成功。下降也可能来自用户放弃、误导、系统不可用或入口使用率下降，必须同时观察字段完整度、有效 SLA、用户反馈、处理耗时和错误引导率。
 
-当前已有本地 PostgreSQL 持久化的预诊 Session/Run、Retrieval/Evidence、Feedback、SubmissionContinuation 和结构化 AuditEvent 等工程数据，但 `EvaluationRun`、Metrics API 与管理员评估页仍未实现。这些本地 `模拟数据` 只能支持工程行为验证，不代表生产业务或模型效果；任何生产基线、目标值与统计周期仍须由产品、SLA 处理人及安全负责人确认。
+当前已有本地 PostgreSQL 持久化的预诊 Session/Run、Retrieval/Evidence、Feedback、SubmissionContinuation、结构化 AuditEvent、`EvaluationRun` 和案例结果；Metrics API 从这些实际持久化事件聚合，管理员评估页提供最小入口。这些本地 `模拟数据` 只能支持工程行为验证，不代表生产业务或模型效果；任何生产基线、目标值与统计周期仍须由产品、SLA 处理人及安全负责人确认。
 
 ## 一期已确认反馈口径
 
 采纳行为与有用性评价分别统计：采纳行为为 `ADOPTED / PARTIALLY_ADOPTED / IGNORED`，有用性评价为可选的 `HELPFUL / NOT_HELPFUL`。未提供有用性评价不得被计为 `NOT_HELPFUL`，反馈失败或缺失也不得推断用户继续提交的原因。
 
-## 一期已确认评估入口（尚未实现）
+## 一期已实现评估入口
 
-目标能力为 `ADMIN` 通过最小评估页手动运行固定评估集，查看最近一次及历史结果摘要和失败案例，并持久化评估运行与结果。当前 `EvaluationRun`、Metrics API 与管理员评估页均为 `NOT_IMPLEMENTED`；一期不提供实时运营大屏、A/B、告警或复杂趋势分析。
+`ADMIN` 可通过最小评估页手动运行固定评估集，查看最近一次及历史结果摘要，并通过 API 分页读取安全失败摘要；评估运行、30 条案例结果及实际 v2 Session/Run/Retrieval/Evidence 轨迹均持久化。EvaluationRun 与 Metrics operation 已标记 `IMPLEMENTED`；一期不提供实时运营大屏、A/B、告警或复杂趋势分析。
 
 固定评估集不少于 30 条 `模拟数据` 策划样例，覆盖精确词、语义改写、证据不足、权限隔离、Embedding 降级、多轮补充与引用核验。每条记录期望 Evidence、允许范围和预期降级或待补充信息。所有汇总结果必须声明“小样本工程评估，不代表生产效果”。
 

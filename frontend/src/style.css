@@ -229,6 +229,30 @@ button {
   color: #2864c7;
   font-size: 13px;
 }
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.metric-grid article {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  background: #f6f9ff;
+  border-radius: 8px;
+}
+.metric-grid strong {
+  font-size: 22px;
+  color: #2257ad;
+}
+.metric-grid span {
+  color: #626e80;
+  font-size: 13px;
+}
+.run-history h3 {
+  margin-bottom: 6px;
+}
 .chips {
   display: flex;
   gap: 7px;
@@ -326,6 +350,9 @@ button {
   }
   .grid {
     grid-template-columns: 1fr;
+  }
+  .metric-grid {
+    grid-template-columns: 1fr 1fr;
   }
   .intro h1 {
     font-size: 28px;

@@ -29,6 +29,15 @@ public class AuthorizedRetrievalService {
   }
 
   public RetrievalOutcome retrieve(IdentityContext identity, PrecheckContext context) {
+    return retrieveUsing(identity, context, search, embedding);
+  }
+
+  public RetrievalOutcome retrieveUsing(
+      IdentityContext identity,
+      PrecheckContext context,
+      RetrievalSearchPort searchPort,
+      EmbeddingPort embeddingPort) {
+    var retrievalStarted = System.nanoTime();
     if (!identity.hasRole(Role.PRECHECK_USER)
         || !identity.canAccessProductLine(context.productLine().code())) {
       throw new IllegalArgumentException("identity is not authorized for retrieval context");
@@ -37,43 +46,52 @@ public class AuthorizedRetrievalService {
     var productLineScope = List.of(context.productLine().code());
     final List<RetrievalCandidate> ftsCandidates;
     try {
-      ftsCandidates = search.searchFts(query, productLineScope);
+      ftsCandidates = searchPort.searchFts(query, productLineScope);
     } catch (DataAccessException exception) {
-      return unavailable("FTS_UNAVAILABLE", "模拟数据：全文检索暂时不可用");
+      return unavailable("FTS_UNAVAILABLE", "模拟数据：全文检索暂时不可用", elapsed(retrievalStarted));
     }
+    var embeddingStarted = System.nanoTime();
     try {
-      var queryVector = embedding.embedQueries(List.of(query)).getFirst();
-      var vectorCandidates = search.searchVector(queryVector, productLineScope);
+      var queryVector = embeddingPort.embedQueries(List.of(query)).getFirst();
+      var vectorCandidates = searchPort.searchVector(queryVector, productLineScope);
       var result = fusion.fuse(ftsCandidates, vectorCandidates);
       return outcome(
           "HYBRID",
           new Capability(true, "FTS_AVAILABLE", "模拟数据：全文检索可用"),
           new Capability(true, "EMBEDDING_AVAILABLE", "模拟数据：本地向量检索可用"),
-          result);
+          result,
+          elapsed(retrievalStarted),
+          elapsed(embeddingStarted));
     } catch (EmbeddingException | DataAccessException exception) {
       var result = fusion.fuse(ftsCandidates, List.of());
       return outcome(
           "FTS_ONLY",
           new Capability(true, "FTS_AVAILABLE", "模拟数据：全文检索可用"),
           new Capability(false, "EMBEDDING_UNAVAILABLE", "模拟数据：本地向量检索暂时不可用"),
-          result);
+          result,
+          elapsed(retrievalStarted),
+          elapsed(embeddingStarted));
     }
   }
 
-  private RetrievalOutcome unavailable(String code, String message) {
+  private RetrievalOutcome unavailable(String code, String message, long retrievalDurationMs) {
     return new RetrievalOutcome(
         "UNAVAILABLE",
         new Capability(false, code, message),
         new Capability(false, "EMBEDDING_NOT_ATTEMPTED", "模拟数据：全文检索不可用时不执行向量召回"),
         fusion.fuse(List.of(), List.of()),
-        List.of());
+        List.of(),
+        retrievalDurationMs,
+        0);
   }
 
   private RetrievalOutcome outcome(
       String mode,
       Capability fts,
       Capability embedding,
-      HybridRetrievalPolicy.FusionResult result) {
+      HybridRetrievalPolicy.FusionResult result,
+      long retrievalDurationMs,
+      long embeddingDurationMs) {
     var evidence = new ArrayList<EvidenceSnapshot>();
     for (var selected : result.selected()) {
       var candidate = selected.candidate();
@@ -93,7 +111,19 @@ public class AuthorizedRetrievalService {
               selected.rrfScore(),
               selected.selectedRank()));
     }
-    return new RetrievalOutcome(mode, fts, embedding, result, List.copyOf(evidence));
+    return new RetrievalOutcome(
+        mode,
+        fts,
+        embedding,
+        result,
+        List.copyOf(evidence),
+        retrievalDurationMs,
+        embeddingDurationMs);
+  }
+
+  private long elapsed(long started) {
+    return Math.max(
+        0, java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
   }
 
   private String query(PrecheckContext context) {
