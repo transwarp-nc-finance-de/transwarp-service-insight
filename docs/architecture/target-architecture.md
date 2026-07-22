@@ -25,7 +25,7 @@ Port → 可替换 Adapter → 数据、模型及外部系统
 
 ## 一期已确认目标边界
 
-一期使用 PostgreSQL 持久化知识治理、预诊 Session/Run、反馈、审计和评估等全部业务状态，要求容器重启可恢复，并支持迁移、`模拟数据` 初始化与受控重置。原始文件不作为数据库大字段保存。当前已实现 AuthSession、知识上传/治理/发布、IndexTask/双索引、预诊 Session/Run、Evidence、独立 Feedback、SubmissionContinuation 与结构化 AuditEvent 的 PostgreSQL 持久化；Evaluation、Metrics 和受控 Admin Reset 等目标尚未实现。
+一期使用 PostgreSQL 持久化知识治理、预诊 Session/Run、反馈、审计、评估和 Admin Reset 等业务状态，要求容器重启可恢复，并支持迁移、版本化 `模拟数据` 初始化与仅限本地环境的受控重置。原始文件不作为数据库大字段保存。当前已实现 AuthSession、知识上传/治理/发布、IndexTask/双索引、预诊 Session/Run、Evidence、独立 Feedback、SubmissionContinuation、结构化 AuditEvent、EvaluationRun、Metrics 与受控 Admin Reset 的 PostgreSQL 持久化。
 
 原始知识文件使用 Compose 管理的本地挂载目录，通过 `FileStoragePort` 访问；数据库仅保存不透明文件 ID、相对存储键、哈希、大小与媒体类型。未来对象存储只能作为替换 Adapter 接入，不得让领域层依赖具体文件系统或对象存储 SDK。
 
@@ -49,6 +49,6 @@ Issue #39 已完成固定 revision 的受控取件并生成、复核文件清单
 
 一期明确不建设真实外部系统集成、自动 SLA/运维动作、真实生成式模型、多 Agent、高级检索链、全格式解析、生产级平台能力或完整运营平台。候选技术不得仅为未来可能性创建空接口、空服务或 Compose 组件。
 
-当前 `/api/v1` 保持兼容；一期新语义由 `/api/v2` 承载。v1/v2 DTO 通过 Mapper 隔离，领域模型不依赖 HTTP 版本。完整 DRAFT OpenAPI 已覆盖方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传/治理/发布、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent；Evaluation、Metrics、Admin Reset 等未标记 `IMPLEMENTED` 的 v2 operation 仍未实现，v1 契约与行为不变。
+当前 `/api/v1` 保持兼容；一期新语义由 `/api/v2` 承载。v1/v2 DTO 通过 Mapper 隔离，领域模型不依赖 HTTP 版本。完整 DRAFT OpenAPI 已覆盖方法、请求/响应 Schema、错误码、幂等、分页、异步任务状态和 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传/治理/发布、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation、结构化 AuditEvent、EvaluationRun、Metrics 与仅限本地环境的受控 Admin Reset；其他未标记 `IMPLEMENTED` 的 v2 operation 仍未实现，v1 契约与行为不变。
 
 一期冻结的 v2 资源组为：`/api/v2/auth-sessions`、`/api/v2/knowledge-documents`、`/api/v2/knowledge-versions`、`/api/v2/parse-tasks`、`/api/v2/index-tasks`、`/api/v2/evidence`、`/api/v2/precheck-sessions`、`/api/v2/precheck-sessions/{sessionId}/runs`、`/api/v2/feedback`、`/api/v2/submission-continuations`、`/api/v2/evaluation-runs`、`/api/v2/metrics`、`/api/v2/audit-events`、`/api/v2/completeness-policies`、`/api/v2/admin/resets`。冻结只覆盖职责和路径前缀，不代表具体方法、Schema 或完整 CRUD 已实现。

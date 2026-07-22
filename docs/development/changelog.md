@@ -4,15 +4,21 @@ Status: ACTIVE
 
 Owner: 研发负责人
 
-Last reviewed: 2026-07-20
+Last reviewed: 2026-07-21
 
 Source of truth for: 当前技术 MVP 的用户可见实施增量
+
+## 2026-07-21
+
+- Issue #28：实现仅 `LOCAL` 环境可用、需 `ADMIN + CSRF + 固定确认短语 + 独立 Idempotency-Key` 的异步受控 Admin Reset；任务历史与终态审计持久化，成功时清理一期模拟业务状态和原始知识文件，恢复 `local-identity-v1`、`local-catalog-v1`、`mock-completeness-v1` 与 `local-mock-data-v1`，并依据 `mock-eval-v1` 重新发布固定知识双索引。重置会使旧本地会话失效，不修改 Git、模型授权证据或外部系统，也不代表备份、灾备或生产恢复能力。
+- 管理员页面新增固定短语二次确认、原因输入、任务历史和结果提示；API v2 三个 Admin Reset operation 标记为 `IMPLEMENTED`，API v1 保持不变。
+- 文档治理：统一此前仍把 Evaluation、Metrics 或 Admin Reset 描述为未实现的 ACTIVE/目标文档；一期最终 Compose/E2E 验收仍由 Issue #29 承担。
 
 ## 2026-07-20
 
 - Issue #27：实现持久化异步 EvaluationRun、30 条 `mock-eval-v1` 实际 v2 检索/证据轨迹、权限/引用/降级/Recall@5 四项工程门禁、安全失败分页、基于 Precheck/Retrieval/Evidence/Feedback/SubmissionContinuation 事件的权限过滤 Metrics API，以及最小管理员评估与指标页；API v1 未变，Admin Reset 保持未实现。
 
-- 文档治理：统一 Issue #24 在产品、项目、架构、API 与开发文档中的已实现状态，并明确 v1 `openapi.yaml` 与 v2 `openapi-v2.yaml` operation 级 `IMPLEMENTED` 的契约事实职责；Evaluation、Metrics、Admin Reset 等剩余目标继续保持未实现。
+- 文档治理（当时状态）：统一 Issue #24 在产品、项目、架构、API 与开发文档中的已实现状态，并明确 v1 `openapi.yaml` 与 v2 `openapi-v2.yaml` operation 级 `IMPLEMENTED` 的契约事实职责；该时点 Evaluation、Metrics、Admin Reset 尚未实现，后续完成状态见 2026-07-21 记录。
 - Issue #24：实现独立持久化 Feedback 与 SubmissionContinuation、`CONTINUED_SUBMISSION` 终止语义，以及按 ADMIN 产品线授权查询的脱敏不可变 AuditEvent；前端新增独立反馈/继续提交和管理员审计页，且不创建 SLA、工单草稿、`ticketId` 或回执。
 - Issue #26：实现授权优先的在线混合检索与不可变 Evidence 快照。FTS/向量召回均在排序前过滤当前身份产品线和当前 `PUBLISHED` 版本，固定采用两路各 Top 20、RRF `k=60`、最终 Top 5 与稳定 UUID 同分排序；每个 Run 重新检索并保存规则、候选、rank、模式和 Evidence 审计快照。
 - `GET /api/v2/evidence/{evidenceId}` 每次按当前身份重新授权，不存在与无权限统一安全 `404`，不返回宿主路径或直接文件 URL。Embedding 故障降级为 `FTS_ONLY / LOW`，FTS 故障降级为 `UNAVAILABLE / LOW`，两者均保留人工继续提交；历史 Run 与 Evidence 不随服务恢复或权限变化改写。Sandbox 新增三种检索模式、降级原因、置信度和受控 Evidence 查看。

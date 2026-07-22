@@ -13,4 +13,4 @@ Source of truth for: 一期重定义后的 HTTP API 兼容方向
 
 当前 v1 将反馈与继续提交耦合，并且无法表达已冻结的 Context、权限和幂等语义；在 v1 内收紧必填字段会破坏已发布契约。该决定落实 ADR-0004 的版本化要求；具体 v2 路径与 Schema 已形成 DRAFT 契约并通过人工评审，运行时可用性以 `openapi-v2.yaml` 的 operation 级 `IMPLEMENTED` 为准；v1 弃用周期仍未确定。
 
-v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态以及 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传/治理/发布、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent，v1 Mock 保持兼容；Evaluation、Metrics、Admin Reset 等未标记 `IMPLEMENTED` 的领域结论或已批准契约不得表述为已实现 API。
+v2 OpenAPI 已完整定义资源与命令方法、请求/响应 Schema、错误码、幂等语义、分页、异步任务状态以及 v1→v2 映射，并于 2026-07-14 获人工批准。API v2 为 `APPROVED_FOR_IMPLEMENTATION`，一期实施为 `READY_FOR_IMPLEMENTATION`；当前已实现 AuthSession、知识上传/治理/发布、持久化 Precheck Session/Run、授权混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation、结构化 AuditEvent、EvaluationRun、Metrics 与仅限本地环境的受控 Admin Reset，v1 Mock 保持兼容；其他未标记 `IMPLEMENTED` 的领域结论或已批准契约不得表述为已实现 API。

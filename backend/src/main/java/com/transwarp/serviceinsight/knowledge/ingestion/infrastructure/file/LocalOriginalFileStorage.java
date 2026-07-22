@@ -12,12 +12,20 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LocalOriginalFileStorage implements OriginalFileStorage {
+  private static final String STORAGE_SENTINEL = ".service-insight-knowledge-storage";
   private final Path root;
 
   public LocalOriginalFileStorage(
       @Value("${app.knowledge.storage-path:${java.io.tmpdir}/service-insight-knowledge}")
           String storagePath) {
     root = Path.of(storagePath).toAbsolutePath().normalize();
+    try {
+      Files.createDirectories(root);
+      var sentinel = root.resolve(STORAGE_SENTINEL);
+      if (!Files.exists(sentinel)) Files.createFile(sentinel);
+    } catch (IOException exception) {
+      throw new IllegalStateException("无法初始化本地知识文件存储", exception);
+    }
   }
 
   @Override
