@@ -65,15 +65,20 @@ test('@full 完整四服务完成一期核心纵向闭环', async ({ page }) => 
   await expect(page.getByTestId('audit-event').first()).toContainText('模拟数据')
 
   await page.goto('/evaluation')
+  const evaluationCreated = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/v2/evaluation-runs') && response.request().method() === 'POST',
+  )
   await page.getByTestId('evaluation-start').click()
+  const evaluation = (await (await evaluationCreated).json()) as { taskId: string }
   await expect
-    .poll(
-      async () => {
-        await page.getByTestId('evaluation-refresh').click()
-        return page.getByTestId('evaluation-run').first().textContent()
-      },
-      { timeout: 90_000 },
-    )
-    .toContain('SUCCEEDED')
+    .poll(async () => {
+      const response = await page.request.get(`/api/v2/evaluation-runs/${evaluation.taskId}`)
+      if (!response.ok()) return 'PENDING'
+      return ((await response.json()) as { status: string }).status
+    })
+    .toBe('SUCCEEDED')
+  await page.reload()
+  await expect(page.getByTestId('evaluation-run').first()).toContainText('SUCCEEDED')
   await expect(page.getByTestId('metrics')).toBeVisible()
 })

@@ -4,16 +4,21 @@ import { loginAs } from './helpers'
 test('@fts 浏览器用户在 Embedding 缺失时仍可核验依据并继续人工提交', async ({ page, request }) => {
   await page.goto('/evaluation')
   await loginAs(page, 'mock-admin', '本地管理员（模拟数据）')
+  const evaluationCreated = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/v2/evaluation-runs') && response.request().method() === 'POST',
+  )
   await page.getByTestId('evaluation-start').click()
+  const evaluation = (await (await evaluationCreated).json()) as { taskId: string }
   await expect
-    .poll(
-      async () => {
-        await page.getByTestId('evaluation-refresh').click()
-        return page.getByTestId('evaluation-run').first().textContent()
-      },
-      { timeout: 90_000 },
-    )
-    .toContain('SUCCEEDED')
+    .poll(async () => {
+      const response = await page.request.get(`/api/v2/evaluation-runs/${evaluation.taskId}`)
+      if (!response.ok()) return 'PENDING'
+      return ((await response.json()) as { status: string }).status
+    })
+    .toBe('SUCCEEDED')
+  await page.reload()
+  await expect(page.getByTestId('evaluation-run').first()).toContainText('SUCCEEDED')
   await expect(page.getByTestId('evaluation-run').first()).toContainText(
     '小样本工程评估，不代表生产效果',
   )
