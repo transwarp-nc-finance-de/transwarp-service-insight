@@ -343,6 +343,9 @@ async function request(path: string, init: Parameters<typeof fetch>[1] = {}) {
       <section v-if="summary && version" class="card governance">
         <h2>知识草稿与审核（模拟数据）</h2>
         <p class="notice">治理状态：{{ version.status }}</p>
+        <p>
+          Version ID：<code data-test="knowledge-version-id">{{ version.versionId }}</code>
+        </p>
         <button
           data-test="submit-review"
           :disabled="governanceLoading || version.status !== 'DRAFT'"

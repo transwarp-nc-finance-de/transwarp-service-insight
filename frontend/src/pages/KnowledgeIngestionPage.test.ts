@@ -30,6 +30,9 @@ describe('knowledge ingestion vertical flow', () => {
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     )
     expect(wrapper.text()).toContain('SUCCEEDED')
+    expect(wrapper.get('[data-test="knowledge-version-id"]').text()).toBe(
+      created().version.versionId,
+    )
     expect(wrapper.text()).toContain('sha256:result')
     expect(wrapper.text()).toContain('block mock data')
     expect(wrapper.text()).toContain('chunk mock data')

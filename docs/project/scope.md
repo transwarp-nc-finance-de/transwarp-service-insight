@@ -2,7 +2,7 @@
 
 状态：ACTIVE，Last reviewed: 2026-07-20。当前实现与一期目标必须分开解读。
 
-统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `READY_FOR_IMPLEMENTATION`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession、知识闭环、持久化预诊/Evidence、独立 Feedback/SubmissionContinuation、结构化 AuditEvent、EvaluationRun/Metrics 和仅限本地环境的受控 Admin Reset。
+统一状态：需求范围为 `CONFIRMED`；API v2 为 `DRAFT / PARTIALLY_IMPLEMENTED / APPROVED_FOR_IMPLEMENTATION`；一期实施为 `IMPLEMENTED`；当前实现为完整兼容的 `v1 Mock` 加已实现的 v2 AuthSession、知识闭环、持久化预诊/Evidence、独立 Feedback/SubmissionContinuation、结构化 AuditEvent、EvaluationRun/Metrics、仅限本地环境的受控 Admin Reset，以及经 Issue #29 验收的完整 Compose/FTS 降级纵向闭环。
 
 当前已有 Vue 前端、Spring Boot API、确定性 Mock Workflow、本地模拟身份 UI、Compose PostgreSQL、OpenAPI 和 CI。v2 已实现知识审核发布、持久化预诊、授权优先的本地混合 Retrieval 与 Evidence、独立 Feedback、SubmissionContinuation 和结构化 AuditEvent。AIOps 是 SLA 表单、枚举、原有校验和最终提交的权威宿主；Service Insight 只负责完整度分析、辅助建议、引用、反馈、审计与安全降级。
 

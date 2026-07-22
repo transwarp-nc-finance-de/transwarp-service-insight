@@ -62,6 +62,11 @@ services:
   frontend:
     build:
       context: ./frontend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     depends_on:
       backend:
         condition: service_healthy

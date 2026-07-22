@@ -1,5 +1,12 @@
 # 变更记录
 
+## 2026/07/22：Issue #29 Compose 完整模式与降级验收收口
+
+- 增加 Playwright 浏览器纵向验收，覆盖完整知识治理/双索引发布、授权预诊、Evidence、反馈、人工继续、审计、Evaluation/Metrics、FTS-only、运行时 Embedding 故障恢复及 v1 回归。
+- 增加隔离 Compose 验收脚本和 CI FTS-only 浏览器门禁；脚本只接受通过 manifest 大小与 SHA-256 校验的已批准本地模型制品，不下载或接入外部模型。
+- 修复运行时降级被 Nginx 三秒超时截断、模型健康早于首次推理预热，以及知识治理页面缺少稳定 version ID 的问题。
+- 同步一期实施、Backlog、当前架构、Quick Start、测试策略和验收报告状态；全部验收内容为 `模拟数据`，不代表真实试点或生产批准，SLA 仍由人工确认。
+
 ## 2026/07/12：AIOps 宿主边界与应用工作流重构
 
 - 将独立表单重新定位为 Mock AIOps Sandbox，新增不含 SLA 表单的 Embed 页面、复用 PrecheckPanel 和 HostBridge/postMessage v1.0 协议骨架。
