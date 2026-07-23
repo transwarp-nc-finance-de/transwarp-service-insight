@@ -12,7 +12,13 @@
     "openapi:v1:check": "swagger-cli validate ../docs/api/openapi.yaml",
     "openapi:v2:check": "swagger-cli validate ../docs/api/openapi-v2.yaml",
     "openapi:check": "npm run openapi:v1:check && npm run openapi:v2:check",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ci": "playwright test e2e/fts-degradation.spec.ts e2e/v1-regression.spec.ts",
+    "test:e2e:v1": "playwright test e2e/v1-regression.spec.ts",
+    "test:e2e:full": "playwright test e2e/full-vertical-closure.spec.ts",
+    "test:e2e:runtime-fault": "playwright test e2e/runtime-degradation.spec.ts --grep @runtime-fault",
+    "test:e2e:recovery": "playwright test e2e/runtime-degradation.spec.ts --grep @recovery"
   },
   "dependencies": {
     "vue": "^3.5.17",
@@ -21,6 +27,7 @@
   "devDependencies": {
     "@apidevtools/swagger-cli": "4.0.4",
     "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.55.0",
     "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/eslint-config-typescript": "^14.6.0",

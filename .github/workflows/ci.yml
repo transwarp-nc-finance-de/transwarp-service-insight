@@ -50,8 +50,27 @@ jobs:
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          {
+            node-version: "24",
+            cache: npm,
+            cache-dependency-path: frontend/package-lock.json,
+          }
+      - name: Install browser acceptance dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
       - run: docker compose build
       - run: docker compose up -d --wait
+      - name: Browser acceptance for FTS-only degradation and v1 regression
+        working-directory: frontend
+        run: npm run test:e2e:ci
+      - name: Reset Compose state after browser acceptance
+        run: |
+          docker compose down --volumes --remove-orphans
+          docker compose up -d --wait
       - name: Smoke test Sandbox, Session/Run API and feedback
         run: |
           curl --fail --retry 5 http://localhost:5173/sandbox

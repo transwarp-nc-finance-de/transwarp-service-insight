@@ -30,6 +30,10 @@ class Application:
             str(model_dir), local_files_only=True, trust_remote_code=False, use_safetensors=True
         ).to("cpu")
         self.model.eval()
+        # The server socket is opened only after this bounded, simulated query.
+        # Therefore Compose health means the first user query does not pay the
+        # framework/model warm-up cost and unexpectedly fall back to FTS_ONLY.
+        self.embed(["模拟数据：本地向量模型启动预热"], "query")
 
     def embed(self, texts: list[str], prefix: str) -> list[list[float]]:
         if prefix not in {"query", "passage"} or not texts or len(texts) > 128:

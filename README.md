@@ -109,10 +109,24 @@ git pull --ff-only
 
 ### 5.1 构建并启动
 
-Windows PowerShell、macOS 和 Linux 命令相同：
+默认完整模式必须使用 Issue #19 已批准、已在本地校验的五文件模型目录；启动过程不会下载模型，也不得使用未批准制品。Windows PowerShell：
 
 ```powershell
+$env:LOCAL_EMBEDDING_MODEL_PATH = "<已批准模型目录的绝对路径>"
 docker compose up -d --build --wait
+```
+
+macOS/Linux：
+
+```bash
+export LOCAL_EMBEDDING_MODEL_PATH="<已批准模型目录的绝对路径>"
+docker compose up -d --build --wait
+```
+
+若只验收无向量服务时的显式降级，可不提供模型目录：
+
+```powershell
+docker compose -f compose.yaml -f compose.fts-only.yaml up -d --build --wait
 ```
 
 首次启动需要下载基础镜像和依赖，耗时取决于网络。`--wait` 会等待后端健康检查通过；命令成功返回后，打开：
@@ -135,7 +149,7 @@ docker compose ps
 curl --fail --silent http://127.0.0.1:5173/api/v1/health
 ```
 
-预期结果：`frontend`、`backend` 与 `postgres` 均处于运行状态，后端与 PostgreSQL 为 `healthy`，健康接口返回包含 `"status": "UP"` 的 JSON。
+完整模式预期结果：`frontend`、`backend`、`postgres` 与 `local-embedding` 均处于运行状态，后端、PostgreSQL 与本地 Embedding 为 `healthy`，健康接口返回包含 `"status": "UP"` 的 JSON。FTS-only 模式不启动 `local-embedding`，其余服务保持可用，预诊明确返回 `FTS_ONLY / LOW`。
 
 页面顶部提供四个预置本地身份。选择身份后登录，确认页面显示 `模拟数据`、唯一角色及授权产品线；切换身份会轮换 Session 与 CSRF Token，退出会同时使二者失效。该能力不是 SSO 或生产鉴权。
 
