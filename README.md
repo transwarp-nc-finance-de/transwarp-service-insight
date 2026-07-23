@@ -92,7 +92,7 @@ git --version
 首次获取：
 
 ```powershell
-git clone <仓库地址>
+git clone https://github.com/transwarp-nc-finance-de/transwarp-service-insight.git
 cd transwarp-service-insight
 ```
 
@@ -107,7 +107,25 @@ git pull --ff-only
 
 ## 5. Quick Start
 
-### 5.1 构建并启动
+### 5.1 Release 一键启动（无需 Embedding 模型）
+
+公开 Release 不包含、不下载也不分发 Embedding 模型权重。首次体验推荐使用 FTS-only 模式；它仍会构建前端、后端和 PostgreSQL，并在预诊结果中明确显示 `FTS_ONLY / LOW`。
+
+Windows PowerShell：
+
+```powershell
+.\tools\release\start-fts-only.ps1
+```
+
+macOS/Linux：
+
+```bash
+bash tools/release/start-fts-only.sh
+```
+
+脚本会校验 Compose 配置、构建并等待服务健康，然后验证前端到后端的健康路由。成功后打开 <http://127.0.0.1:5173>。首次构建需要下载基础镜像和构建依赖，耗时取决于网络。
+
+### 5.2 可选 Hybrid 模式
 
 默认完整模式必须使用 Issue #19 已批准、已在本地校验的五文件模型目录；启动过程不会下载模型，也不得使用未批准制品。Windows PowerShell：
 
@@ -133,7 +151,23 @@ docker compose -f compose.yaml -f compose.fts-only.yaml up -d --build --wait
 
 <http://127.0.0.1:5173>
 
-### 5.2 首次启动验证
+Embedding 使用者需要自行从上游取得并审查模型。项目只接受以下固定参数，且模型目录必须与 [allowlist](tools/embedding-qualification/allowlist.json) 中五个文件的大小和 SHA-256 完全一致，不能包含额外文件或符号链接。
+
+| 参数 | 固定值 |
+| --- | --- |
+| 上游模型 | [`intfloat/multilingual-e5-base`](https://huggingface.co/intfloat/multilingual-e5-base) |
+| Revision | `d13f1b27baf31030b7fd040960d60d909913633f` |
+| 模型目录环境变量 | `LOCAL_EMBEDDING_MODEL_PATH` |
+| 向量维度 | `768` |
+| 最大输入长度 | `512 Token` |
+| 检索前缀 | 查询使用 `query:`，知识段落使用 `passage:` |
+| 单请求文本数 | `1–128` |
+| 运行边界 | CPU-only、只读挂载、离线加载、`trust_remote_code=false` |
+| 已验收资源边界 | 4 GiB 内存，默认 `OMP_NUM_THREADS=1` |
+
+上游模型卡当前标记 MIT，但模型、训练数据和传递依赖的适用性仍由使用者自行审查；本项目的 MIT License 只覆盖项目代码，不替代第三方许可证，也不构成法律意见。固定制品的工程资格结果见[模型资格实测报告](docs/development/embedding-model-qualification-report.md)。
+
+### 5.3 首次启动验证
 
 Windows PowerShell：
 
@@ -157,7 +191,7 @@ curl --fail --silent http://127.0.0.1:5173/api/v1/health
 
 使用 `mock-precheck-tdh` 登录后可访问 `/precheck-v2`，创建持久化 Session 与 Run 1、补充完整 Context 形成最多三轮 Run、刷新恢复本人活动 Session、跳过建议继续人工提交，以及显式确认自助结束。每个 Run 都会在当前 Context 产品线授权范围内查询当前 `PUBLISHED` 知识：FTS 与本地 Embedding 均可用时为 `HYBRID`，Embedding 故障时降级为 `FTS_ONLY`，FTS 故障时为无 Evidence 的 `UNAVAILABLE`；降级均限制为 `LOW` 且不阻断人工继续提交。Evidence 保存不可变快照，并在每次读取时按当前身份重新鉴权。
 
-### 5.3 `模拟数据` 预诊验收
+### 5.4 `模拟数据` 预诊验收
 
 1. 打开 <http://127.0.0.1:5173/sandbox>。该页面不是正式 SLA 入口；`/embed` 仅用于验证嵌入式预诊面板。
 2. 在必填的“问题标题”和“问题描述”中填写不含真实客户信息的模拟内容，例如“`模拟数据：查询响应变慢`”。
