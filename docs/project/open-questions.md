@@ -1,8 +1,8 @@
 # 待确认问题（ACTIVE）
 
-1. `EXTERNAL QUESTION`：MIT License 的对外开源意图待负责人确认。
-2. `EXTERNAL QUESTION`：Copyright 版权主体待负责人/法务确认。
-3. `EXTERNAL QUESTION`：公司内部使用、修改和分发授权边界待负责人/法务确认。
+1. `CONFIRMED`：用户于 2026-07-23 以项目负责人和版权责任人身份确认，批准项目代码按当前 MIT License 对外发布 `v0.1.0`。
+2. `CONFIRMED`：用户于 2026-07-23 以版权责任人身份确认当前 `LICENSE` 中的版权与发布授权可用于 `v0.1.0` 项目代码发布。
+3. `CONFIRMED`：用户于 2026-07-23 确认项目代码可按当前 MIT License 对外使用、修改和分发；该确认不授权分发 Embedding 模型权重，不扩大到真实业务数据、外部系统或第三方资料。
 4. `EXTERNAL QUESTION`：一期本地模拟/公开/脱敏数据已确认保留至受控重置；真实数据的分类、保留删除期限、迁移和恢复责任仍待数据/安全负责人确认，该结论不得直接沿用到二期。
 5. `EXTERNAL QUESTION`：真实知识源的授权白名单、脱敏、版权、文档及 Chunk 权限继承待知识/安全负责人确认。
 6. `EXTERNAL QUESTION`：外部或内部模型的调用边界、数据出域、成本预算和模型审计待安全/架构负责人确认。
@@ -16,4 +16,4 @@
 14. `CONFIRMED`：用户于 2026-07-20 明确要求解决文档状态冲突；v1 继续以 `docs/api/openapi.yaml` 为唯一 v1 契约，v2 以 `docs/api/openapi-v2.yaml` 中 operation 级 `IMPLEMENTED` 为唯一 v2 运行时契约，未标记 `IMPLEMENTED` 的设计保持 `NOT_IMPLEMENTED / DRAFT`。根 `AGENTS.md`、文档导航与契约说明已同步，不再保留“openapi.yaml 是全部版本唯一契约”的冲突表述。
 15. `OPEN QUESTION`：Issue #27 的 `mock-eval-v1` 固定集在真实 v2 路径运行时，30 条样例的 `expectedMissingFieldCodes` 均与当前 `mock-completeness-v1` 完整性策略产生非硬性差异（当前策略额外要求 `OCCURRED_AT` 及问题类型相关字段）；四项工程门槛仍全部通过，差异已按失败样例安全持久化且不得通过改写固定集或特殊判断掩盖。后续需由产品与评测负责人决定是在新版本固定集中对齐期望，还是调整完整性策略；在结论形成前保留 `mock-eval-v1` 的版本和 checksum。
 
-在第 1–3 项结论形成前不修改仓库 `LICENSE`，也不宣称项目对外开源。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项的一次受控取件授权已由 Issue #39 使用完毕，第 13 项的 Issue #19 人工门禁已通过。模型文件不得进入 Git 或镜像；Issue #25 已在校验批准制品、只读挂载和离线运行边界下完成默认 Compose 与产品运行时接入。v2 可按已批准契约继续实施。
+第 1–3 项已确认项目代码按当前 MIT License 对外发布；该结论不覆盖第三方模型权重、真实数据或外部资料。第 4–7 项仅阻止对应真实数据或外部系统接入，不阻止已确认的一期本地模拟闭环；第 9 项的一次受控取件授权已由 Issue #39 使用完毕，第 13 项的 Issue #19 人工门禁已通过。模型文件不得进入 Git、Release 或镜像；Issue #25 已在校验批准制品、只读挂载和离线运行边界下完成默认 Compose 与产品运行时接入。v2 可按已批准契约继续实施。
